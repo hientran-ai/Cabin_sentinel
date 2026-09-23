@@ -57,3 +57,11 @@ Nhật ký các yêu cầu dành cho AI và kết quả thực hiện trong proj
 - **Tệp thay đổi:** `BUILD_PHASE/AGENTS.md`, `BUILD_PHASE/.agents/skills/**`, `BUILD_PHASE/.agents/workflows/safety-change.md`, `BUILD_PHASE/.agents/workflows/sync-to-p068.md`, `BUILD_PHASE/AI_LOG.md`; không đổi tệp trong `P-068`.
 - **Kiểm tra:** Xác nhận 6 skill có frontmatter, tên khớp thư mục và description; kiểm cú pháp shell của tệp đi kèm. Validator chính thức chưa chạy vì Python môi trường thiếu `PyYAML`; dùng kiểm tra cấu trúc độc lập. Không chạy test ứng dụng vì không sửa mã.
 - **Còn tồn đọng:** Skill mới có hiệu lực trong lượt làm việc tiếp theo; chưa đồng bộ sang `P-068` hoặc push GitHub.
+
+## 2026-09-23 — Đưa toàn bộ AI log hiện có lên P-068
+
+- **Yêu cầu:** Đưa các AI log của project lên GitHub qua repository `P-068`.
+- **Đã làm:** Sao chép `BUILD_PHASE/AI_LOG.md` vào gốc `P-068`, giữ log Gate G1 đã có, và đưa ba bản ghi JSONL từ `.ai-log/archive` vào `P-068/docs/ai-log-archive/` dưới dạng snapshot theo dõi được. Fast-forward `P-068` trước khi commit; chỉ stage các log, giữ nguyên thay đổi sẵn có của `scripts/_pyrun.sh`. Commit `9c62ea7` đã push lên `origin/main`.
+- **Tệp thay đổi:** `BUILD_PHASE/AI_LOG.md`; `P-068/AI_LOG.md`, `P-068/docs/ai-log-archive/2026-09-20.jsonl`, `P-068/docs/ai-log-archive/2026-09-23.jsonl`. Không đồng bộ mã ứng dụng.
+- **Kiểm tra:** Ba JSONL parse hợp lệ; rà mẫu credential không thấy secret; `git diff --cached --check` qua và push GitHub trả thành công. Hook pre-push không gửi lên grading server vì thiếu `AI_LOG_SERVER`; bước quét Antigravity của hook lỗi cú pháp Python trên môi trường hiện tại nhưng không chặn GitHub push.
+- **Còn tồn đọng:** Cần cấu hình grading server nếu muốn nộp AI logs qua hook; các thay đổi mã/kiến trúc chưa được đồng bộ sang `P-068` trong yêu cầu chỉ upload log này.
