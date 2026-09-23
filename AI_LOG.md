@@ -137,3 +137,19 @@ Nhật ký các yêu cầu dành cho AI và kết quả thực hiện trong proj
 - Tệp thay đổi: `BUILD_PHASE/AI_LOG.md`, `P-068/AI_LOG.md`; không đồng bộ mã ứng dụng hoặc log sự kiện vận hành.
 - Kiểm tra: So sánh local với `origin/main` trước khi đồng bộ; rà mẫu credential trong AI log; kiểm tra diff và trạng thái Git trước/sau push.
 - Còn tồn đọng: Tài liệu và mã Sprint 0 chưa được đồng bộ sang `P-068`; kết quả hook gửi log lên grading server cần kiểm tra riêng.
+
+## 2026-09-23 — Chẩn đoán lỗi gửi AI log theo tài liệu onboarding
+
+- Yêu cầu: Xác định lỗi ở bước AI log khi push, đọc thêm PDF onboarding để đối chiếu.
+- Đã làm: Đọc toàn bộ hướng dẫn onboarding; rà pre-push hook, Python launcher, script quét/gửi log, môi trường Python và sự hiện diện của cấu hình/log (không đọc hoặc ghi giá trị token vào nhật ký).
+- Tệp thay đổi: `BUILD_PHASE/AI_LOG.md`; không đổi mã hoặc `P-068`.
+- Kiểm tra: GitHub push trước đó thành công ở commit `182c86f`. Hook chọn Python 3.9, trong khi `log_antigravity.py` dùng cú pháp type hint cần Python 3.10+; Python được chọn thiếu `python-dotenv` nên không nạp `.env`, dù file có cấu hình server/key. `.ai-log/session.jsonl` hiện không có dữ liệu mới; hook cố ý trả exit 0 khi hai bước thất bại/bỏ qua.
+- Còn tồn đọng: Cần sửa cách chọn Python/hook và xác minh cơ chế ghi prompt của Codex ở workspace dùng thực tế; sau đó tạo một log thử hợp lệ và kiểm tra trên Phoenix AI Logs. Chưa xác minh token/server bằng POST thật.
+
+## 2026-09-23 — Rà soát phần Khánh và đưa backend Sprint 0 vào repo nhóm
+
+- Yêu cầu: Kiểm tra phần Backend & Sensor đã làm, chỉnh cho phù hợp repository GitHub `P-068` của nhóm.
+- Đã làm: Đối chiếu phân công và kiến trúc với mã ở `BUILD_PHASE` và template `P-068`; thêm module CabinSentinel dưới `P-068/src/cabinsentinel`, API Vision/GET, MQTT subscriber, simulator, rule LangGraph xác định, SQLite state/event, action mock, trạng thái pending unlock có hủy/hết hạn, và cảnh báo hạn remote start. Cập nhật Docker Compose Mosquitto, sơ đồ kiến trúc, README và cấu hình mẫu. Giữ route chat template để không làm hỏng phần sẵn có.
+- Tệp thay đổi: `BUILD_PHASE/AI_LOG.md`; `P-068/AI_LOG.md`, `.env.example`, `README.md`, `docker-compose.yml`, `docs/architecture_diagram.md`, `mosquitto.conf`, `requirements.txt`, `scripts/cabinsentinel_sensor_simulator.py`, `src/config.py`, `src/main.py`, `src/cabinsentinel/*`, `tests/test_cabinsentinel.py`. Không chỉnh thay đổi mode có sẵn của `P-068/scripts/_pyrun.sh`.
+- Kiểm tra: `P-068` qua 31/31 test, Ruff, `git diff --check`, YAML Compose parse hợp lệ; smoke test MQTT local với broker tạm và SQLite tạm cho ra CRITICAL, hai action `simulated` và unlock `pending_human_confirmation`. Chưa chạy Docker Compose vì máy này không có lệnh Docker.
+- Còn tồn đọng: Chưa push/commit; cần tích hợp Vision và frontend thật, phân quyền/idempotency cho xác nhận unlock, adapter/feedback xe và kênh cảnh báo thật, test đầy đủ TC01–TC20 cùng latency/recall trên Raspberry Pi 5. Hook AI log/grading server vẫn cần xử lý riêng.

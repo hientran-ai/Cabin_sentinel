@@ -1,38 +1,27 @@
-# Architecture Diagram
-
-## System Overview
+# CabinSentinel Sprint 0 architecture
 
 ```mermaid
-graph TB
-    User([User]) --> UI[Frontend<br/>React/Next.js]
-    UI -->|REST API| API[FastAPI Backend]
-    API --> Agent[LangGraph Agent]
-    Agent --> LLM[LLM Service<br/>GPT-4o / Gemini]
-    Agent --> Tools[Agent Tools]
-    Tools --> DB[(Database)]
-    Agent --> VS[Vector Store<br/>ChromaDB]
+flowchart LR
+    S[Sensor simulator / vehicle adapter] -->|JSON v1, QoS 1| M[Local Mosquitto]
+    M -->|cabinsentinel/+/sensors| Q[MQTT subscriber and queue]
+    V[Vision module] -->|POST /api/v1/vision| A[FastAPI]
+    Q --> F[Per-vehicle fusion]
+    A --> F
+    F --> G[LangGraph orchestration]
+    G --> R[Deterministic safety rules]
+    R --> F
+    F --> DB[(SQLite state and events)]
+    F --> X[Mock action adapter]
+    DB -->|GET state, risk, events| A
+    A --> D[Dashboard]
 ```
 
-## Agent Flow
+The safety decision uses local inputs and deterministic rules; no LLM or Internet
+service participates. Each accepted MQTT or Vision update reevaluates the vehicle.
+The one-second timer also detects stale sources. SQLite persists the latest
+decision and action attempts. All action results currently mean **simulated**;
+`request_unlock` is pending confirmation only and has no actuator connection.
+The health endpoint reports a disconnected broker as degraded.
 
-```mermaid
-graph LR
-    START((Start)) --> Input[Parse Input]
-    Input --> Analyze[Analyze Query]
-    Analyze --> Decide{Need Tool?}
-    Decide -->|Yes| CallTool[Call Tool]
-    CallTool --> Analyze
-    Decide -->|No| Generate[Generate Response]
-    Generate --> END((End))
-```
-
-## Component Details
-
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| Frontend | React/Next.js | User interface |
-| Backend | FastAPI | API server |
-| Agent | LangGraph | AI agent orchestration |
-| LLM | OpenAI/Gemini | Language model |
-| Database | PostgreSQL/SQLite | Data persistence |
-| Vector Store | ChromaDB | RAG / embeddings |
+The original `/api/v1/chat` template route remains available for compatibility
+with the team's existing code and tests. It is outside the safety path.
