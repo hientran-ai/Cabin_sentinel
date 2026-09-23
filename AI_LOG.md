@@ -153,3 +153,11 @@ Nhật ký các yêu cầu dành cho AI và kết quả thực hiện trong proj
 - Tệp thay đổi: `BUILD_PHASE/AI_LOG.md`; `P-068/AI_LOG.md`, `.env.example`, `README.md`, `docker-compose.yml`, `docs/architecture_diagram.md`, `mosquitto.conf`, `requirements.txt`, `scripts/cabinsentinel_sensor_simulator.py`, `src/config.py`, `src/main.py`, `src/cabinsentinel/*`, `tests/test_cabinsentinel.py`. Không chỉnh thay đổi mode có sẵn của `P-068/scripts/_pyrun.sh`.
 - Kiểm tra: `P-068` qua 31/31 test, Ruff, `git diff --check`, YAML Compose parse hợp lệ; smoke test MQTT local với broker tạm và SQLite tạm cho ra CRITICAL, hai action `simulated` và unlock `pending_human_confirmation`. Chưa chạy Docker Compose vì máy này không có lệnh Docker.
 - Còn tồn đọng: Chưa push/commit; cần tích hợp Vision và frontend thật, phân quyền/idempotency cho xác nhận unlock, adapter/feedback xe và kênh cảnh báo thật, test đầy đủ TC01–TC20 cùng latency/recall trên Raspberry Pi 5. Hook AI log/grading server vẫn cần xử lý riêng.
+
+## 2026-09-23 — Tạo nhánh Khanh và push phần Backend & Sensor
+
+- Yêu cầu: Tạo nhánh tên chính xác `Khanh` trong repo GitHub nhóm và tạm đẩy phần CabinSentinel lên đó.
+- Đã làm: Xác nhận remote chỉ có `main`, tạo nhánh `Khanh` từ `main`, commit phần backend/sensor/tài liệu đã kiểm thử bằng tác giả GitHub noreply của tài khoản đăng nhập và push thành công lên `origin/Khanh`. Không stage thay đổi mode có sẵn của `scripts/_pyrun.sh`.
+- Tệp thay đổi: `BUILD_PHASE/AI_LOG.md`, `P-068/AI_LOG.md`; phần CabinSentinel trong `P-068` thuộc commit `c7c5b5a` trên nhánh `Khanh`.
+- Kiểm tra: Trước commit, `P-068` qua 31/31 test, Ruff và `git diff --cached --check`; push trả thành công và nhánh tracking `origin/Khanh` được thiết lập. Hook pre-push vẫn lỗi cú pháp type hint của `log_antigravity.py` dưới Python cũ và bỏ qua gửi grading AI log vì không thấy `AI_LOG_SERVER`; GitHub push không bị chặn.
+- Còn tồn đọng: Cần xử lý hook/grading AI log riêng; chưa mở PR hoặc nhập `Khanh` vào `main`.
