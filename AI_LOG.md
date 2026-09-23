@@ -161,3 +161,11 @@ Nhật ký các yêu cầu dành cho AI và kết quả thực hiện trong proj
 - Tệp thay đổi: `BUILD_PHASE/AI_LOG.md`, `P-068/AI_LOG.md`; phần CabinSentinel trong `P-068` thuộc commit `c7c5b5a` trên nhánh `Khanh`.
 - Kiểm tra: Trước commit, `P-068` qua 31/31 test, Ruff và `git diff --cached --check`; push trả thành công và nhánh tracking `origin/Khanh` được thiết lập. Hook pre-push vẫn lỗi cú pháp type hint của `log_antigravity.py` dưới Python cũ và bỏ qua gửi grading AI log vì không thấy `AI_LOG_SERVER`; GitHub push không bị chặn.
 - Còn tồn đọng: Cần xử lý hook/grading AI log riêng; chưa mở PR hoặc nhập `Khanh` vào `main`.
+
+## 2026-09-23 — Kiểm kê AI log cũ trên nhánh Khanh
+
+- Yêu cầu: Giữ mã CabinSentinel trên nhánh `Khanh` và bổ sung các AI log cũ còn thiếu, chỉ thao tác với log.
+- Đã làm: Đối chiếu `BUILD_PHASE/AI_LOG.md` với `P-068/AI_LOG.md`, hai JSONL gốc trong `.ai-log/archive` với bản đã theo dõi ở `docs/ai-log-archive`, và log Gate G1 trong `submission/`. Xác nhận toàn bộ các log project cũ đã có trên nhánh `Khanh`; thêm mục kiểm kê này để theo dõi yêu cầu. Không đưa `logs/events.jsonl` hoặc `.mqtt_bus/messages.jsonl` vào AI log vì đó là dữ liệu vận hành ứng dụng.
+- Tệp thay đổi: `BUILD_PHASE/AI_LOG.md`, `P-068/AI_LOG.md`; không đổi mã, các JSONL cũ hoặc `scripts/_pyrun.sh`.
+- Kiểm tra: `AI_LOG.md` hai thư mục khớp trước khi thêm mục mới; SHA của hai JSONL lưu trong `docs/ai-log-archive` khớp byte với bản gốc `.ai-log/archive`; `git ls-tree` xác nhận AI log cũ và log Gate G1 đã được theo dõi từ `main` và có trên `Khanh`.
+- Còn tồn đọng: Hook gửi AI log lên grading server vẫn cần sửa riêng; không cần chép trùng các log cũ đã có trong Git.
