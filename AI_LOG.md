@@ -65,3 +65,75 @@ Nhật ký các yêu cầu dành cho AI và kết quả thực hiện trong proj
 - **Tệp thay đổi:** `BUILD_PHASE/AI_LOG.md`; `P-068/AI_LOG.md`, `P-068/docs/ai-log-archive/2026-09-20.jsonl`, `P-068/docs/ai-log-archive/2026-09-23.jsonl`. Không đồng bộ mã ứng dụng.
 - **Kiểm tra:** Ba JSONL parse hợp lệ; rà mẫu credential không thấy secret; `git diff --cached --check` qua và push GitHub trả thành công. Hook pre-push không gửi lên grading server vì thiếu `AI_LOG_SERVER`; bước quét Antigravity của hook lỗi cú pháp Python trên môi trường hiện tại nhưng không chặn GitHub push.
 - **Còn tồn đọng:** Cần cấu hình grading server nếu muốn nộp AI logs qua hook; các thay đổi mã/kiến trúc chưa được đồng bộ sang `P-068` trong yêu cầu chỉ upload log này.
+
+## 2026-09-23 — Giải thích MQTT trong kiến trúc CabinSentinel
+
+- **Yêu cầu:** Giải thích MQTT là gì và cách nó kết nối với các thành phần còn lại.
+- **Đã làm:** Đối chiếu sơ đồ kiến trúc và luồng dữ liệu; giải thích vai trò publisher, broker Mosquitto, subscriber Backend, sensor fusion, Vision HTTP, LangGraph, action và Frontend. Không sửa mã hoặc kiến trúc.
+- **Tệp thay đổi:** `BUILD_PHASE/AI_LOG.md`; không đổi `P-068`.
+- **Kiểm tra:** Đọc lại phần tổng quan và data flow trong `docs/BACKEND_REASONING_ARCHITECTURE.md`; không chạy test vì chỉ giải thích.
+- **Còn tồn đọng:** Không.
+
+## 2026-09-23 — Sơ đồ kết nối thiết bị với Raspberry Pi 5
+
+- **Yêu cầu:** Vẽ các khối thiết bị chính, cách kết nối và dữ liệu trao đổi khi dùng Raspberry Pi 5.
+- **Đã làm:** Tạo sơ đồ Mermaid vật lý và luồng dữ liệu, bảng giao tiếp camera/cảm biến/vehicle gateway/MQTT/Frontend/action/modem/nguồn, cùng phạm vi demo và tích hợp xe thật. Liên kết sơ đồ từ tài liệu kiến trúc chính; đối chiếu cổng camera, GPIO, mạng và nguồn Pi 5 với tài liệu Raspberry Pi chính hãng.
+- **Tệp thay đổi:** `BUILD_PHASE/docs/RPI5_DEVICE_CONNECTIONS.md`, `BUILD_PHASE/docs/BACKEND_REASONING_ARCHITECTURE.md`, `BUILD_PHASE/AI_LOG.md`; không đổi `P-068`.
+- **Kiểm tra:** Kiểm tra cấu trúc sơ đồ và bảng, đường dẫn liên kết nội bộ và thông số Pi 5 theo tài liệu chính hãng. Không chạy test ứng dụng vì chỉ thay đổi tài liệu.
+- **Còn tồn đọng:** Cần chọn model sensor/camera, xác nhận giao diện và quyền truy cập ECU/actuator theo xe cụ thể, đo nguồn/nhiệt khi lắp thật.
+
+## 2026-09-23 — Đánh giá khả năng Pi 5 điều khiển HVAC và mode xe
+
+- **Yêu cầu:** Xác định Raspberry Pi 5 gắn thêm có thể điều khiển điều hòa hoặc bật Pet/Camp Mode hay không.
+- **Đã làm:** Đối chiếu tài liệu chính hãng về API lệnh HVAC/Pet/Camp của Tesla, điều hòa từ xa của VF 8 và giới hạn phần cứng Pi 5; phân biệt demo, API hãng qua mạng, gateway nội bộ được xe cho phép và đấu nối trực tiếp không phù hợp.
+- **Tệp thay đổi:** `BUILD_PHASE/AI_LOG.md`; không đổi mã/tài liệu khác hoặc `P-068`.
+- **Kiểm tra:** Đọc tài liệu Tesla Fleet API, hướng dẫn Tesla/VinFast và tài liệu GPIO Pi; không chạy test vì chỉ đánh giá tính khả thi.
+- **Còn tồn đọng:** Cần model/năm/phần mềm xe và quyền truy cập API/gateway được hãng cho phép để kết luận có thể điều khiển offline trên xe cụ thể.
+
+## 2026-09-23 — Xác định bước tiếp theo và nội dung cần học
+
+- **Yêu cầu:** Đề xuất thứ tự công việc tiếp theo và kiến thức cần tìm hiểu cho CabinSentinel dùng Raspberry Pi 5.
+- **Đã làm:** Đối chiếu mã hiện tại, Definition of Done Sprint 0, sơ đồ Pi 5 và các dependency xe/Vision/Frontend; lập thứ tự ưu tiên từ chốt contract, hoàn thiện backend, demo trên bàn đến tích hợp xe thật.
+- **Tệp thay đổi:** `BUILD_PHASE/AI_LOG.md`; không đổi mã/tài liệu khác hoặc `P-068`.
+- **Kiểm tra:** Xác nhận repo hiện có app MQTT/FastAPI/LangGraph và hai tệp test, trong khi các service fusion/persistence và test mode/latency chưa có. Không chạy test vì chỉ lập kế hoạch.
+- **Còn tồn đọng:** Cần chốt model xe/gateway được phép dùng và target Pi 5 cụ thể để nghiệm thu latency, nguồn và HVAC feedback.
+
+## 2026-09-23 — Rà soát hai thư mục project
+
+- Yêu cầu: Đọc lại `BUILD_PHASE` và `P-068`, tóm tắt phần đã làm và các mục chủ project cần kiểm tra.
+- Đã làm: Kiểm kê mã, tài liệu, bài test, Git và hồ sơ Gate G1 của hai thư mục; đối chiếu thiết kế Sprint 0 với backend hiện tại và kiểm tra các đường dẫn validator/hook được README nhắc tới.
+- Tệp thay đổi: `BUILD_PHASE/AI_LOG.md` (mục rà soát này). Không thay đổi `P-068`.
+- Kiểm tra: `BUILD_PHASE` chạy 32/32 test thành công. `P-068` chưa chạy được test tại máy: `.venv` thiếu `pytest`, Python hệ thống thiếu `pytest_asyncio`; các tệp Gate G1 validator/hook ghi trong README không có ở đường dẫn nêu. Git `P-068` ở `main`, có sẵn thay đổi mode của `scripts/_pyrun.sh`.
+- Còn tồn đọng: Backend Sprint 0, Pet/Camp Mode, remote start, điều khiển Pi 5/HVAC và ngưỡng delay mới chỉ ở mức thiết kế; cần chủ project duyệt quy tắc và kiểm tra phần cứng/khả năng tích hợp xe trước khi triển khai. Cần sửa môi trường test và xác minh hồ sơ Gate G1 trước lần đồng bộ GitHub tiếp theo.
+
+## 2026-09-23 — Tổng hợp kế hoạch và yêu cầu để chủ project chỉnh sửa
+
+- Yêu cầu: Đọc lại hai thư mục, trả kế hoạch và toàn bộ nhóm yêu cầu đã đề xuất để chủ project sửa.
+- Đã làm: Đối chiếu mã/test/tài liệu `BUILD_PHASE`, bốn PDF Gate G1 và template/AI log của `P-068`; lập bản kế hoạch có giai đoạn, yêu cầu đo được, Definition of Done và bảng các mâu thuẫn cần quyết định.
+- Tệp thay đổi: `BUILD_PHASE/docs/PROJECT_PLAN_FOR_REVIEW.md`, `BUILD_PHASE/AI_LOG.md`. Không đổi `P-068`.
+- Kiểm tra: Đã trích nội dung toàn bộ trang của bốn PDF Gate G1 và rà lại các phần liên quan trong mã/tài liệu; lượt này chỉ sửa tài liệu nên không chạy lại test ứng dụng. Kết quả gần nhất của `BUILD_PHASE`: 32/32 test qua, chưa xác nhận các yêu cầu Sprint 0 mới.
+- Còn tồn đọng: Chủ project cần chốt phạm vi Pi 5/xe thật, action CRITICAL, debounce/hysteresis, ngưỡng và mẫu xe; sau đó mới đồng bộ rule matrix, code/test và tài liệu Gate G1/P-068.
+
+## 2026-09-23 — Đối chiếu phân công Khánh và deadline Sprint 0
+
+- Yêu cầu: Đọc Google Doc phân công, tóm tắt bài toán/app, việc của Khánh và tiến độ so với deadline.
+- Đã làm: Đọc các tab Action Plan, Brief, PRD và các tab còn lại trong Google Doc; đối chiếu ba đầu ra Sprint 0 của Khánh với simulator, MQTT subscriber, FastAPI, LangGraph, test và `P-068`.
+- Tệp thay đổi: `BUILD_PHASE/AI_LOG.md`; không đổi mã hoặc `P-068`.
+- Kiểm tra: Chạy lại `BUILD_PHASE` test: 32/32 qua. Broker local báo kết nối trong test, nhưng test chủ yếu gọi state store/API trực tiếp, chưa chứng minh luồng publish MQTT → tự đánh giá → action. Google Doc ghi deadline Sprint 0 là 24/09/2026; ngày rà soát 23/09/2026.
+- Còn tồn đọng: Cần demo và test end-to-end ba đầu ra của Khánh, nhất là MQTT tự kích hoạt đánh giá, schema/freshness và xử lý action an toàn; mã chưa chuyển sang `P-068`. Phạm vi Pi 5, HVAC và EV/ICE mode là mở rộng so với Sprint 0 trong Google Doc, cần chốt riêng.
+
+## 2026-09-23 — Giải thích CabinSentinel cho khách hàng phổ thông
+
+- Yêu cầu: Diễn giải mô tả MVP bằng ngôn ngữ dễ hiểu cho người không có nền tảng kỹ thuật.
+- Đã làm: Viết ví dụ người/thú cưng còn trong xe, các mức cảnh báo, giới hạn của bản demo, cách hiểu mục tiêu nhận diện/độ trễ và giới hạn cảnh báo khi mất Internet.
+- Tệp thay đổi: `BUILD_PHASE/AI_LOG.md`; không đổi mã hoặc `P-068`.
+- Kiểm tra: Đối chiếu nội dung với PRD và hiện trạng action mock; không chạy test vì chỉ giải thích.
+- Còn tồn đọng: Mục tiêu recall, độ trễ và cảnh báo thực chưa được nghiệm thu trên thiết bị/xe thật.
+
+## 2026-09-23 — Đồng bộ AI log mới lên P-068
+
+- Yêu cầu: Đưa các AI log phát sinh từ lần đồng bộ trước lên GitHub qua `P-068`.
+- Đã làm: Đồng bộ toàn bộ `BUILD_PHASE/AI_LOG.md` vào `P-068/AI_LOG.md`, gồm các mục giải thích MQTT, Pi 5, rà soát project, kế hoạch, phân công Khánh và giải thích MVP; giữ nguyên thay đổi sẵn có không liên quan của `scripts/_pyrun.sh`.
+- Tệp thay đổi: `BUILD_PHASE/AI_LOG.md`, `P-068/AI_LOG.md`; không đồng bộ mã ứng dụng hoặc log sự kiện vận hành.
+- Kiểm tra: So sánh local với `origin/main` trước khi đồng bộ; rà mẫu credential trong AI log; kiểm tra diff và trạng thái Git trước/sau push.
+- Còn tồn đọng: Tài liệu và mã Sprint 0 chưa được đồng bộ sang `P-068`; kết quả hook gửi log lên grading server cần kiểm tra riêng.
