@@ -14,6 +14,10 @@ class SafetyState(TypedDict, total=False):
     risk_level: str
     rule_id: str
     reason: str
+    occupancy_state: str
+    occupancy_reason_code: str
+    evidence_conflicts: list[dict]
+    seat_configuration_state: str
     actions: list[str]
     route: str
 

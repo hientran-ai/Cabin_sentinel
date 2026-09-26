@@ -11,6 +11,7 @@ from uuid import uuid4
 from src.cabinsentinel.actions import MockActions
 from src.cabinsentinel.graph import safety_graph
 from src.cabinsentinel.models import SensorPayload, VisionPayload
+from src.cabinsentinel.rules import confidence_regression, has_baby_seat_evidence
 
 
 class CabinService:
@@ -79,6 +80,11 @@ class CabinService:
             incoming_time = sensor.timestamp if sensor is not None else vision.timestamp if vision is not None else None
             if incoming_time is not None and (incoming_time - now).total_seconds() > 2:
                 raise ValueError("source timestamp is too far in the future")
+            if vision is not None and any(
+                (seat.observed_at - now).total_seconds() > 2
+                for seat in vision.seat_evidence
+            ):
+                raise ValueError("seat evidence timestamp is too far in the future")
 
             if sensor is not None and row is not None:
                 prior_time = row["sensor_time"]
@@ -101,8 +107,15 @@ class CabinService:
                 vision.model_dump(mode="json") if vision is not None
                 else json.loads(row["vision_json"]) if row and row["vision_json"] else None
             )
+            if vision is not None:
+                for seat in vision_data["seat_evidence"]:
+                    seat["received_at"] = now.isoformat()
             started = time.perf_counter()
             decision = safety_graph.invoke({"sensor": sensor_data, "vision": vision_data, "now": now})
+            if vision is not None and row and row["vision_json"]:
+                regression = confidence_regression(json.loads(row["vision_json"]), vision_data, now)
+                if regression:
+                    decision["evidence_conflicts"] = [*decision["evidence_conflicts"], regression]
             previous = old_state["risk_level"] if old_state else None
             new_risk = decision["risk_level"]
             incident_id = (
@@ -137,6 +150,10 @@ class CabinService:
                 "risk_level": new_risk,
                 "rule_id": decision["rule_id"],
                 "reason": decision["reason"],
+                "occupancy_state": decision["occupancy_state"],
+                "occupancy_reason_code": decision["occupancy_reason_code"],
+                "evidence_conflicts": decision["evidence_conflicts"],
+                "seat_configuration_state": decision["seat_configuration_state"],
                 "actions": decision["actions"],
                 "action_results": [],
                 "incident_id": incident_id,
@@ -146,6 +163,7 @@ class CabinService:
                 "doors_locked": sensor_data["doors_locked"] if sensor_data else None,
                 "radar_presence": sensor_data["radar_presence"] if sensor_data else None,
                 "detected_objects": vision_data["detected_objects"] if vision_data else None,
+                "seat_evidence": vision_data.get("seat_evidence", []) if vision_data else [],
                 "camera_status": vision_data["camera_status"] if vision_data else None,
                 "evaluated_at": now.isoformat(),
                 "reasoning_latency_ms": round((time.perf_counter() - started) * 1000, 3),
@@ -154,7 +172,15 @@ class CabinService:
                 decision["rule_id"] in {"ICE_REMOTE_START_EXPIRING", "ICE_REMOTE_START_EXPIRED"}
                 and (old_state is None or decision["rule_id"] != old_state["rule_id"])
             )
-            new_intents = decision["actions"] if new_risk != previous or deadline_escalation else []
+            baby_seat_first_notice = (
+                new_risk == "WARNING"
+                and "send_notification" in decision["actions"]
+                and has_baby_seat_evidence(vision_data)
+                and not has_baby_seat_evidence(old_state)
+            )
+            new_intents = decision["actions"] if (
+                new_risk != previous or deadline_escalation or baby_seat_first_notice
+            ) else []
             with self._db:
                 self._db.execute(
                     """INSERT INTO vehicles (
@@ -224,6 +250,46 @@ class CabinService:
             ).fetchone()
             return json.loads(row["state_json"]) if row and row["state_json"] else None
 
+    def get_state_with_freshness(self, vehicle_id: str) -> dict | None:
+        """Read a committed decision and attach current source-age metadata."""
+        with self._lock:
+            row = self._db.execute(
+                "SELECT state_json, sensor_time, vision_time FROM vehicles WHERE vehicle_id = ?",
+                (vehicle_id,),
+            ).fetchone()
+            if row is None or row["state_json"] is None:
+                return None
+            state = json.loads(row["state_json"])
+            now = self.clock()
+            sensor = _source_freshness(row["sensor_time"], now, ttl_s=5)
+            vision = _source_freshness(row["vision_time"], now, ttl_s=3)
+            seats = [
+                {"evidence_id": seat["evidence_id"], **_source_freshness(seat.get("observed_at"), now, ttl_s=3)}
+                for seat in state.get("seat_evidence", [])
+            ]
+            orientation_status = (
+                "UNKNOWN" if not seats else
+                "STALE" if any(seat["status"] == "STALE" for seat in seats) else
+                "UNKNOWN" if any(seat["status"] == "UNKNOWN" for seat in seats) else
+                "FRESH"
+            )
+            state["freshness"] = {
+                "as_of": now.isoformat(),
+                "sensor": sensor,
+                "vision": vision,
+                "orientation": {
+                    "status": orientation_status,
+                    "age_s": max((seat["age_s"] for seat in seats if seat["age_s"] is not None), default=None),
+                    "evidence": seats,
+                },
+            }
+            state["decision_current"] = (
+                sensor["status"] == "FRESH"
+                and vision["status"] == "FRESH"
+                and state.get("camera_status") == "OK"
+            )
+            return state
+
     def events(self, vehicle_id: str, *, event_type: str | None = None, limit: int = 50) -> list[dict]:
         with self._lock:
             if event_type:
@@ -240,3 +306,17 @@ class CabinService:
                 {"event_id": row["id"], "event_type": row["event_type"], **json.loads(row["payload_json"])}
                 for row in rows
             ]
+
+
+def _source_freshness(observed_at: str | None, now: datetime, *, ttl_s: float) -> dict:
+    if observed_at is None:
+        return {"status": "UNKNOWN", "age_s": None, "observed_at": None}
+    try:
+        age_s = (now - datetime.fromisoformat(observed_at)).total_seconds()
+    except (TypeError, ValueError):
+        return {"status": "UNKNOWN", "age_s": None, "observed_at": observed_at}
+    return {
+        "status": "FRESH" if -2 <= age_s <= ttl_s else "STALE",
+        "age_s": age_s,
+        "observed_at": observed_at,
+    }

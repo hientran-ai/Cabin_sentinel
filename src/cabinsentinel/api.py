@@ -26,7 +26,7 @@ def receive_vision(payload: VisionPayload, service: CabinService = Depends(get_c
 
 @router.get("/state/{vehicle_id}")
 def read_state(vehicle_id: str, service: CabinService = Depends(get_cabin_service)) -> dict:
-    state = service.get_state(vehicle_id)
+    state = service.get_state_with_freshness(vehicle_id)
     if state is None:
         raise HTTPException(status_code=404, detail="Vehicle has no evaluated state")
     return state
@@ -40,6 +40,7 @@ def read_risk(vehicle_id: str, service: CabinService = Depends(get_cabin_service
         for key in (
             "vehicle_id", "revision", "previous_risk_level", "risk_level",
             "rule_id", "reason", "actions", "action_results", "evaluated_at",
+            "freshness", "decision_current",
         )
     }
 

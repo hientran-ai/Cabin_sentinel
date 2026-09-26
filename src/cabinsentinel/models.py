@@ -39,6 +39,7 @@ class SensorPayload(BaseModel):
 class DetectedObject(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
+    detection_id: str | None = Field(default=None, min_length=1, max_length=128)
     class_name: str
     confidence: float = Field(ge=0, le=1, allow_inf_nan=False)
 
@@ -50,6 +51,29 @@ class DetectedObject(BaseModel):
         return data
 
 
+class SeatEvidence(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    evidence_id: str = Field(min_length=1, max_length=128)
+    child_seat_present: bool | None
+    seat_orientation: Literal["REAR_FACING", "FORWARD_FACING", "UNKNOWN"]
+    orientation_confidence: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    seat_position: str | None = None
+    observed_at: datetime
+    source: str = Field(min_length=1, max_length=128)
+    model_version: str | None = None
+    quality: Literal["OK", "DEGRADED", "UNKNOWN"]
+    seat_detection_id: str | None = None
+    related_occupant_detection_id: str | None = None
+
+    @field_validator("observed_at")
+    @classmethod
+    def require_observation_timezone(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            raise ValueError("observed_at must include timezone")
+        return value
+
+
 class VisionPayload(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -58,6 +82,7 @@ class VisionPayload(BaseModel):
     frame_id: str = Field(min_length=1, max_length=128)
     camera_status: Literal["OK", "BLOCKED", "ERROR", "DISCONNECTED", "NO_FEED"]
     detected_objects: list[DetectedObject]
+    seat_evidence: list[SeatEvidence] = Field(default_factory=list)
     vision_latency_ms: float | None = Field(default=None, ge=0)
 
     @model_validator(mode="before")
