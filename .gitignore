@@ -58,3 +58,9 @@ out/
 # AI logs — tracked structure, ignored content
 .ai-log/*.jsonl
 .ai-log/archive/
+
+# Local Vision artifacts
+*.pt
+runs/
+Ultralytics/
+eval/sviro-age-audit/manifest.jsonl

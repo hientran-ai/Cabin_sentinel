@@ -1,0 +1,2 @@
+﻿# Optional Vision dependencies; tested baseline
+ultralytics==8.4.159

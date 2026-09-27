@@ -1,0 +1,24 @@
+{
+  "source": "data\\videos\\cabin_test.mp4",
+  "model": "yolov8n.pt",
+  "device": "cpu",
+  "ultralytics_version": "8.4.159",
+  "imgsz": 640,
+  "confidence_threshold": 0.25,
+  "video_fps": 25.0,
+  "expected_frames": 266,
+  "processed_frames": 266,
+  "complete": true,
+  "frames_with_detections": 266,
+  "detections_by_class": {
+    "person": 657,
+    "cat": 0,
+    "dog": 0
+  },
+  "latency_mean_ms": 53.35462030178265,
+  "latency_p95_ms": 68.7632999906782,
+  "latency_definition": "CPU predict wall time including preprocessing and postprocessing; excludes decoding, serialization and writing",
+  "warmup_predictions_excluded": 1,
+  "processing_elapsed_seconds": 19.284704499994405,
+  "processing_fps": 13.79331480034227
+}

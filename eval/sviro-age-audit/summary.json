@@ -1,0 +1,29 @@
+{
+  "complete": false,
+  "audit_only": true,
+  "scenes": {
+    "test": 500,
+    "train": 1627,
+    "val": 373
+  },
+  "crops": {
+    "test/child": 209,
+    "test/adult": 234,
+    "train/child": 758,
+    "train/adult": 737,
+    "val/adult": 155,
+    "val/child": 182
+  },
+  "records": 2275,
+  "rejected": {},
+  "missing_rgb_scenes": 2500,
+  "seed": 68,
+  "crop_padding": 0.1,
+  "mapping": {
+    "1": "child (infant)",
+    "2": "child",
+    "3": "adult"
+  },
+  "source": "https://sviro.kl.dfki.de/data/",
+  "limitations": "Synthetic single-vehicle data; scene split does not separate train/val human identities."
+}
