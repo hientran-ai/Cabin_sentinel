@@ -26,6 +26,8 @@ class SensorSubscriber:
         self.client.on_disconnect = self._on_disconnect
         self.client.on_message = self._on_message
         self._worker: threading.Thread | None = None
+        self._stopping = threading.Event()
+        self._admission_lock = threading.Lock()
 
     def _on_connect(self, client, userdata, flags, reason_code, properties):
         if not reason_code.is_failure:
@@ -52,7 +54,10 @@ class SensorSubscriber:
             sensor = SensorPayload.model_validate(data)
             if sensor.vehicle_id != parts[1]:
                 raise ValueError("Topic vehicle and payload vehicle differ")
-            self.queue.put_nowait(sensor)
+            with self._admission_lock:
+                if self._stopping.is_set():
+                    return False
+                self.queue.put_nowait(sensor)
             return True
         except (ValueError, json.JSONDecodeError, queue.Full) as exc:
             logger.warning("Rejected MQTT sensor packet: %s", exc)
@@ -64,6 +69,7 @@ class SensorSubscriber:
         except queue.Empty:
             return False
         if item is None:
+            self.queue.task_done()
             return False
         try:
             self.service.ingest_sensor(item)
@@ -75,12 +81,15 @@ class SensorSubscriber:
 
     def _run(self):
         next_tick = time.monotonic() + 1
-        while True:
+        # Stop admitting packets first, then drain those already accepted.
+        while not (self._stopping.is_set() and self.queue.empty()):
             try:
                 item = self.queue.get(timeout=max(0.1, next_tick - time.monotonic()))
             except queue.Empty:
                 item = False
             if item is False:
+                if self._stopping.is_set():
+                    continue
                 self.service.tick_all()
                 next_tick = time.monotonic() + 1
                 continue
@@ -93,20 +102,28 @@ class SensorSubscriber:
                 logger.exception("Failed to evaluate MQTT sensor packet")
             finally:
                 self.queue.task_done()
-            if time.monotonic() >= next_tick:
+            if not self._stopping.is_set() and time.monotonic() >= next_tick:
                 self.service.tick_all()
                 next_tick = time.monotonic() + 1
 
     def start(self):
+        if self._worker is not None and self._worker.is_alive():
+            raise RuntimeError("MQTT worker is already running")
+        self._stopping.clear()
         self._worker = threading.Thread(target=self._run, daemon=True)
         self._worker.start()
         self.client.connect_async(self.host, self.port, keepalive=60)
         self.client.loop_start()
 
     def stop(self):
-        self.client.loop_stop()
+        with self._admission_lock:
+            self._stopping.set()
         self.client.disconnect()
+        self.client.loop_stop()
         self.connected = False
         if self._worker is not None:
-            self.queue.put(None)
             self._worker.join(timeout=2)
+            if self._worker.is_alive():
+                raise TimeoutError("MQTT worker has not stopped; accepted packets are still pending")
+            if self.queue.unfinished_tasks:
+                raise RuntimeError("MQTT worker exited with unprocessed packets")

@@ -103,3 +103,17 @@ def test_new_low_confidence_frame_records_regression_without_reusing_old_detecti
     conflict = next(c for c in new["evidence_conflicts"] if c["type"] == "CONFIDENCE_REGRESSION")
     assert conflict["previous"]["detected_objects"][0]["confidence"] == 0.99
     assert conflict["current"]["detected_objects"][0]["confidence"] == 0.39
+
+
+def test_low_confidence_with_positive_radar_stays_suspected_without_presence_conflict():
+    # DECISION-20260926-LOW-CONFIDENCE-CONFLICT: uncertain Vision is not absence.
+    service = CabinService(":memory:", clock=lambda: NOW)
+    service.ingest_sensor(_sensor(radar=True))
+    state = service.ingest_vision(_vision(objects=[{"class_name": "baby", "confidence": 0.39}]))
+    assert state["occupancy_state"] == "SUSPECTED"
+    assert state["risk_level"] == "WARNING"
+    assert state["detected_objects"][0]["confidence"] == 0.39
+    assert all(c["type"] != "PRESENCE_DISAGREEMENT" for c in state["evidence_conflicts"])
+    event = service.events("CAR_1", event_type="evaluation")[0]
+    assert event["detected_objects"] == state["detected_objects"]
+    assert event["radar_presence"] is True

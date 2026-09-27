@@ -32,6 +32,10 @@ Thumbs.db
 data/
 *.db
 *.sqlite3
+*.pt
+*.pth
+*.onnx
+models/
 
 # Logs
 logs/

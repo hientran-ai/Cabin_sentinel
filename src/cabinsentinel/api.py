@@ -1,19 +1,19 @@
 """FastAPI boundary for Vision input and read-only owner dashboard data."""
 
-import os
 from functools import lru_cache
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from src.cabinsentinel.models import VisionPayload
 from src.cabinsentinel.service import CabinService
+from src.config import get_settings
 
 router = APIRouter(prefix="/api/v1", tags=["CabinSentinel"])
 
 
 @lru_cache
 def get_cabin_service() -> CabinService:
-    return CabinService(os.getenv("CABINSENTINEL_DB_PATH", "data/cabinsentinel.db"))
+    return CabinService(get_settings().cabinsentinel_db_path)
 
 
 @router.post("/vision")

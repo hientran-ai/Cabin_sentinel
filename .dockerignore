@@ -14,3 +14,13 @@ eval/
 .dockerignore
 Dockerfile
 docker-compose.yml
+tests/
+*.pt
+*.pth
+*.onnx
+data/
+.ai-log/
+models/
+.agents/
+.github/
+scripts/

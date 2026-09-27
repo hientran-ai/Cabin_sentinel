@@ -50,6 +50,14 @@ class CabinService:
     def ingest_sensor(self, payload: SensorPayload) -> dict:
         return self._ingest(payload.vehicle_id, sensor=payload)
 
+    def database_ready(self) -> bool:
+        """Check that the SQLite connection can serve reads without changing state."""
+        with self._lock:
+            try:
+                return self._db.execute("SELECT 1").fetchone()[0] == 1
+            except sqlite3.Error:
+                return False
+
     def ingest_vision(self, payload: VisionPayload) -> dict:
         return self._ingest(payload.vehicle_id, vision=payload)
 
@@ -69,7 +77,10 @@ class CabinService:
         self, vehicle_id: str, *, sensor: SensorPayload | None = None,
         vision: VisionPayload | None = None, timer: bool = False,
     ) -> dict | None:
-        with self._lock:
+        # Acquire SQLite's writer reservation before reading the prior revision.
+        # RLock alone only serializes callers sharing this service instance.
+        with self._lock, self._db:
+            self._db.execute("BEGIN IMMEDIATE")
             row = self._db.execute(
                 "SELECT * FROM vehicles WHERE vehicle_id = ?", (vehicle_id,)
             ).fetchone()
@@ -181,6 +192,8 @@ class CabinService:
             new_intents = decision["actions"] if (
                 new_risk != previous or deadline_escalation or baby_seat_first_notice
             ) else []
+            committed_state_json = json.dumps(state)
+            # This commit releases the writer before any external action executes.
             with self._db:
                 self._db.execute(
                     """INSERT INTO vehicles (
@@ -196,7 +209,7 @@ class CabinService:
                         vehicle_id,
                         json.dumps(sensor_data) if sensor_data is not None else None,
                         json.dumps(vision_data) if vision_data is not None else None,
-                        json.dumps(state),
+                        committed_state_json,
                         sensor.sequence if sensor is not None else row["sensor_seq"] if row else None,
                         sensor.timestamp.isoformat() if sensor is not None else row["sensor_time"] if row else None,
                         vision.frame_id if vision is not None else row["vision_frame"] if row else None,
@@ -232,8 +245,8 @@ class CabinService:
             if state["action_results"]:
                 with self._db:
                     self._db.execute(
-                        "UPDATE vehicles SET state_json = ? WHERE vehicle_id = ?",
-                        (json.dumps(state), vehicle_id),
+                        "UPDATE vehicles SET state_json = ? WHERE vehicle_id = ? AND state_json = ?",
+                        (json.dumps(state), vehicle_id, committed_state_json),
                     )
             return state
 
