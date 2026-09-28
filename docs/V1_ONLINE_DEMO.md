@@ -52,9 +52,14 @@ curl -F 'image=@cabin.jpg;type=image/jpeg' -F 'scenario=hot_locked' \
 
 The endpoint accepts JPEG or PNG up to `MAX_UPLOAD_SIZE_BYTES` (default 5 MiB).
 It checks MIME, byte length, actual decoded format and `MAX_IMAGE_PIXELS`
-(default 20 million). Image bytes are passed
-to inference and discarded; no raw image is written to application storage.
+(default 20 million). `MAX_CONCURRENT_DEMO_REQUESTS` defaults to one in-flight
+analysis per worker; extra requests receive HTTP 503 with `Retry-After: 1`
+before multipart parsing reads or spools their body. Keep the one-worker
+SQLite demo setting unless measured memory and database behavior support
+raising concurrency. Image bytes are passed to inference and discarded; no
+raw image is written to application storage.
 The multipart parser may use a temporary spooled file during a request.
+Clients should treat capacity `503` as retryable and honor `Retry-After`.
 
 Scenarios are `normal`, `parked_locked` and `hot_locked`. They supply a
 `SensorPayload` marked `source: SIMULATED` in the response. The `vision` section
