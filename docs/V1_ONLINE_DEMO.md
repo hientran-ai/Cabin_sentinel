@@ -81,6 +81,17 @@ The Dockerfile installs the optional Vision dependencies, runs as a non-root
 user and binds Uvicorn to `0.0.0.0:${PORT:-8000}`. Supply the model artifact via
 an approved mount or image build strategy and set `MODEL_PATH` to its path.
 The Docker build context excludes `.pt`, `.pth`, `.onnx`, data and local logs.
+It installs PyTorch 2.14.0+cpu and torchvision 0.29.0+cpu from the
+[official PyTorch CPU index](https://download.pytorch.org/whl/cpu/)
+before the remaining requirements, matching the provider's CPU execution.
+The image does not require CUDA; `pip check` validates installed dependencies.
+
+The Docker and Compose healthchecks use `python -m src.healthcheck` to check
+process/store liveness. They require an HTTP response with a ready backend and
+SQLite; malformed responses or an unavailable database fail the probe. A live
+backend without weights can pass this probe while `/health` still returns 503
+with `vision: unavailable`. This is not evidence that image analysis is ready.
+Railway readiness should use `/health`; provision the model before expecting 200.
 
 Set `APP_ENV=production`, `CORS_ORIGINS` to the exact Vercel origin (and local
 origin if needed), `CABINSENTINEL_DB_PATH=/app/data/cabinsentinel.db`, and
@@ -113,8 +124,8 @@ detection or safety readiness. Vision owner must evaluate representative cabin
 images and calibrate/improve the model before that claim. The dog-at-window sample
 also shows a false `person` label; its result does not prove dog-specific
 accuracy. The sample images and
-weight stay in `/private/tmp`, outside Git. Docker build and container smoke
-could not run because Docker CLI is unavailable on the current machine.
+weight stay in `/private/tmp`, outside Git. Docker was unavailable during that
+2026-09-27 check; the later container verification is recorded below.
 
 An additional local Uvicorn process with `APP_ENV=production` served
 `GET /health` (200), a Vercel-origin CORS preflight (200 with the configured
@@ -122,6 +133,47 @@ An additional local Uvicorn process with `APP_ENV=production` served
 (200, `person` evidence → `HOT_OCCUPANT/CRITICAL` and simulated actions).
 This verifies the local HTTP server path; it is not a deployed Railway/Vercel
 test.
+
+
+## Docker verification (2026-09-28)
+
+A Linux ARM64 image built successfully on Docker Desktop with Python 3.11,
+Ultralytics 8.4.159 and CPU PyTorch 2.14.0+cpu. Registry/PyPI downloads were
+slow and intermittently failed, so the local verification build used a temporary
+Dockerfile with a local wheelhouse and `PIP_NO_INDEX=1`. All 94 wheels matched
+the official PyPI/PyTorch SHA-256 values. The requirements, application source,
+runtime stage and startup/health commands matched the repository Dockerfile;
+the temporary additions only changed dependency transport in the builder.
+`pip check` passed. The standard network-only build and Linux AMD64/Railway
+runtime have not been verified here. Wheels/cache are outside Git.
+
+The image retains Ultralytics' required Linux NVML helper (`nvidia-ml-py`);
+PyTorch reports no CUDA runtime and CUDA/Triton packages are absent.
+`YOLO_AUTOINSTALL=false` disables package installation at runtime. Upload
+validation captures Pillow's decoder before model startup so the Vision
+library's later PIL hook cannot trigger an optional HEIF dependency install
+on malformed JPEG/PNG input. The HTTP error contract remains unchanged.
+
+Two temporary production-configured containers were tested and removed:
+
+- No weights: `/health` and valid-image analysis returned 503; backend/SQLite
+  stayed ready and the Docker liveness probe passed, running as a non-root user.
+- Read-only stock YOLO weight mount: `/health` returned 200. Actual uploads
+  produced `HOT_OCCUPANT/CRITICAL` for `cayenne-0.png` and `dog-cabin-2.jpg`,
+  `SUSPECTED_OCCUPANT/WARNING` for `cayenne-6.png`, and
+  `ATTENDED_DRIVING/SAFE` for `cayenne-0.png` in the `normal` scenario.
+- Actions remained `simulated` or `pending_human_confirmation`. The requests
+  used the real CabinService/rules/LangGraph pipeline.
+- Configured-origin CORS preflight passed; an unapproved origin was rejected.
+  Corrupt/empty images, unsupported MIME, invalid scenario and a 6 MiB upload
+  returned the expected 422/415/413 responses. `/app/data` held only SQLite
+  files after analysis, with no persisted raw upload.
+
+The exact new CI container-smoke shell was executed locally, including CPU,
+non-root, auto-install-disabled and degraded-health checks. The backend suite
+passed 138 tests and Ruff passed. This does not verify GitHub Actions, an online
+Vercel/Railway deployment, model accuracy or physical vehicle actions. The stock
+model false negative recorded above remains a Vision limitation.
 
 Ultralytics [lists AGPL-3.0 and Enterprise licensing options](https://github.com/ultralytics/assets#license).
 Review the chosen license and model artifact delivery before public deployment.

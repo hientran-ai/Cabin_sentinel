@@ -126,6 +126,26 @@ async def test_png_upload_is_accepted(tmp_path):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(("payload", "expected_status", "expected_calls"), [
+    (image_bytes("PNG"), 200, 1),
+    (b"broken png", 422, 0),
+], ids=["valid_png", "corrupt_png"])
+async def test_image_validation_isolated_from_vision_pillow_hook(
+    tmp_path, monkeypatch, payload, expected_status, expected_calls,
+):
+    def vision_image_open(*args, **kwargs):
+        raise AssertionError("Vision's PIL hook must not run during upload validation")
+
+    # Model initialization can replace this global function after the API loads.
+    monkeypatch.setattr(Image, "open", vision_image_open)
+    response, _, provider = await post_demo(
+        tmp_path, scenario="hot_locked", detections=[], image=payload, mime="image/png",
+    )
+    assert response.status_code == expected_status
+    assert provider.calls == expected_calls
+
+
+@pytest.mark.asyncio
 async def test_model_inference_does_not_block_the_event_loop(tmp_path):
     now = datetime.now(UTC)
     service = CabinService(tmp_path / "demo.db", clock=lambda: now)

@@ -8,6 +8,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from PIL import Image, UnidentifiedImageError
+from PIL.Image import open as open_image
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
@@ -97,7 +98,8 @@ async def analyze_image(
     if len(image_data) > get_settings().max_upload_size_bytes:
         raise HTTPException(status_code=413, detail="Image exceeds upload limit")
     try:
-        with Image.open(BytesIO(image_data)) as decoded:
+        # Vision may replace Image.open later; validation keeps Pillow's decoder.
+        with open_image(BytesIO(image_data)) as decoded:
             if decoded.format != IMAGE_TYPES[image.content_type]:
                 raise HTTPException(status_code=422, detail="Image format and content type differ")
             if decoded.width * decoded.height > get_settings().max_image_pixels:
