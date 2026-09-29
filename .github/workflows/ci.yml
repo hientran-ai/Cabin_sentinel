@@ -30,3 +30,63 @@ jobs:
         env:
           APP_ENV: test
           OPENAI_API_KEY: test-key
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build deployable image
+        run: docker build -t cabinsentinel-v1:ci .
+      - name: Smoke test deployable container
+        run: |
+          set -eu
+          cleanup() {
+            result=$?
+            if [ "$result" -ne 0 ]; then docker logs cabinsentinel-smoke; fi
+            docker rm -f cabinsentinel-smoke >/dev/null
+          }
+          trap cleanup EXIT
+          docker run -d --name cabinsentinel-smoke \
+            -p 127.0.0.1:18080:8080 -e PORT=8080 -e APP_ENV=production \
+            -e CORS_ORIGINS=https://cabinsentinel-example.vercel.app \
+            -e CABINSENTINEL_MQTT_ENABLED=false cabinsentinel-v1:ci
+          python - <<'PY'
+          import json
+          import time
+          import urllib.error
+          import urllib.request
+
+          for attempt in range(60):
+              try:
+                  try:
+                      response = urllib.request.urlopen('http://127.0.0.1:18080/health', timeout=2)
+                  except urllib.error.HTTPError as error:
+                      response = error
+                  with response:
+                      status = response.code
+                      health = json.load(response)
+                  break
+              except (OSError, ValueError, urllib.error.URLError):
+                  if attempt == 59:
+                      raise
+                  time.sleep(1)
+          assert status == 503, (status, health)
+          assert health['backend'] == 'ready' and health['database'] == 'ready', health
+          assert health['vision'] == 'unavailable' and health['status'] == 'degraded', health
+          print('Container boots without weights and truthfully reports demo unavailable')
+          PY
+          test "$(docker exec cabinsentinel-smoke id -u)" -ne 0
+          docker exec -i cabinsentinel-smoke python - <<'PY'
+          import importlib.metadata as metadata
+          import torch
+          from ultralytics.utils import AUTOINSTALL
+
+          assert torch.version.cuda is None, torch.__version__
+          assert AUTOINSTALL is False, 'Runtime package installation must be disabled'
+          names = {d.metadata["Name"].lower().replace("_", "-") for d in metadata.distributions()}
+          # Ultralytics requires the small NVML helper on Linux, including CPU installs.
+          gpu = {n for n in names if (n.startswith("nvidia-") and n != "nvidia-ml-py") or n == "triton"}
+          assert not gpu, gpu
+          print('CPU-only PyTorch', torch.__version__)
+          PY
+          docker exec cabinsentinel-smoke python -m src.healthcheck

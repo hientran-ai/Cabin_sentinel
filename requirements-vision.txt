@@ -1,0 +1,2 @@
+# Tâm's tested CPU YOLO baseline; model weights are supplied separately.
+ultralytics==8.4.159

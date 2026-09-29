@@ -4,9 +4,11 @@ import pytest
 @pytest.mark.asyncio
 async def test_health(client):
     response = await client.get("/health")
-    assert response.status_code == 200
+    assert response.status_code == 503
     data = response.json()
-    assert data["status"] == "ok"
+    assert data["status"] == "degraded"
+    assert data["backend"] == "ready"
+    assert data["vision"] == "unavailable"
 
 
 @pytest.mark.asyncio
