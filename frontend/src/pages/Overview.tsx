@@ -9,12 +9,13 @@ import { EventHistory } from '../components/EventHistory'
 import { DeviceHealth } from '../components/DeviceHealth'
 import { SimulationPanel } from '../components/SimulationPanel'
 import { FreshnessAlert } from '../components/status/FreshnessAlert'
+import { DemoAnalysisPanel } from '../components/DemoAnalysisPanel'
 
 export function Overview() {
-  const { current, history, health, connection, error, simulate, effectiveDataAgeMs } = useAgent()
+  const { current, history, health, connection, error, simulate, analyze, analysisPending, capabilities, effectiveDataAgeMs } = useAgent()
   return <main className="content" id="overview">
     <header className="topbar">
-      <div><span className="eyebrow">Vehicle CS-014 · Main cabin</span><h1>Safety overview</h1></div>
+      <div><span className="eyebrow">Vehicle {current.vehicleId} · Main cabin</span><h1>Safety overview</h1></div>
       <div className="connection-group">
         <span className={health.edgeConnected ? 'connected' : 'disconnected'}><Radio /> Edge {health.edgeConnected ? 'connected' : 'offline'}</span>
         <span className={current.internetAvailable ? 'connected' : 'disconnected'}>{current.internetAvailable ? <Wifi /> : <WifiOff />} Internet {current.internetAvailable ? 'online' : 'offline'}</span>
@@ -38,7 +39,8 @@ export function Overview() {
         </section>
         <section className="panel action-panel"><div className="panel-heading"><div><span className="eyebrow">Backend action results</span><h2>Response actions</h2></div></div><ActionProgress tools={current.toolResults} /></section>
         <DeviceHealth health={{ ...health, internetAvailable: current.internetAvailable, cameraStatus: current.cameraStatus }} connection={connection} />
-        <SimulationPanel state={current} onUpdate={simulate} />
+        {capabilities.demoAnalysis && <DemoAnalysisPanel pending={analysisPending} onAnalyze={analyze} />}
+        {capabilities.simulationControls && <SimulationPanel state={current} onUpdate={simulate} />}
       </aside>
     </div>
   </main>

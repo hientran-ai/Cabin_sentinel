@@ -5,7 +5,7 @@ const links = [
   { href: '#live-cabin', label: 'Live cabin', Icon: CarFront },
   { href: '#events', label: 'Event history', Icon: History },
   { href: '#health', label: 'Device health', Icon: HeartPulse },
-  { href: '#simulation', label: 'Simulation', Icon: FlaskConical },
+  { href: '#backend-demo', label: 'Backend demo', Icon: FlaskConical },
 ]
 
 export function Sidebar() {

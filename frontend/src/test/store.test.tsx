@@ -12,6 +12,7 @@ const api = vi.hoisted(() => ({
 
 vi.mock('../api/client', () => ({
   USE_MOCKS: true,
+  BACKEND_CAPABILITIES: { manualEmergencyActions: true, acknowledgement: true, simulationControls: true, demoAnalysis: false },
   subscribeToAgentState: (onState: (state: AgentState) => void, onConnection: (connected: boolean) => void) => {
     api.stateListener = onState
     onConnection(true)
@@ -23,6 +24,7 @@ vi.mock('../api/client', () => ({
   executeEmergencyActions: api.action,
   acknowledgeEvent: api.acknowledge,
   updateSimulation: vi.fn(),
+  analyzeDemo: vi.fn(),
 }))
 
 import { AgentProvider, useAgent } from '../store/AgentContext'

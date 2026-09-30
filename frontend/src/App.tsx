@@ -9,7 +9,7 @@ function AppContent() {
   return <div className="app-shell">
     <Sidebar />
     <Overview />
-    <CriticalModal state={agent.current} actionPending={agent.actionPending} acknowledgementPending={agent.acknowledgementPending} onAction={agent.runEmergencyActions} onAcknowledge={agent.acknowledge} />
+    <CriticalModal state={agent.current} actionPending={agent.actionPending} acknowledgementPending={agent.acknowledgementPending} allowAction={agent.capabilities.manualEmergencyActions} allowAcknowledge={agent.capabilities.acknowledgement} onAction={agent.runEmergencyActions} onAcknowledge={agent.acknowledge} />
   </div>
 }
 

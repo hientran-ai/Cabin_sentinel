@@ -9,10 +9,12 @@ function elapsed(seconds: number) {
   return `${minutes}:${String(seconds % 60).padStart(2, '0')}`
 }
 
-export function CriticalModal({ state, actionPending, acknowledgementPending, onAction, onAcknowledge }: {
+export function CriticalModal({ state, actionPending, acknowledgementPending, allowAction = true, allowAcknowledge = true, onAction, onAcknowledge }: {
   state: AgentState
   actionPending: boolean
   acknowledgementPending: boolean
+  allowAction?: boolean
+  allowAcknowledge?: boolean
   onAction: () => Promise<void>
   onAcknowledge: Parameters<typeof ResolutionForm>[0]['onSubmit']
 }) {
@@ -41,7 +43,7 @@ export function CriticalModal({ state, actionPending, acknowledgementPending, on
 
   if (state.riskState !== 'CRITICAL') return null
   const toolsRunning = state.toolResults.some((tool) => tool.status === 'RUNNING')
-  const actionsDisabled = actionPending || toolsRunning
+  const actionsDisabled = actionPending || toolsRunning || !allowAction
   return <div className="modal-backdrop">
     <div className="critical-modal" role="alertdialog" aria-modal="true" aria-labelledby="critical-title" aria-describedby="critical-description" ref={modal}>
       <div className="critical-header"><span className="critical-icon"><ShieldAlert /></span><div><span className="eyebrow">Immediate intervention required</span><h2 id="critical-title">Critical cabin risk</h2></div><span className="event-id">{state.eventId}</span></div>
@@ -51,12 +53,12 @@ export function CriticalModal({ state, actionPending, acknowledgementPending, on
         <div><AlarmClock /><span>Elapsed<strong>{elapsed(state.durationSeconds)}</strong></span></div>
         <div><ShieldAlert /><span>Rule ID<strong>{state.ruleId}</strong></span></div>
       </div>
-      <div className="modal-evidence"><span>Evidence</span><strong>{state.objects.map((object) => `${object.class} (${Math.round(object.confidence * 100)}%)`).join(', ') || 'No classified object'}</strong><small>Privacy processing: edge blur active</small></div>
+      <div className="modal-evidence"><span>Evidence</span><strong>{state.objects.map((object) => `${object.class} (${Math.round(object.confidence * 100)}%)`).join(', ') || 'No classified object'}</strong><small>Detection metadata only · no raw frame rendered</small></div>
       <button className="button critical-action" type="button" onClick={() => void onAction()} disabled={actionsDisabled}>
-        {actionsDisabled ? 'Emergency actions running…' : 'Sound horn + crack window'} <ArrowRight />
+        {!allowAction ? 'Actions managed by backend' : actionsDisabled ? 'Emergency actions running…' : 'Sound horn + crack window'} <ArrowRight />
       </button>
       <ActionProgress tools={state.toolResults} />
-      <ResolutionForm onSubmit={onAcknowledge} pending={acknowledgementPending} status={state.acknowledgementStatus} />
+      <ResolutionForm onSubmit={onAcknowledge} pending={acknowledgementPending} status={state.acknowledgementStatus} disabled={!allowAcknowledge} />
       <p className="modal-footnote">This alert stays open until the backend reports a different risk state.</p>
     </div>
   </div>

@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, type ReactNode } from 'react'
-import { acknowledgeEvent, executeEmergencyActions, fetchEventHistory, fetchSystemHealth, subscribeToAgentState, updateSimulation, USE_MOCKS } from '../api/client'
+import { acknowledgeEvent, analyzeDemo, BACKEND_CAPABILITIES, executeEmergencyActions, fetchEventHistory, fetchSystemHealth, subscribeToAgentState, updateSimulation, USE_MOCKS } from '../api/client'
 import { cloneScenario, mockHealth } from '../mocks/scenarios'
-import type { AcknowledgementReason, AgentState, ConnectionState, SimulationUpdate, SystemHealth, ToolResult } from '../types/agent'
+import type { AcknowledgementReason, AgentState, ConnectionState, DemoScenario, SimulationUpdate, SystemHealth, ToolResult } from '../types/agent'
 
 interface StoreState {
   current: AgentState
@@ -10,6 +10,7 @@ interface StoreState {
   connection: ConnectionState
   actionPending: boolean
   acknowledgementPending: boolean
+  analysisPending: boolean
   lastReceivedAt: number
   clockMs: number
   error?: string
@@ -27,6 +28,8 @@ type Action =
   | { type: 'SIMULATION_RESULT'; startedAt: number; state: AgentState }
   | { type: 'TICK'; now: number }
   | { type: 'ERROR'; message: string }
+  | { type: 'ANALYSIS_START' }
+  | { type: 'ANALYSIS_END'; state?: AgentState; error?: string }
 
 const initialAgentState = USE_MOCKS ? cloneScenario('SAFE') : {
   ...cloneScenario('ERROR'),
@@ -38,13 +41,21 @@ const initialAgentState = USE_MOCKS ? cloneScenario('SAFE') : {
   timestamp: new Date(0).toISOString(),
 }
 
+const initialHealth: SystemHealth = USE_MOCKS ? mockHealth : {
+  edgeConnected: false,
+  internetAvailable: false,
+  cameraStatus: 'NO_FEED',
+  lastHeartbeat: new Date(0).toISOString(),
+}
+
 const initialState: StoreState = {
   current: initialAgentState,
   history: [],
-  health: mockHealth,
+  health: initialHealth,
   connection: 'RECONNECTING',
   actionPending: false,
   acknowledgementPending: false,
+  analysisPending: false,
   lastReceivedAt: Date.now(),
   clockMs: Date.now(),
 }
@@ -117,6 +128,16 @@ function reducer(state: StoreState, action: Action): StoreState {
     }
     case 'TICK': return { ...state, clockMs: action.now }
     case 'ERROR': return { ...state, error: action.message }
+    case 'ANALYSIS_START': return { ...state, analysisPending: true, error: undefined }
+    case 'ANALYSIS_END': return action.state ? {
+      ...state,
+      analysisPending: false,
+      current: action.state,
+      lastReceivedAt: Date.now(),
+      clockMs: Date.now(),
+      connection: 'CONNECTED',
+      error: undefined,
+    } : { ...state, analysisPending: false, error: action.error }
   }
 }
 
@@ -125,6 +146,8 @@ interface AgentContextValue extends StoreState {
   acknowledge: (reason: AcknowledgementReason) => Promise<void>
   simulate: (update: SimulationUpdate) => Promise<void>
   effectiveDataAgeMs: number
+  analyze: (image: File, scenario: DemoScenario) => Promise<void>
+  capabilities: typeof BACKEND_CAPABILITIES
 }
 
 const AgentContext = createContext<AgentContextValue | null>(null)
@@ -188,8 +211,17 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const analyze = useCallback(async (image: File, scenario: DemoScenario) => {
+    dispatch({ type: 'ANALYSIS_START' })
+    try {
+      dispatch({ type: 'ANALYSIS_END', state: await analyzeDemo(image, scenario) })
+    } catch (error) {
+      dispatch({ type: 'ANALYSIS_END', error: error instanceof Error ? error.message : 'Image analysis failed' })
+    }
+  }, [])
+
   const effectiveDataAgeMs = state.current.dataAgeMs + Math.max(0, state.clockMs - state.lastReceivedAt)
-  const value = useMemo(() => ({ ...state, effectiveDataAgeMs, runEmergencyActions, acknowledge, simulate }), [state, effectiveDataAgeMs, runEmergencyActions, acknowledge, simulate])
+  const value = useMemo(() => ({ ...state, effectiveDataAgeMs, runEmergencyActions, acknowledge, simulate, analyze, capabilities: BACKEND_CAPABILITIES }), [state, effectiveDataAgeMs, runEmergencyActions, acknowledge, simulate, analyze])
   return <AgentContext.Provider value={value}>{children}</AgentContext.Provider>
 }
 

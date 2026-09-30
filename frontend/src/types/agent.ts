@@ -1,6 +1,6 @@
 export type RiskState = 'SAFE' | 'NOTICE' | 'WARNING' | 'CRITICAL' | 'ERROR'
 export type CameraStatus = 'OK' | 'BLOCKED' | 'NO_FEED'
-export type EngineState = 'ON' | 'OFF'
+export type EngineState = 'ON' | 'OFF' | 'UNKNOWN'
 export type ConnectionState = 'CONNECTED' | 'RECONNECTING' | 'OFFLINE'
 export type AcknowledgementReason =
   | 'CABIN_CLEAR'
@@ -21,14 +21,15 @@ export interface SensorState {
 }
 
 export interface ToolResult {
-  action: 'TRIGGER_HORN' | 'CRACK_WINDOW' | 'SEND_SMS'
-  status: 'IDLE' | 'RUNNING' | 'SUCCESS' | 'FAILED'
+  action: 'TRIGGER_HORN' | 'CRACK_WINDOW' | 'SEND_SMS' | 'SEND_NOTIFICATION' | 'REQUEST_UNLOCK'
+  status: 'IDLE' | 'RUNNING' | 'SUCCESS' | 'FAILED' | 'SIMULATED' | 'PENDING_CONFIRMATION'
   message?: string
   timestamp?: string
   latencyMs?: number
 }
 
 export interface AgentState {
+  vehicleId: string
   eventId: string
   timestamp: string
   riskState: RiskState
@@ -57,4 +58,13 @@ export interface SimulationUpdate {
   engine?: EngineState
   doorsLocked?: boolean
   scenario?: RiskState
+}
+
+export type DemoScenario = 'normal' | 'parked_locked' | 'hot_locked'
+
+export interface BackendCapabilities {
+  manualEmergencyActions: boolean
+  acknowledgement: boolean
+  simulationControls: boolean
+  demoAnalysis: boolean
 }

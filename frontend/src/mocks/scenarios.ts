@@ -9,6 +9,7 @@ const tools: AgentState['toolResults'] = [
 ]
 
 const base: AgentState = {
+  vehicleId: 'CS-014',
   eventId: 'EVT-2409',
   timestamp: now(),
   riskState: 'SAFE',

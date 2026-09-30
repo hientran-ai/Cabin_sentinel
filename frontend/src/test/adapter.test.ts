@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { adaptAgentState } from '../api/adapter'
+import { adaptAgentState, adaptBackendState, adaptDemoResponse } from '../api/adapter'
 
 describe('adaptAgentState', () => {
   it('maps snake_case backend payloads into the frontend contract', () => {
@@ -32,5 +32,41 @@ describe('adaptAgentState', () => {
     expect(state.toolResults).toEqual([])
     expect(state.sensors.doorsLocked).toBe(false)
     expect(state.dataAgeMs).toBe(3001)
+  })
+
+  it('maps the committed CabinService state without inventing actions or bbox data', () => {
+    const state = adaptBackendState({
+      vehicle_id: 'CAR_1', revision: 7, incident_id: 'incident-7', risk_level: 'CRITICAL',
+      rule_id: 'HOT_OCCUPANT', reason: 'Living being remains in hot vehicle',
+      temperature: 40, engine_status: 'UNKNOWN', doors_locked: true, camera_status: 'OK',
+      detected_objects: [{ class_name: 'dog', confidence: 0.91 }],
+      action_results: [
+        { tool: 'trigger_horn', status: 'simulated' },
+        { tool: 'request_unlock', status: 'pending_human_confirmation' },
+      ],
+      evaluated_at: '2026-09-30T01:00:00Z', decision_current: false,
+      freshness: { vision: { status: 'STALE', age_s: 4.2 }, sensor: { status: 'FRESH', age_s: 1 } },
+    })
+    expect(state).toMatchObject({
+      vehicleId: 'CAR_1', eventId: 'incident-7', riskState: 'CRITICAL',
+      sensors: { temperatureC: 40, engine: 'UNKNOWN', doorsLocked: true },
+      dataAgeMs: 4200,
+    })
+    expect(state.objects[0]).toMatchObject({ class: 'dog', confidence: 0.91, bbox: [0, 0, 0, 0] })
+    expect(state.toolResults.map((tool) => [tool.action, tool.status])).toEqual([
+      ['TRIGGER_HORN', 'SIMULATED'], ['REQUEST_UNLOCK', 'PENDING_CONFIRMATION'],
+    ])
+  })
+
+  it('maps the synchronous demo response into AgentState', () => {
+    const state = adaptDemoResponse({
+      session_id: 'demo-1',
+      vision: { source: 'MODEL_INFERENCE', detections: [{ class: 'person', confidence: 0.88 }], latency_ms: 25 },
+      vehicle_state: { vehicle_id: 'DEMO_demo-1', timestamp: '2026-09-30T01:00:00Z', temperature: 40, engine_status: 'OFF', doors_locked: true, scenario: 'hot_locked' },
+      reasoning: { revision: 2, risk_level: 'CRITICAL', rule_id: 'HOT_OCCUPANT', reason: 'Hot occupied cabin', decision_current: true, freshness: { vision: { status: 'FRESH', age_s: 0.1 }, sensor: { status: 'FRESH', age_s: 0.2 } } },
+      actions: [{ tool: 'send_sms', status: 'simulated' }],
+    })
+    expect(state).toMatchObject({ vehicleId: 'DEMO_demo-1', eventId: 'demo-1', riskState: 'CRITICAL', ruleId: 'HOT_OCCUPANT' })
+    expect(state.toolResults[0]).toMatchObject({ action: 'SEND_SMS', status: 'SIMULATED' })
   })
 })

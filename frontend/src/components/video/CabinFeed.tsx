@@ -15,7 +15,7 @@ export function CabinFeed({ state }: { state: AgentState }) {
           ? <div className="feed-message"><CameraOff /><strong>Camera {state.cameraStatus.replace('_', ' ').toLowerCase()}</strong><span>No safety inference is made without a feed.</span></div>
           : evidenceBlocked
             ? <div className="feed-message"><EyeOff /><strong>Evidence withheld</strong><span>Blur verification or the evidence origin is not trusted.</span></div>
-          : <div className="feed-placeholder"><div className="seat seat-left" /><div className="seat seat-right" /><ScanFace /><span>Privacy-blurred preview</span></div>}
+          : <div className="feed-placeholder"><div className="seat seat-left" /><div className="seat seat-right" /><ScanFace /><span>No evidence image supplied by backend</span></div>}
       {!unavailable && state.objects.map((object, index) => <span className="detection" key={`${object.class}-${index}`}><strong>{object.class.replace('_', ' ')}</strong> {Math.round(object.confidence * 100)}%</span>)}
       <span className="live-chip"><span /> LIVE · EDGE</span>
     </div>

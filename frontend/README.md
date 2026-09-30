@@ -1,47 +1,56 @@
 # CabinSentinel frontend
 
-React + TypeScript + Vite MVP for monitoring cabin safety. The frontend renders
-the risk state supplied by the backend and never derives or downgrades risk on
-its own.
+React + TypeScript + Vite dashboard. Risk, reason and action results are rendered
+from the backend response; the browser does not calculate safety state.
 
-## Run locally
+## Run
 
-```bash
+```powershell
 npm install
-copy .env.example .env
+Copy-Item .env.example .env
 npm run dev
 ```
 
-Mock mode is enabled by default. Set `VITE_USE_MOCKS=false` to use the real API.
-
-## Environment
+The checked-in example and the client default connect to the repository backend:
 
 ```dotenv
+VITE_USE_MOCKS=false
 VITE_API_BASE_URL=http://localhost:8000
-VITE_EVENT_STREAM_URL=http://localhost:8000/api/v1/events/stream
-VITE_USE_MOCKS=true
+VITE_VEHICLE_ID=CAR_1
 ```
 
-## Expected backend endpoints
+For isolated UI work without the backend, opt into mock mode:
 
-The repository backend currently exposes only template chat/status routes. The
-frontend isolates the proposed CabinSentinel contract in `src/api/client.ts`:
+```dotenv
+VITE_USE_MOCKS=true
+VITE_API_BASE_URL=http://localhost:8000
+VITE_VEHICLE_ID=CAR_1
+```
 
-- `GET /api/v1/events/stream` — SSE stream containing an `AgentState` payload
-- `POST /api/v1/events/{eventId}/actions` — run emergency actions
-- `POST /api/v1/events/{eventId}/acknowledge` — body `{ "reason": ... }`
-- `POST /api/v1/simulation` — update demo inputs or scenario
-- `GET /api/v1/events` — event history
-- `GET /api/v1/system/health` — Edge, internet and camera health
+The backend must include `http://localhost:5173` in `CORS_ORIGINS`. Start it
+with the required model and configuration described in the root documentation.
 
-`src/api/adapter.ts` accepts both camelCase and snake_case payload fields. The
-backend team still needs to confirm endpoint paths, the SSE event envelope,
-action idempotency semantics, evidence URL lifetime/authentication, and the
-exact system-health payload.
+## Implemented backend contract
+
+- `GET /health` — backend/database/model health.
+- `GET /api/v1/state/{vehicle_id}` — polled every 1.5 seconds because the
+  current backend does not expose SSE or WebSocket state streaming.
+- `GET /api/v1/events/{vehicle_id}?limit=50` — evaluation history.
+- `POST /api/v1/demo/analyze` — multipart JPEG/PNG plus `scenario`; the UI
+  supports `normal`, `parked_locked` and `hot_locked`.
+
+The API adapter maps the backend's `risk_level`, freshness, `class_name`,
+`action_results`, `simulated` and `pending_human_confirmation` fields into the
+central frontend types. It does not treat simulated tools as physical success.
+
+The current backend does **not** expose manual emergency-action,
+acknowledgement, or JSON simulation endpoints. Those controls are disabled in
+backend mode instead of calling invented endpoints. They remain available in
+mock mode for UX testing.
 
 ## Checks
 
-```bash
+```powershell
 npm run lint
 npm run typecheck
 npm test
