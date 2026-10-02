@@ -1,0 +1,6 @@
+{
+  "expo": {
+    "name": "CabinSentinel", "slug": "cabinsentinel", "version": "0.1.0", "scheme": "cabinsentinel", "orientation": "portrait", "userInterfaceStyle": "automatic",
+    "ios": { "supportsTablet": true }, "android": { "adaptiveIcon": { "backgroundColor": "#102c37" } }
+  }
+}

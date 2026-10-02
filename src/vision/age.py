@@ -34,6 +34,8 @@ def padded_box(box, width, height, padding=CROP_PADDING):
 def choose_group(child_score, child_threshold=0.5, adult_threshold=0.9):
     if not (0 < child_threshold <= 1 and 0 < adult_threshold <= 1):
         raise ValueError("Thresholds must be in (0, 1]")
+    # Child requires p >= child_threshold; adult requires p <= 1 - adult_threshold.
+    # Strict separation leaves an unknown region and rejects a shared boundary.
     if child_threshold + adult_threshold <= 1:
         raise ValueError("Child and adult decision regions must not overlap")
     if not math.isfinite(child_score) or not 0 <= child_score <= 1:

@@ -16,6 +16,11 @@ env/
 .env
 .env.local
 .env.production
+.env.*
+!.env.example
+
+# Local agent rules (keep off GitHub)
+.agents/rules/global-rules.md
 
 # IDE
 .vscode/
@@ -32,12 +37,18 @@ Thumbs.db
 data/
 *.db
 *.sqlite3
+*.pt
+*.pth
+*.onnx
+models/
 
 # Logs
 logs/
 *.log
 
 # Test coverage
+.pytest_cache/
+.ruff_cache/
 htmlcov/
 .coverage
 coverage.xml
@@ -47,13 +58,22 @@ docker-compose.override.yml
 
 # Node (frontend)
 node_modules/
+*.tsbuildinfo
+.expo/
 .next/
 out/
 .nuxt/
 
+# Local GitHub Actions runner (contains machine credentials)
+/actions-runner/
+
 # Build
 *.pyc
 *.pyo
+
+# Generated reports and local analysis artifacts
+/output/
+/tmp/
 
 # AI logs — tracked structure, ignored content
 .ai-log/*.jsonl

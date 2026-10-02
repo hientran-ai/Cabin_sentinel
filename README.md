@@ -1,4 +1,75 @@
-# AI20K Agent Template
+# CabinSentinel — Backend & Sensor Sprint 0
+
+V1 online image demo instructions: [docs/V1_ONLINE_DEMO.md](docs/V1_ONLINE_DEMO.md).
+The image path uses Tâm's YOLO detector settings, a separate model artifact,
+and the canonical CabinSentinel reasoning service. It does not use the
+`BUILD_PHASE/app` prototype. No vehicle action is physically executed.
+An SVIRO child/infant-only sample was missed by the stock detector and produced
+`EMPTY_CABIN/SAFE`; see the V1 guide before presenting child safety claims.
+
+This repo now contains Khánh's local safety backend under `src/cabinsentinel/`.
+It accepts versioned sensor JSON through local MQTT and Vision results through
+HTTP, evaluates risk on either update, and exposes the latest state to the
+dashboard. Rules run locally. Horn, SMS, notification and unlock are **mock or
+pending** outputs; this does not demonstrate real vehicle control or delivery.
+The CabinSentinel routes do not need an OpenAI API key; the template chat route
+still uses the template's separate LLM configuration.
+
+## Run the Sprint 0 demo
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+The V1 image endpoint reports unavailable until `MODEL_PATH` points to a
+readable local model artifact. Set `CABINSENTINEL_MQTT_ENABLED=true` in `.env`
+when running the older MQTT sensor demo below.
+
+In another terminal, publish a sensor snapshot (Python dependencies from
+`requirements.txt` are required on the host):
+
+```bash
+python scripts/cabinsentinel_sensor_simulator.py --vehicle-id CAR_1 --temperature 35 --engine OFF --radar
+```
+
+Send a matching Vision result to `POST http://localhost:8000/api/v1/vision`:
+
+```json
+{
+  "vehicle_id": "CAR_1",
+  "timestamp": "2026-09-23T10:00:00+07:00",
+  "camera_status": "OK",
+  "objects": [{"class": "dog", "confidence": 0.95}]
+}
+```
+
+Use the current time in `timestamp`; the example timestamp is illustrative.
+Inputs expire after 3 seconds for Vision and 5 seconds for sensors. Read
+`GET /api/v1/state/CAR_1`,
+`GET /api/v1/risk/CAR_1`, and `GET /api/v1/events/CAR_1`. Swagger is at
+`http://localhost:8000/docs`. The simulator publishes a new snapshot every
+second with an increasing sequence; stop it with Ctrl-C. Restarting a
+simulator for the same vehicle resets its sequence, so clear the demo SQLite
+database or use a new vehicle ID for a separate demo run.
+Send a new Vision frame at least every 3 seconds during a live demo; after a
+single frame expires, the backend correctly reports `ERROR` without radar.
+`GET /health` reports model and database readiness. MQTT is disabled by default
+for V1; if explicitly enabled, a disconnected broker makes readiness degraded.
+
+For an EV Pet Mode demo, use `--powertrain EV --mode PET --hvac ACTIVE --soc 40
+--temperature 28`. For an ICE remote start demo, use `--powertrain ICE --mode
+REMOTE_START --hvac ACTIVE --engine ON`. These flags simulate vehicle feedback;
+they do not switch on a real vehicle mode or HVAC.
+
+Run checks with `pytest -q` and `ruff check src tests scripts/cabinsentinel_sensor_simulator.py`.
+
+This is a Sprint 0 integration baseline. The team still needs real Vision
+integration, authorization and expiry for unlock confirmation, device feedback,
+mode telemetry validation, offline delivery adapters, and measured latency on
+the target Raspberry Pi 5 before claiming the full safety Definition of Done.
+
+## Original AI20K template guidance
 
 Template chính thức cho học viên VinUni AI20K Build Phase: cấu trúc dự án, code
 mẫu và hướng dẫn kỹ thuật để xây dựng một AI Agent hoàn chỉnh — từ kiến trúc,

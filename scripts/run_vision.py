@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import sys
+from contextlib import ExitStack
 from datetime import UTC, datetime
 from pathlib import Path
 from time import perf_counter
@@ -104,7 +105,8 @@ def main():
     latencies = []
     counts = dict.fromkeys(["person", "cat", "dog"] + (classifier.classes if classifier else []), 0)
     detected = 0
-    try:
+    with ExitStack() as resources:
+        resources.callback(cap.release)
         if not cap.isOpened():
             raise RuntimeError("Cannot open video")
         fps = cap.get(cv2.CAP_PROP_FPS)
@@ -123,9 +125,9 @@ def main():
             args.video_output.parent.mkdir(parents=True, exist_ok=True)
             # Reserve the partial output exclusively before opening the encoder.
             partial_video.touch(exist_ok=False)
-            writer = cv2.VideoWriter(str(partial_video), cv2.VideoWriter_fourcc(*"mp4v"), fps, export_size)
-            if not writer.isOpened():
-                raise RuntimeError("Cannot initialize MP4 encoder")
+            from src.vision.video import mp4_writer
+
+            writer = resources.enter_context(mp4_writer(partial_video, fps, export_size))
         model = YOLO(str(args.model))
         options = dict(classes=[0, 15, 16], device=args.device, conf=args.conf, iou=args.iou, imgsz=args.imgsz, verbose=False)
         warmup = model.predict(frame, **options)[0]
@@ -215,10 +217,6 @@ def main():
                     print(f"Processed {frame_id} frames", flush=True)
                 ok, frame = cap.read()
         elapsed = perf_counter() - started
-    finally:
-        cap.release()
-        if writer is not None:
-            writer.release()
     complete = expected <= 0 or len(latencies) == expected
     if face_blurrer:
         from src.vision.video import encode_h264

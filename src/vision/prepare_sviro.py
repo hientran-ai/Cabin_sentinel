@@ -81,6 +81,19 @@ def labelled_boxes(mask, boxes, seat_labels):
     return accepted, rejected
 
 
+def crop_path(output, split, age_class, filename):
+    """Validate crop components and reject escapes, including existing symlinks."""
+    if split not in {"train", "val", "test"} or age_class not in {"child", "adult"}:
+        raise ValueError("Invalid crop split or age class")
+    if not filename or filename in {".", ".."} or any(char in filename for char in "/\\:"):
+        raise ValueError("Crop filename must be a single relative component")
+    rel = Path(split) / age_class / filename
+    destination = output / rel
+    if not destination.resolve().is_relative_to(output.resolve()):
+        raise ValueError("Crop destination escapes output directory")
+    return rel, destination
+
+
 def prepare(source, output, audit_only=False, seed=68):
     annotations = sorted(source.rglob("boundingBoxes_wholeImage/*.txt"))
     if not annotations:
@@ -122,10 +135,12 @@ def prepare(source, output, audit_only=False, seed=68):
                 if rect is None:
                     rejected["invalid_crop"] += 1
                     continue
-                rel = Path(split) / record["class"] / f"{annotation.stem}_seat{record['seat']}.jpg"
+                rel, destination = crop_path(
+                    output, split, record["class"], f"{annotation.stem}_seat{record['seat']}.jpg"
+                )
                 if rgb is not None:
-                    (output / rel).parent.mkdir(parents=True, exist_ok=True)
-                    rgb.crop(rect).save(output / rel, quality=95)
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    rgb.crop(rect).save(destination, quality=95)
                 record.update(
                     {
                         "split": split,

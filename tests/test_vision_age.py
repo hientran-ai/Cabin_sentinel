@@ -10,7 +10,7 @@ import torch
 from PIL import Image
 
 from src.vision.age import AgeClassifier, apply_age, build_model, choose_age, choose_group, padded_box
-from src.vision.prepare_sviro import labelled_boxes, prepare, scene_info, split_for
+from src.vision.prepare_sviro import crop_path, labelled_boxes, prepare, scene_info, split_for
 
 
 class AgeDecisionsTest(unittest.TestCase):
@@ -21,6 +21,15 @@ class AgeDecisionsTest(unittest.TestCase):
         self.assertEqual(choose_group(float("nan")), "unknown")
         with self.assertRaises(ValueError):
             choose_group(0.5, 0.4, 0.6)
+
+    def test_overlapping_thresholds_are_rejected(self):
+        for child, adult in [(0.4, 0.4), (0.4, 0.6), (0.5, 0.5)]:
+            with self.subTest(child=child, adult=adult), self.assertRaises(ValueError):
+                choose_group(0.45, child, adult)
+        self.assertEqual(choose_group(0.1, 0.5, 0.75), "adult")
+        self.assertEqual(choose_group(0.25, 0.5, 0.75), "adult")
+        self.assertEqual(choose_group(0.3, 0.5, 0.75), "unknown")
+        self.assertEqual(choose_group(0.5, 0.5, 0.75), "child")
 
     def test_merged_child_decisions(self):
         self.assertEqual(choose_age({"adult": 0.1, "child": 0.2, "infant": 0.7}), "child")
@@ -117,6 +126,23 @@ class AgeDecisionsTest(unittest.TestCase):
 
 
 class SviroPreparationTest(unittest.TestCase):
+    def test_crop_paths_reject_traversal_and_absolute_components(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder)
+            for split, label, filename in [
+                ("../outside", "child", "crop.jpg"),
+                ("test", "../outside", "crop.jpg"),
+                ("test", "child", "../crop.jpg"),
+                ("test", "child", "..\\crop.jpg"),
+                ("test", "child", "/crop.jpg"),
+                ("test", "child", "C:\\crop.jpg"),
+            ]:
+                with self.subTest(filename=filename), self.assertRaises(ValueError):
+                    crop_path(output, split, label, filename)
+            rel, destination = crop_path(output, "test", "child", "crop.jpg")
+            self.assertEqual(rel.as_posix(), "test/child/crop.jpg")
+            self.assertEqual(destination, output / rel)
+
     def test_person_masks_resolve_child_and_adult_not_seat_size(self):
         mask = np.full((20, 60), 226, dtype=np.uint8)
         mask[2:18, 2:18] = 29
