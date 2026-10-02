@@ -7,7 +7,12 @@ Node.js 20+ is required. From the repository root run `npm ci`, then `npm run ty
 - Build: `npm --prefix frontend run build`
 - Output: `frontend/dist`
 - Required: `VITE_API_BASE_URL`, `VITE_VEHICLE_ID`
-- Configure the backend CORS allow-list with the exact deployed origin. `_redirects` supplies SPA fallback on Cloudflare Pages.
+- Configure the backend CORS allow-list with the exact deployed origin. For
+  Cloudflare Workers Static Assets, the root `wrangler.jsonc` supplies SPA
+  fallback through `assets.not_found_handling = "single-page-application"`.
+- Workers build command: `npm ci --prefix frontend && npm --prefix frontend run build`.
+- Workers deploy command: `npx wrangler@latest deploy`. The asset directory,
+  Worker name and compatibility date are committed in `wrangler.jsonc`.
 - Health check: load the site, verify `/health` is reported ready, then confirm state polling and one image-analysis request. The upload endpoint name remains `/api/v1/demo/analyze`; it performs real model inference but uses a required telemetry preset.
 
 ## Owner portal (`apps/owner-web/`)

@@ -41,6 +41,12 @@ persistent volume vào `/app/data`, lịch sử sẽ mất khi service được 
 
 ## 3. Deploy frontend trên Cloudflare Pages
 
+> Nếu project đang dùng **Workers Builds** với lệnh `wrangler deploy` như log
+> hiện tại, dùng `wrangler.jsonc` ở root và deploy bằng
+> `npx wrangler@latest deploy`. Không thêm catch-all `_redirects`: Workers
+> Static Assets dùng `not_found_handling = "single-page-application"` để tránh
+> vòng lặp redirect.
+
 Vào **Workers & Pages → Create application → Pages → Import a Git repository**,
 chọn repository và cấu hình:
 
