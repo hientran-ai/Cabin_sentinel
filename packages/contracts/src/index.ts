@@ -134,3 +134,53 @@ export interface RealtimeEvent<T> {
   occurredAt: string
   data: T
 }
+
+/** Contracts exposed by the currently deployed V1 backend. */
+export interface V1Detection {
+  class?: string
+  class_name?: string
+  confidence?: number
+  bbox?: [number, number, number, number]
+}
+
+export interface V1ActionResult {
+  tool?: string
+  status?: string
+  error?: string
+  request_id?: string
+  expires_at?: string
+}
+
+export interface V1CabinState {
+  vehicle_id?: string
+  revision?: number
+  previous_risk_level?: string | null
+  incident_id?: string | null
+  risk_level?: string
+  rule_id?: string
+  reason?: string
+  temperature?: number | null
+  engine_status?: string | null
+  doors_locked?: boolean | null
+  radar_presence?: boolean | null
+  camera_status?: string | null
+  detected_objects?: V1Detection[] | null
+  occupancy_state?: string
+  occupancy_reason_code?: string
+  action_results?: V1ActionResult[]
+  evaluated_at?: string
+  decision_current?: boolean
+  freshness?: {
+    as_of?: string
+    sensor?: { status?: FreshnessStatus; age_s?: number | null; observed_at?: string | null }
+    vision?: { status?: FreshnessStatus; age_s?: number | null; observed_at?: string | null }
+  }
+}
+
+export interface V1Health {
+  status?: string
+  backend?: string
+  vision?: string
+  database?: string
+  mqtt?: string
+}

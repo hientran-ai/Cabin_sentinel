@@ -57,7 +57,6 @@ Thêm **build environment variables** cho Pages:
 
 ```dotenv
 NODE_VERSION=22.16.0
-VITE_USE_MOCKS=false
 VITE_API_BASE_URL=https://<backend-domain>
 VITE_VEHICLE_ID=CAR_1
 ```

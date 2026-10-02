@@ -14,15 +14,6 @@ npm run dev
 The checked-in example and the client default connect to the repository backend:
 
 ```dotenv
-VITE_USE_MOCKS=false
-VITE_API_BASE_URL=http://localhost:8000
-VITE_VEHICLE_ID=CAR_1
-```
-
-For isolated UI work without the backend, opt into mock mode:
-
-```dotenv
-VITE_USE_MOCKS=true
 VITE_API_BASE_URL=http://localhost:8000
 VITE_VEHICLE_ID=CAR_1
 ```
@@ -52,9 +43,9 @@ configuration, reasoning latency, and the pending/expired/canceled unlock
 request lifecycle.
 
 The current backend does **not** expose manual emergency-action,
-acknowledgement, or JSON simulation endpoints. Those controls are disabled in
-backend mode instead of calling invented endpoints. They remain available in
-mock mode for UX testing.
+acknowledgement, or JSON simulation endpoints. Those controls are disabled
+instead of calling invented endpoints. Runtime mock mode has been removed: an
+unavailable backend is shown as unavailable and is never interpreted as safe.
 
 ## Checks
 

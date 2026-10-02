@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": { "dev": "vite", "build": "tsc -b && vite build", "typecheck": "tsc -b --pretty false" },
   "dependencies": {
-    "@cabinsentinel/api-client": "*", "@cabinsentinel/contracts": "*", "@cabinsentinel/design-tokens": "*", "@cabinsentinel/domain": "*", "@cabinsentinel/test-fixtures": "*",
+    "@cabinsentinel/api-client": "*", "@cabinsentinel/contracts": "*", "@cabinsentinel/design-tokens": "*", "@cabinsentinel/domain": "*",
     "@tanstack/react-query": "^5.90.2", "react": "^19.2.0", "react-dom": "^19.2.0", "react-router-dom": "^7.9.3"
   },
   "devDependencies": { "@types/react": "^19.2.0", "@types/react-dom": "^19.2.0", "@vitejs/plugin-react": "^6.0.0", "typescript": "~6.0.2", "vite": "^8.0.0" }

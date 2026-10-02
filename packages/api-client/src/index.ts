@@ -1,4 +1,4 @@
-import type { ApiErrorEnvelope, Incident, Page, RealtimeEvent, User, Vehicle, VehicleStatus } from '@cabinsentinel/contracts'
+import type { ApiErrorEnvelope, Incident, Page, RealtimeEvent, User, V1CabinState, V1Health, Vehicle, VehicleStatus } from '@cabinsentinel/contracts'
 import { acceptNewerRevision } from '@cabinsentinel/domain'
 
 export class ApiError extends Error {
@@ -86,6 +86,17 @@ export class CabinSentinelClient {
     })
   }
   operationsIncidents(signal?: AbortSignal) { return this.request<Page<Incident>>('/api/v2/operations/incidents', { signal }) }
+
+  /** Confirmed endpoints from the repository's current V1 FastAPI service. */
+  v1State(vehicleId: string, signal?: AbortSignal) {
+    return this.request<V1CabinState>(`/api/v1/state/${encodeURIComponent(vehicleId)}`, { signal, credentials: 'omit' })
+  }
+  v1Events(vehicleId: string, limit = 50, signal?: AbortSignal) {
+    return this.request<V1CabinState[]>(`/api/v1/events/${encodeURIComponent(vehicleId)}?limit=${Math.max(1, Math.min(limit, 100))}`, { signal, credentials: 'omit' })
+  }
+  health(signal?: AbortSignal) {
+    return this.request<V1Health>('/health', { signal, credentials: 'omit' })
+  }
 }
 
 export interface RevisionCache<T> { revision?: number; value?: T }

@@ -1,4 +1,5 @@
 import './App.css'
+import './theme.css'
 import { Sidebar } from './components/layout/Sidebar'
 import { CriticalModal } from './components/alerts/CriticalModal'
 import { Overview } from './pages/Overview'

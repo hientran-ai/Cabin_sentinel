@@ -1,81 +1,35 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { Incident, RiskLevel, Vehicle } from '@cabinsentinel/contracts'
+import { useQuery } from '@tanstack/react-query'
+import type { RiskLevel, V1CabinState } from '@cabinsentinel/contracts'
 import { formatRelativeTime, formatTemperature, severityPresentation } from '@cabinsentinel/domain'
-import { Link, Navigate, NavLink, Route, Routes, useParams } from 'react-router-dom'
-import { client, fixtureMode, getIncident, getVehicles } from './data'
+import { Link, Navigate, NavLink, Route, Routes } from 'react-router-dom'
+import { getEvents, getHealth, getState, vehicleId } from './data'
 
-function Severity({ level }: { level: RiskLevel }) {
-  const semantic = severityPresentation[level]
-  return <span className={`severity severity-${level.toLowerCase()}`} aria-label={`Cabin status: ${semantic.label}`}><span aria-hidden="true">{semantic.icon === 'siren' ? '◆' : semantic.icon === 'check-circle' ? '✓' : '!'}</span> {semantic.label}</span>
-}
-
-function Freshness({ incident }: { incident: Incident }) {
-  return <div className={incident.decision.decisionCurrent ? 'freshness' : 'freshness stale'} role={incident.decision.decisionCurrent ? undefined : 'alert'}>
-    <strong>{incident.decision.decisionCurrent ? 'Current data' : 'Last known safety state'}</strong>
-    <span>{formatRelativeTime(incident.decision.evaluatedAt)}</span>
-    {!incident.decision.decisionCurrent && <span>Connection or evidence is degraded. Check the cabin directly; this state has not changed to safe.</span>}
-  </div>
-}
-
-function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
-  const status = vehicle.status
-  return <article className="card vehicle-card">
-    <div><p className="eyebrow">{vehicle.registrationLabel ?? 'Vehicle'}</p><h2>{vehicle.displayName}</h2></div>
-    {status ? <><Severity level={status.decision.riskLevel} /><p>{status.decision.reason}</p><p className="meta">{formatRelativeTime(status.decision.evaluatedAt)}</p><Link className="button" to={`/app/vehicles/${vehicle.id}`}>View vehicle</Link></> : <p>Status has not been reported.</p>}
-  </article>
-}
-
-function VehiclesPage() {
-  const query = useQuery({ queryKey: ['vehicles'], queryFn: getVehicles, refetchInterval: fixtureMode ? false : 30_000 })
-  if (query.isLoading) return <State title="Loading vehicles" body="Requesting the latest authenticated status." />
-  if (query.isError) return <State title="Status unavailable" body="We could not reach the service. No vehicle has been marked safe because of this error." action={() => void query.refetch()} />
-  return <><PageHeader title="Your vehicles" subtitle="Latest backend-evaluated cabin status" /><div className="cards">{query.data?.items.map((vehicle) => <VehicleCard key={vehicle.id} vehicle={vehicle} />)}</div></>
-}
-
-function VehiclePage() {
-  const { vehicleId = '' } = useParams()
-  const query = useQuery({ queryKey: ['vehicles'], queryFn: getVehicles })
-  const vehicle = query.data?.items.find((item) => item.id === vehicleId)
-  if (!vehicle?.status) return <State title="Vehicle unavailable" body="This vehicle is not available to the current account or has no reported state." />
-  const { status } = vehicle
-  return <><PageHeader title={vehicle.displayName} subtitle={vehicle.registrationLabel ?? 'Vehicle overview'} />
-    <section className={`status-panel status-${status.decision.riskLevel.toLowerCase()}`} aria-live="polite">
-      <p className="eyebrow">Cabin status</p><Severity level={status.decision.riskLevel} /><h2>{status.decision.reason}</h2>
-      <p>{status.decision.recommendedAction}</p><Freshness incident={{ id: '', vehicleId, status: 'active', createdAt: status.decision.evaluatedAt, updatedAt: status.decision.evaluatedAt, decision: status.decision, revisions: [], actions: [] }} />
-      {status.activeIncidentId && <Link className="button primary" to={`/app/incidents/${status.activeIncidentId}`}>View incident details</Link>}
-    </section>
-    <section className="metrics" aria-label="Vehicle signals">
-      <Metric label="Temperature" value={formatTemperature(status.temperatureC)} /><Metric label="Occupancy evidence" value={status.occupancyLabel} /><Metric label="Edge device" value={status.device.edge} /><Metric label="Camera" value={status.device.camera} />
-    </section>
-    <section className="card"><h2>Why this status?</h2><dl className="details"><div><dt>Rule</dt><dd>{status.decision.ruleId}</dd></div><div><dt>Revision</dt><dd>{status.decision.revision}</dd></div><div><dt>Evaluated</dt><dd>{new Date(status.decision.evaluatedAt).toLocaleString()}</dd></div></dl></section>
-  </>
-}
-
-function IncidentPage() {
-  const { incidentId = '' } = useParams()
-  const queryClient = useQueryClient()
-  const query = useQuery({ queryKey: ['incident', incidentId], queryFn: () => getIncident(incidentId) })
-  const mutation = useMutation({ mutationFn: async (incident: Incident) => {
-    if (fixtureMode) throw new Error('Preview mode cannot acknowledge a real incident.')
-    return client.acknowledgeIncident(incident.id, incident.decision.revision, 'CABIN_CHECKED', crypto.randomUUID())
-  }, onSuccess: (data) => queryClient.setQueryData(['incident', incidentId], data) })
-  if (!query.data) return query.isError ? <State title="Incident unavailable" body="The last known warning must not be treated as safe. Retry when connected." /> : <State title="Loading incident" body="Refreshing the authoritative incident state." />
-  const incident = query.data
-  return <><PageHeader title="Incident details" subtitle={`Incident ${incident.id}`} />
-    <section className={`status-panel status-${incident.decision.riskLevel.toLowerCase()}`}><Severity level={incident.decision.riskLevel} /><h2>{incident.decision.reason}</h2><p>{incident.decision.recommendedAction}</p><Freshness incident={incident} /></section>
-    <section className="card"><h2>Privacy-safe evidence</h2>{incident.decision.evidence.map((item) => <div className="evidence" key={item.id}><strong>{item.label}</strong><span>{item.summary}</span><small>{new Date(item.observedAt).toLocaleString()} · {item.source}</small></div>)}</section>
-    <section className="card"><h2>Actions already performed</h2>{incident.actions.map((action) => <div className="evidence" key={action.id}><strong>{action.type}</strong><span>{action.status}</span><small>{action.message}</small></div>)}</section>
-    <section className="action-bar"><div><strong>Have you checked the cabin?</strong><p>This records an acknowledgement; it does not change the backend safety verdict.</p></div><button className="button primary" disabled={mutation.isPending || incident.status !== 'active'} onClick={() => mutation.mutate(incident)}>{mutation.isPending ? 'Recording…' : 'I checked the cabin'}</button>{mutation.error && <p role="alert">{mutation.error.message}</p>}</section>
-  </>
-}
-
-function State({ title, body, action }: { title: string; body: string; action?: () => void }) { return <section className="card state"><h1>{title}</h1><p>{body}</p>{action && <button className="button" onClick={action}>Try again</button>}</section> }
+const risks: RiskLevel[] = ['SAFE', 'NOTICE', 'WARNING', 'CRITICAL', 'ERROR']
+function riskOf(state: V1CabinState): RiskLevel { const value = state.risk_level?.toUpperCase() as RiskLevel; return risks.includes(value) ? value : 'ERROR' }
+function evaluatedAt(state: V1CabinState) { return state.evaluated_at || state.freshness?.as_of || '' }
+function Severity({ state }: { state: V1CabinState }) { const level = riskOf(state); const item = severityPresentation[level]; return <span className={`severity severity-${level.toLowerCase()}`}><span aria-hidden="true">{level === 'SAFE' ? '✓' : level === 'CRITICAL' ? '◆' : '!'}</span>{item.label}</span> }
+function StateView({ title, body, retry }: { title: string; body: string; retry?: () => void }) { return <section className="card state"><div className="state-mark" aria-hidden="true">♡</div><h1>{title}</h1><p>{body}</p>{retry && <button className="button" onClick={retry}>Try again</button>}</section> }
+function Header({ title, subtitle }: { title: string; subtitle: string }) { return <header className="page-header"><div><p className="eyebrow">CabinSentinel Owner</p><h1>{title}</h1><p>{subtitle}</p></div><span className="live-chip"><i /> LIVE API</span></header> }
 function Metric({ label, value }: { label: string; value: string }) { return <div className="metric"><span>{label}</span><strong>{value}</strong></div> }
-function PageHeader({ title, subtitle }: { title: string; subtitle: string }) { return <header className="page-header"><div><p className="eyebrow">CabinSentinel Owner</p><h1>{title}</h1><p>{subtitle}</p></div>{fixtureMode && <span className="preview">INTEGRATION PREVIEW · SIMULATED DATA</span>}</header> }
-function Placeholder({ title }: { title: string }) { return <><PageHeader title={title} subtitle="This view requires the product API." /><State title="Integration pending" body="No production data is fabricated. The required authenticated backend endpoint is documented in the platform assessment." /></> }
+function useLiveState() { return useQuery({ queryKey: ['v1-state', vehicleId], queryFn: getState, refetchInterval: 5_000 }) }
 
-export function App() {
-  return <div className="shell"><aside><Link className="brand" to="/app/vehicles">CabinSentinel</Link><nav aria-label="Owner navigation"><NavLink to="/app/vehicles">Vehicles</NavLink><NavLink to="/app/history">History</NavLink><NavLink to="/app/notifications">Notifications</NavLink><NavLink to="/app/profile">Profile</NavLink></nav><p className="aside-note">Safety decisions are evaluated by the backend and Edge system.</p></aside><main>
-    <Routes><Route path="/login" element={<Placeholder title="Sign in" />} /><Route path="/app" element={<Navigate to="/app/vehicles" replace />} /><Route path="/app/vehicles" element={<VehiclesPage />} /><Route path="/app/vehicles/:vehicleId" element={<VehiclePage />} /><Route path="/app/vehicles/:vehicleId/incidents" element={<Placeholder title="Vehicle incidents" />} /><Route path="/app/incidents/:incidentId" element={<IncidentPage />} /><Route path="/app/history" element={<Placeholder title="History" />} /><Route path="/app/notifications" element={<Placeholder title="Notifications" />} /><Route path="/app/profile" element={<Placeholder title="Profile" />} /><Route path="*" element={<Navigate to="/app/vehicles" replace />} /></Routes>
-  </main></div>
+function Overview() {
+  const state = useLiveState(); const health = useQuery({ queryKey: ['health'], queryFn: getHealth, refetchInterval: 15_000 })
+  if (state.isLoading) return <StateView title="Connecting to your vehicle" body="Requesting the latest backend-evaluated cabin state." />
+  if (state.isError || !state.data) return <StateView title="Vehicle status unavailable" body="The service could not provide a verified state. The cabin has not been marked safe." retry={() => void state.refetch()} />
+  const item = state.data; const level = riskOf(item); const current = item.decision_current === true
+  return <><Header title={`Vehicle ${item.vehicle_id || vehicleId}`} subtitle="Latest backend-evaluated cabin status" />
+    <section className={`status-panel status-${level.toLowerCase()}`} aria-live="polite"><p className="eyebrow">Cabin status</p><Severity state={item} /><h2>{item.reason || 'Backend did not provide a reason.'}</h2><p>{current ? 'This decision is current.' : 'This is the last known state. Check the cabin directly.'}</p><div className={current ? 'freshness' : 'freshness stale'} role={current ? undefined : 'alert'}><strong>{current ? 'Current data' : 'Stale or incomplete data'}</strong><span>{evaluatedAt(item) ? formatRelativeTime(evaluatedAt(item)) : 'Time unavailable'}</span></div></section>
+    <section className="metrics"><Metric label="Temperature" value={formatTemperature(item.temperature ?? undefined)} /><Metric label="Occupancy" value={item.occupancy_state || 'UNKNOWN'} /><Metric label="Camera" value={item.camera_status || 'UNKNOWN'} /><Metric label="Backend" value={health.data?.status || health.data?.backend || (health.isError ? 'UNAVAILABLE' : 'CHECKING')} /></section>
+    <section className="card"><div className="section-title"><div><p className="eyebrow">Decision details</p><h2>Why this status?</h2></div><Link to="/app/history">View history</Link></div><dl className="details"><div><dt>Rule</dt><dd>{item.rule_id || 'UNMAPPED'}</dd></div><div><dt>Revision</dt><dd>{item.revision ?? '—'}</dd></div><div><dt>Evaluated</dt><dd>{evaluatedAt(item) ? new Date(evaluatedAt(item)).toLocaleString() : 'Unavailable'}</dd></div></dl></section>
+    <section className="card unavailable"><h2>Emergency actions</h2><p>Remote commands and acknowledgements remain unavailable until the backend adds authorization, idempotency, device confirmation and audit APIs.</p><button className="button primary" disabled>Request emergency action</button></section>
+  </>
 }
+function History() {
+  const query = useQuery({ queryKey: ['v1-events', vehicleId], queryFn: getEvents, refetchInterval: 15_000 })
+  if (query.isLoading) return <StateView title="Loading history" body="Fetching backend evaluation events." />
+  if (query.isError) return <StateView title="History unavailable" body="The event feed could not be loaded." retry={() => void query.refetch()} />
+  return <><Header title="Safety history" subtitle={`Backend evaluations for ${vehicleId}`} /><section className="card"><div className="history-list">{query.data?.length ? query.data.map((item, index) => <article className="history-row" key={`${item.revision ?? index}-${evaluatedAt(item)}`}><Severity state={item} /><div><strong>{item.reason || 'No reason supplied'}</strong><span>{item.rule_id || 'UNMAPPED'} · revision {item.revision ?? '—'}</span></div><time>{evaluatedAt(item) ? new Date(evaluatedAt(item)).toLocaleString() : 'Unknown time'}</time></article>) : <p className="empty">No backend events have been recorded for this vehicle.</p>}</div></section></>
+}
+function ComingSoon({ title, detail }: { title: string; detail: string }) { return <><Header title={title} subtitle="Designed and ready for backend integration" /><StateView title="Backend capability required" body={detail} /></> }
+export function App() { return <div className="shell"><aside><Link className="brand" to="/app/vehicles"><span>♡</span> CabinSentinel</Link><nav aria-label="Owner navigation"><NavLink to="/app/vehicles">Vehicle</NavLink><NavLink to="/app/history">History</NavLink><NavLink to="/app/notifications">Notifications</NavLink><NavLink to="/app/profile">Profile</NavLink></nav><p className="aside-note">Safety decisions always come from the backend.</p></aside><main><Routes><Route path="/app" element={<Navigate to="/app/vehicles" replace />} /><Route path="/app/vehicles" element={<Overview />} /><Route path="/app/history" element={<History />} /><Route path="/app/notifications" element={<ComingSoon title="Notifications" detail="Requires authenticated notification preferences and push registration endpoints." />} /><Route path="/app/profile" element={<ComingSoon title="Profile" detail="Requires OIDC/session bootstrap and an authenticated profile endpoint." />} /><Route path="/login" element={<ComingSoon title="Sign in" detail="Requires the production OIDC/session flow." />} /><Route path="*" element={<Navigate to="/app/vehicles" replace />} /></Routes></main></div> }

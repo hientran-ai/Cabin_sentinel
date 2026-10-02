@@ -1,17 +1,13 @@
 import { adaptAgentState, adaptBackendState, adaptDemoResponse } from './adapter'
-import { cloneScenario, mockHealth, mockHistory } from '../mocks/scenarios'
 import type { BackendCabinState, BackendDemoResponse, BackendHealth } from '../types/backend'
-import type { AcknowledgementReason, AgentState, BackendCapabilities, DemoScenario, RiskState, SimulationUpdate, SystemHealth } from '../types/agent'
+import type { AcknowledgementReason, AgentState, BackendCapabilities, DemoScenario, SimulationUpdate, SystemHealth } from '../types/agent'
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '')
 let activeVehicleId = import.meta.env.VITE_VEHICLE_ID || 'CAR_1'
 const POLL_INTERVAL_MS = 1500
-export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
-export const BACKEND_CAPABILITIES: BackendCapabilities = USE_MOCKS
-  ? { manualEmergencyActions: true, acknowledgement: true, simulationControls: true, demoAnalysis: false }
-  : { manualEmergencyActions: false, acknowledgement: false, simulationControls: false, demoAnalysis: true }
-
-let mockCurrent = cloneScenario('SAFE')
+/** Kept as a compatibility export; runtime mock mode has been removed. */
+export const USE_MOCKS = false
+export const BACKEND_CAPABILITIES: BackendCapabilities = { manualEmergencyActions: false, acknowledgement: false, simulationControls: false, demoAnalysis: true }
 
 export class ApiRequestError extends Error {
   readonly status?: number
@@ -24,7 +20,6 @@ export class ApiRequestError extends Error {
     this.retryAfter = retryAfter
   }
 }
-
 async function parseResponse<T>(response: Response): Promise<T> {
   let payload: unknown
   try { payload = await response.json() } catch { payload = undefined }
@@ -50,12 +45,6 @@ export function subscribeToAgentState(
   onState: (state: AgentState) => void,
   onConnection: (connected: boolean) => void,
 ): () => void {
-  if (USE_MOCKS) {
-    onConnection(true)
-    onState(structuredClone(mockCurrent))
-    return () => undefined
-  }
-
   let active = true
   let requestRunning = false
   const poll = async () => {
@@ -80,47 +69,21 @@ export function subscribeToAgentState(
 }
 
 export async function executeEmergencyActions(eventId: string): Promise<AgentState> {
-  if (USE_MOCKS) {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    return {
-      ...cloneScenario('CRITICAL'), eventId,
-      toolResults: [
-        { action: 'TRIGGER_HORN', status: 'SUCCESS', message: 'Horn activated', latencyMs: 318 },
-        { action: 'CRACK_WINDOW', status: 'SUCCESS', message: 'Windows opened 4 cm', latencyMs: 482 },
-        { action: 'SEND_SMS', status: 'SUCCESS', message: 'Emergency contacts notified', latencyMs: 613 },
-      ],
-    }
-  }
+  void eventId
   throw new ApiRequestError('The current backend executes actions during evaluation and does not expose a manual action endpoint.', 501)
 }
 
 export async function acknowledgeEvent(eventId: string, reason: AcknowledgementReason): Promise<AgentState> {
-  if (USE_MOCKS) {
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    return { ...cloneScenario('CRITICAL'), eventId, acknowledgementStatus: 'ACKNOWLEDGED' }
-  }
+  void eventId
   throw new ApiRequestError(`Acknowledgement ${reason} is not supported by the current backend.`, 501)
 }
 
 export async function updateSimulation(update: SimulationUpdate): Promise<AgentState> {
-  if (USE_MOCKS) {
-    if (update.scenario) mockCurrent = cloneScenario(update.scenario)
-    const { temperatureC, engine, doorsLocked } = update
-    mockCurrent = {
-      ...mockCurrent, timestamp: new Date().toISOString(), dataAgeMs: 0,
-      sensors: {
-        temperatureC: temperatureC ?? mockCurrent.sensors.temperatureC,
-        engine: engine ?? mockCurrent.sensors.engine,
-        doorsLocked: doorsLocked ?? mockCurrent.sensors.doorsLocked,
-      },
-    }
-    return structuredClone(mockCurrent)
-  }
+  void update
   throw new ApiRequestError('JSON simulation controls are not supported; use the image demo endpoint.', 501)
 }
 
 export async function analyzeDemo(image: File, scenario: DemoScenario): Promise<AgentState> {
-  if (USE_MOCKS) throw new ApiRequestError('Image analysis is available only in backend mode.', 400)
   const form = new FormData()
   form.append('image', image)
   form.append('scenario', scenario)
@@ -138,13 +101,11 @@ export async function analyzeDemo(image: File, scenario: DemoScenario): Promise<
 }
 
 export async function fetchEventHistory(): Promise<AgentState[]> {
-  if (USE_MOCKS) return structuredClone(mockHistory)
   const payload = await request<BackendCabinState[]>(`/api/v1/events/${encodeURIComponent(activeVehicleId)}?limit=50`)
   return payload.filter((event) => typeof event.risk_level === 'string').map(adaptAgentState)
 }
 
 export async function fetchSystemHealth(): Promise<SystemHealth> {
-  if (USE_MOCKS) return structuredClone(mockHealth)
   const response = await fetch(`${API_BASE}/health`, { credentials: 'omit' })
   const payload = await response.json() as BackendHealth
   return {
@@ -153,8 +114,4 @@ export async function fetchSystemHealth(): Promise<SystemHealth> {
     cameraStatus: payload.vision === 'ready' ? 'OK' : 'NO_FEED',
     lastHeartbeat: new Date().toISOString(),
   }
-}
-
-export function scenarioFor(state: RiskState): AgentState {
-  return cloneScenario(state)
 }

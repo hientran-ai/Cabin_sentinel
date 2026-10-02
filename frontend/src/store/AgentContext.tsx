@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, type ReactNode } from 'react'
-import { acknowledgeEvent, analyzeDemo, BACKEND_CAPABILITIES, executeEmergencyActions, fetchEventHistory, fetchSystemHealth, subscribeToAgentState, updateSimulation, USE_MOCKS } from '../api/client'
-import { cloneScenario, mockHealth } from '../mocks/scenarios'
+import { acknowledgeEvent, analyzeDemo, BACKEND_CAPABILITIES, executeEmergencyActions, fetchEventHistory, fetchSystemHealth, subscribeToAgentState, updateSimulation } from '../api/client'
 import type { AcknowledgementReason, AgentState, ConnectionState, DemoScenario, SimulationUpdate, SystemHealth, ToolResult } from '../types/agent'
 
 interface StoreState {
@@ -31,17 +30,30 @@ type Action =
   | { type: 'ANALYSIS_START' }
   | { type: 'ANALYSIS_END'; state?: AgentState; error?: string }
 
-const initialAgentState = USE_MOCKS ? cloneScenario('SAFE') : {
-  ...cloneScenario('ERROR'),
+const initialAgentState: AgentState = {
+  vehicleId: import.meta.env.VITE_VEHICLE_ID || 'CAR_1',
+  revision: 0,
   eventId: 'initializing',
+  timestamp: new Date(0).toISOString(),
+  riskState: 'ERROR',
   ruleId: 'SYSTEM-INIT',
   reason: 'Waiting for the first verified state from the Edge unit.',
-  cameraStatus: 'NO_FEED' as const,
+  cameraStatus: 'NO_FEED',
+  sensors: { temperatureC: 0, engine: 'UNKNOWN', doorsLocked: false },
+  objects: [],
+  occupancyState: 'UNKNOWN',
+  occupancyReasonCode: 'SOURCE_UNAVAILABLE',
+  evidenceConflicts: [],
+  seatEvidence: [],
+  seatConfigurationState: 'NOT_ENOUGH_EVIDENCE',
+  durationSeconds: 0,
+  internetAvailable: false,
   dataAgeMs: 3001,
-  timestamp: new Date(0).toISOString(),
+  toolResults: [],
+  acknowledgementStatus: 'NONE',
 }
 
-const initialHealth: SystemHealth = USE_MOCKS ? mockHealth : {
+const initialHealth: SystemHealth = {
   edgeConnected: false,
   internetAvailable: false,
   cameraStatus: 'NO_FEED',

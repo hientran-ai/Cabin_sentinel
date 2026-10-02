@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "typecheck": "tsc -b --pretty false",
-    "test": "vitest run",
+    "test": "vitest run --config vitest.config.mjs --configLoader runner",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -2,6 +2,17 @@
 
 Date: 2026-10-02
 
+## Implementation update
+
+The runtime fixture/demo application has been removed. `frontend/` now always
+uses the confirmed V1 backend; owner web, operations web and mobile also consume
+V1 state/events/health for one configured vehicle and fail closed when the
+backend is unavailable. Product routes whose authenticated APIs do not yet
+exist render explicit unavailable states. See
+[`FRONTEND_BACKEND_REQUIREMENTS.md`](FRONTEND_BACKEND_REQUIREMENTS.md) for the
+required production API backlog and
+[`FRONTEND_DEPLOYMENT.md`](FRONTEND_DEPLOYMENT.md) for build/release details.
+
 ## 1. Current architecture discovered
 
 - `frontend/` is a React 19 + Vite + TypeScript demo/dashboard with Vitest and Testing Library.
