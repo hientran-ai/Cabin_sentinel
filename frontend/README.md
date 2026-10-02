@@ -29,6 +29,8 @@ VITE_VEHICLE_ID=CAR_1
 
 The backend must include `http://localhost:5173` in `CORS_ORIGINS`. Start it
 with the required model and configuration described in the root documentation.
+For a public image demo with Cloudflare Pages, follow
+[`docs/CLOUDFLARE_DEMO_DEPLOY.md`](../docs/CLOUDFLARE_DEMO_DEPLOY.md).
 
 ## Implemented backend contract
 
@@ -42,6 +44,12 @@ with the required model and configuration described in the root documentation.
 The API adapter maps the backend's `risk_level`, freshness, `class_name`,
 `action_results`, `simulated` and `pending_human_confirmation` fields into the
 central frontend types. It does not treat simulated tools as physical success.
+
+The Decision intelligence panel also exposes backend reasoning metadata without
+recomputing it in the browser: revision and risk transition, occupancy state and
+reason code, radar evidence, evidence conflicts, child-seat evidence and
+configuration, reasoning latency, and the pending/expired/canceled unlock
+request lifecycle.
 
 The current backend does **not** expose manual emergency-action,
 acknowledgement, or JSON simulation endpoints. Those controls are disabled in

@@ -1,9 +1,10 @@
-import type { AgentState, CameraStatus, DetectedObject, RiskState, ToolResult } from '../types/agent'
-import type { BackendActionResult, BackendCabinState, BackendDemoResponse } from '../types/backend'
+import type { AgentState, CameraStatus, DetectedObject, EvidenceConflict, OccupancyState, RiskState, SeatEvidence, ToolResult, UnlockRequest } from '../types/agent'
+import type { BackendActionResult, BackendCabinState, BackendDemoResponse, BackendEvidenceConflict, BackendSeatEvidence, BackendUnlockRequest } from '../types/backend'
 
 type UnknownRecord = Record<string, unknown>
 const riskStates: RiskState[] = ['SAFE', 'NOTICE', 'WARNING', 'CRITICAL', 'ERROR']
 const cameraStates: CameraStatus[] = ['OK', 'BLOCKED', 'NO_FEED']
+const occupancyStates: OccupancyState[] = ['PRESENT', 'SUSPECTED', 'ABSENT', 'UNKNOWN']
 const objectClasses: DetectedObject['class'][] = ['person', 'dog', 'cat', 'cell_phone', 'backpack']
 const toolActions: ToolResult['action'][] = ['TRIGGER_HORN', 'CRACK_WINDOW', 'SEND_SMS', 'SEND_NOTIFICATION', 'REQUEST_UNLOCK']
 const toolStatuses: ToolResult['status'][] = ['IDLE', 'RUNNING', 'SUCCESS', 'FAILED', 'SIMULATED', 'PENDING_CONFIRMATION']
@@ -25,6 +26,13 @@ function boolean(value: unknown, fallback: boolean): boolean {
   if (value === 'true') return true
   if (value === 'false') return false
   return fallback
+}
+
+function optionalBoolean(value: unknown): boolean | undefined {
+  if (typeof value === 'boolean') return value
+  if (value === 'true') return true
+  if (value === 'false') return false
+  return undefined
 }
 
 function adaptObjects(value: unknown, bboxOptional = false): DetectedObject[] {
@@ -75,6 +83,73 @@ function adaptBackendTools(value: BackendActionResult[] | undefined): ToolResult
   })
 }
 
+function adaptSeatEvidence(value: BackendSeatEvidence[] | undefined): SeatEvidence[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => {
+    const evidenceId = text(item.evidence_id, '')
+    if (!evidenceId) return []
+    const orientation = ['REAR_FACING', 'FORWARD_FACING', 'UNKNOWN'].includes(text(item.seat_orientation, ''))
+      ? text(item.seat_orientation, 'UNKNOWN') as SeatEvidence['orientation']
+      : 'UNKNOWN'
+    const quality = ['OK', 'DEGRADED', 'UNKNOWN'].includes(text(item.quality, ''))
+      ? text(item.quality, 'UNKNOWN') as SeatEvidence['quality']
+      : 'UNKNOWN'
+    const confidence = typeof item.orientation_confidence === 'number' && Number.isFinite(item.orientation_confidence)
+      ? item.orientation_confidence
+      : undefined
+    return [{
+      evidenceId,
+      childSeatPresent: optionalBoolean(item.child_seat_present),
+      orientation,
+      orientationConfidence: confidence,
+      position: text(item.seat_position, '') || undefined,
+      observedAt: text(item.observed_at, '') || undefined,
+      source: text(item.source, 'unknown source'),
+      modelVersion: text(item.model_version, '') || undefined,
+      quality,
+    }]
+  })
+}
+
+function conflictDetail(conflict: BackendEvidenceConflict): string {
+  if (conflict.type === 'PRESENCE_DISAGREEMENT') {
+    const radar = conflict.sensor?.radar_presence === true ? 'presence' : conflict.sensor?.radar_presence === false ? 'clear' : 'unknown'
+    const detections = Array.isArray(conflict.vision?.detected_objects) ? conflict.vision.detected_objects.length : 0
+    return `Radar reports ${radar}; Vision reports ${detections} detection${detections === 1 ? '' : 's'}.`
+  }
+  if (conflict.type === 'ORIENTATION_DISAGREEMENT') {
+    const orientations = [...new Set((conflict.seat_evidence ?? []).map((seat) => seat.seat_orientation).filter(Boolean))]
+    return `Seat ${conflict.seat_detection_id ?? 'unknown'} has conflicting orientations${orientations.length ? `: ${orientations.join(' / ')}` : ''}.`
+  }
+  if (conflict.type === 'TIMESTAMP_SKEW') return `Sensor and Vision timestamps differ by ${number(conflict.skew_s).toFixed(1)} seconds.`
+  if (conflict.type === 'CONFIDENCE_REGRESSION') return 'A previously confirmed living-object detection dropped below the confidence threshold.'
+  return text(conflict.type, 'UNKNOWN_CONFLICT').replaceAll('_', ' ').toLowerCase()
+}
+
+function adaptConflicts(value: BackendEvidenceConflict[] | undefined): EvidenceConflict[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => {
+    const type = text(item.type, '')
+    return type ? [{ type, detail: conflictDetail(item) }] : []
+  })
+}
+
+function adaptUnlockRequest(value: BackendUnlockRequest | null | undefined): UnlockRequest | undefined {
+  if (!value) return undefined
+  const requestId = text(value.request_id, '')
+  if (!requestId) return undefined
+  const rawStatus = text(value.status, 'unknown')
+  return {
+    requestId,
+    incidentId: text(value.incident_id, '') || undefined,
+    createdAt: text(value.created_at, '') || undefined,
+    expiresAt: text(value.expires_at, '') || undefined,
+    status: ['pending', 'expired', 'canceled'].includes(rawStatus)
+      ? rawStatus as UnlockRequest['status']
+      : 'unknown',
+  }
+}
+
 function backendDataAgeMs(payload: BackendCabinState): number {
   const ages = [payload.freshness?.sensor?.age_s, payload.freshness?.vision?.age_s]
     .filter((age): age is number => typeof age === 'number' && Number.isFinite(age))
@@ -86,8 +161,12 @@ export function adaptBackendState(payload: BackendCabinState): AgentState {
   const risk = text(payload.risk_level, 'ERROR').toUpperCase()
   const cameraRaw = text(payload.camera_status, 'NO_FEED').toUpperCase()
   const revision = number(payload.revision)
+  const previousRisk = text(payload.previous_risk_level, '').toUpperCase()
+  const occupancy = text(payload.occupancy_state, 'UNKNOWN').toUpperCase()
   return {
     vehicleId: text(payload.vehicle_id, 'unknown'),
+    revision,
+    previousRiskState: riskStates.includes(previousRisk as RiskState) ? previousRisk as RiskState : undefined,
     eventId: text(payload.incident_id, '') || `${text(payload.vehicle_id, 'unknown')}-r${revision}`,
     timestamp: text(payload.evaluated_at ?? payload.freshness?.as_of, new Date().toISOString()),
     riskState: riskStates.includes(risk as RiskState) ? risk as RiskState : 'ERROR',
@@ -102,6 +181,15 @@ export function adaptBackendState(payload: BackendCabinState): AgentState {
       doorsLocked: boolean(payload.doors_locked, true),
     },
     objects: adaptObjects(payload.detected_objects, true),
+    occupancyState: occupancyStates.includes(occupancy as OccupancyState) ? occupancy as OccupancyState : 'UNKNOWN',
+    occupancyReasonCode: text(payload.occupancy_reason_code, 'SOURCE_UNAVAILABLE'),
+    radarPresence: optionalBoolean(payload.radar_presence),
+    evidenceConflicts: adaptConflicts(payload.evidence_conflicts),
+    seatEvidence: adaptSeatEvidence(payload.seat_evidence),
+    seatConfigurationState: text(payload.seat_configuration_state, 'NOT_ENOUGH_EVIDENCE'),
+    reasoningLatencyMs: typeof payload.reasoning_latency_ms === 'number' && Number.isFinite(payload.reasoning_latency_ms) ? payload.reasoning_latency_ms : undefined,
+    decisionCurrent: typeof payload.decision_current === 'boolean' ? payload.decision_current : undefined,
+    unlockRequest: adaptUnlockRequest(payload.unlock_request),
     durationSeconds: 0,
     internetAvailable: true,
     dataAgeMs: backendDataAgeMs(payload),
@@ -121,9 +209,11 @@ export function adaptDemoResponse(payload: BackendDemoResponse): AgentState {
     temperature: payload.vehicle_state.temperature,
     engine_status: payload.vehicle_state.engine_status,
     doors_locked: payload.vehicle_state.doors_locked,
+    radar_presence: payload.vehicle_state.radar_presence,
     camera_status: 'OK',
     detected_objects: payload.vision.detections,
     action_results: payload.actions,
+    occupancy_state: payload.reasoning.occupancy_state,
     evaluated_at: payload.vehicle_state.timestamp,
     freshness: payload.reasoning.freshness,
     decision_current: payload.reasoning.decision_current,
@@ -153,8 +243,12 @@ export function adaptAgentState(payload: unknown): AgentState {
   const sensors = record(raw.sensors ?? raw.sensor_state)
   const risk = text(raw.riskState ?? raw.risk_state ?? raw.status, 'ERROR').toUpperCase()
   const camera = text(raw.cameraStatus ?? raw.camera_status, 'NO_FEED').toUpperCase()
+  const previousRisk = text(raw.previousRiskState ?? raw.previous_risk_level, '').toUpperCase()
+  const occupancy = text(raw.occupancyState ?? raw.occupancy_state, 'UNKNOWN').toUpperCase()
   return {
     vehicleId: text(raw.vehicleId ?? raw.vehicle_id, 'unknown'),
+    revision: number(raw.revision),
+    previousRiskState: riskStates.includes(previousRisk as RiskState) ? previousRisk as RiskState : undefined,
     eventId: text(raw.eventId ?? raw.event_id, 'unknown-event'),
     timestamp: text(raw.timestamp, new Date().toISOString()),
     riskState: riskStates.includes(risk as RiskState) ? risk as RiskState : 'ERROR',
@@ -167,6 +261,15 @@ export function adaptAgentState(payload: unknown): AgentState {
       doorsLocked: boolean(sensors.doorsLocked ?? sensors.doors_locked, true),
     },
     objects: adaptObjects(raw.objects),
+    occupancyState: occupancyStates.includes(occupancy as OccupancyState) ? occupancy as OccupancyState : 'UNKNOWN',
+    occupancyReasonCode: text(raw.occupancyReasonCode ?? raw.occupancy_reason_code, 'SOURCE_UNAVAILABLE'),
+    radarPresence: optionalBoolean(raw.radarPresence ?? raw.radar_presence),
+    evidenceConflicts: Array.isArray(raw.evidenceConflicts) ? raw.evidenceConflicts as EvidenceConflict[] : [],
+    seatEvidence: Array.isArray(raw.seatEvidence) ? raw.seatEvidence as SeatEvidence[] : [],
+    seatConfigurationState: text(raw.seatConfigurationState ?? raw.seat_configuration_state, 'NOT_ENOUGH_EVIDENCE'),
+    reasoningLatencyMs: typeof (raw.reasoningLatencyMs ?? raw.reasoning_latency_ms) === 'number' ? raw.reasoningLatencyMs as number ?? raw.reasoning_latency_ms as number : undefined,
+    decisionCurrent: typeof (raw.decisionCurrent ?? raw.decision_current) === 'boolean' ? (raw.decisionCurrent ?? raw.decision_current) as boolean : undefined,
+    unlockRequest: raw.unlockRequest as UnlockRequest | undefined,
     evidenceFrameUrl: text(raw.evidenceFrameUrl ?? raw.evidence_frame_url, '') || undefined,
     durationSeconds: number(raw.durationSeconds ?? raw.duration_seconds),
     internetAvailable: boolean(raw.internetAvailable ?? raw.internet_available, false),

@@ -1,8 +1,9 @@
-import { Activity, CarFront, FlaskConical, HeartPulse, History, LayoutDashboard } from 'lucide-react'
+import { Activity, BrainCircuit, CarFront, FlaskConical, HeartPulse, History, LayoutDashboard } from 'lucide-react'
 
 const links = [
   { href: '#overview', label: 'Overview', Icon: LayoutDashboard },
   { href: '#live-cabin', label: 'Live cabin', Icon: CarFront },
+  { href: '#decision-intelligence', label: 'Decision data', Icon: BrainCircuit },
   { href: '#events', label: 'Event history', Icon: History },
   { href: '#health', label: 'Device health', Icon: HeartPulse },
   { href: '#backend-demo', label: 'Backend demo', Icon: FlaskConical },

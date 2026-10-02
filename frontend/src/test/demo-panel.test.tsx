@@ -25,4 +25,10 @@ describe('DemoAnalysisPanel', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Only JPEG and PNG')
     expect(analyze).not.toHaveBeenCalled()
   })
+
+  it('keeps upload disabled until the Vision model is ready', () => {
+    render(<DemoAnalysisPanel pending={false} visionReady={false} onAnalyze={vi.fn()} />)
+    expect(screen.getByRole('status')).toHaveTextContent('Vision model unavailable')
+    expect(screen.getByRole('button', { name: /Analyze with CabinSentinel/ })).toBeDisabled()
+  })
 })

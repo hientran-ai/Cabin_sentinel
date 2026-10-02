@@ -180,8 +180,12 @@ def main():
     with open(log_file, "a", encoding="utf-8") as f:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
-    # Output valid JSON (required by some tools like Gemini)
-    print(json.dumps({"status": "logged"}))
+    # Codex treats JSON-looking stdout as a hook control response and rejects
+    # arbitrary objects such as {"status": "logged"}. Exit 0 with no output,
+    # which Codex defines as a successful hook run. Other integrations still
+    # receive the JSON acknowledgement they expect.
+    if tool != "codex":
+        print(json.dumps({"status": "logged"}))
 
 
 if __name__ == "__main__":

@@ -164,7 +164,20 @@ export function AgentProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void fetchEventHistory().then((history) => dispatch({ type: 'HISTORY', history })).catch(() => undefined)
-    void fetchSystemHealth().then((health) => dispatch({ type: 'HEALTH', health })).catch(() => undefined)
+  }, [])
+
+  useEffect(() => {
+    const refreshHealth = () => {
+      void fetchSystemHealth()
+        .then((health) => dispatch({ type: 'HEALTH', health }))
+        .catch(() => dispatch({ type: 'HEALTH', health: {
+          edgeConnected: false, internetAvailable: false, cameraStatus: 'NO_FEED',
+          lastHeartbeat: new Date().toISOString(),
+        } }))
+    }
+    refreshHealth()
+    const timer = window.setInterval(refreshHealth, 5000)
+    return () => window.clearInterval(timer)
   }, [])
 
   useEffect(() => {
@@ -215,6 +228,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'ANALYSIS_START' })
     try {
       dispatch({ type: 'ANALYSIS_END', state: await analyzeDemo(image, scenario) })
+      void fetchEventHistory().then((history) => dispatch({ type: 'HISTORY', history })).catch(() => undefined)
     } catch (error) {
       dispatch({ type: 'ANALYSIS_END', error: error instanceof Error ? error.message : 'Image analysis failed' })
     }

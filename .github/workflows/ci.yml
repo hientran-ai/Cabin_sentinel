@@ -7,6 +7,25 @@ on:
     branches: [main]
 
 jobs:
+  frontend-platform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install workspace dependencies
+        run: npm ci
+      - name: Install preserved demo dependencies
+        run: npm ci --prefix frontend
+      - name: Typecheck workspace
+        run: npm run typecheck
+      - name: Test workspace and preserved demo
+        run: npm test
+      - name: Build web applications
+        run: npm run build
+
   lint-and-test:
     runs-on: ubuntu-latest
 

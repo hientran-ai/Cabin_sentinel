@@ -2,6 +2,7 @@ export type RiskState = 'SAFE' | 'NOTICE' | 'WARNING' | 'CRITICAL' | 'ERROR'
 export type CameraStatus = 'OK' | 'BLOCKED' | 'NO_FEED'
 export type EngineState = 'ON' | 'OFF' | 'UNKNOWN'
 export type ConnectionState = 'CONNECTED' | 'RECONNECTING' | 'OFFLINE'
+export type OccupancyState = 'PRESENT' | 'SUSPECTED' | 'ABSENT' | 'UNKNOWN'
 export type AcknowledgementReason =
   | 'CABIN_CLEAR'
   | 'OCCUPANT_WITH_OWNER'
@@ -28,8 +29,35 @@ export interface ToolResult {
   latencyMs?: number
 }
 
+export interface EvidenceConflict {
+  type: string
+  detail: string
+}
+
+export interface SeatEvidence {
+  evidenceId: string
+  childSeatPresent?: boolean
+  orientation: 'REAR_FACING' | 'FORWARD_FACING' | 'UNKNOWN'
+  orientationConfidence?: number
+  position?: string
+  observedAt?: string
+  source: string
+  modelVersion?: string
+  quality: 'OK' | 'DEGRADED' | 'UNKNOWN'
+}
+
+export interface UnlockRequest {
+  requestId: string
+  incidentId?: string
+  createdAt?: string
+  expiresAt?: string
+  status: 'pending' | 'expired' | 'canceled' | 'unknown'
+}
+
 export interface AgentState {
   vehicleId: string
+  revision: number
+  previousRiskState?: RiskState
   eventId: string
   timestamp: string
   riskState: RiskState
@@ -38,6 +66,15 @@ export interface AgentState {
   cameraStatus: CameraStatus
   sensors: SensorState
   objects: DetectedObject[]
+  occupancyState: OccupancyState
+  occupancyReasonCode: string
+  radarPresence?: boolean
+  evidenceConflicts: EvidenceConflict[]
+  seatEvidence: SeatEvidence[]
+  seatConfigurationState: string
+  reasoningLatencyMs?: number
+  decisionCurrent?: boolean
+  unlockRequest?: UnlockRequest
   evidenceFrameUrl?: string
   durationSeconds: number
   internetAvailable: boolean

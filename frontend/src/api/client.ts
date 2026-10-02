@@ -61,14 +61,15 @@ export function subscribeToAgentState(
   const poll = async () => {
     if (!active || requestRunning) return
     requestRunning = true
+    const vehicleId = activeVehicleId
     try {
-      const payload = await request<BackendCabinState>(`/api/v1/state/${encodeURIComponent(activeVehicleId)}`)
-      if (active) {
+      const payload = await request<BackendCabinState>(`/api/v1/state/${encodeURIComponent(vehicleId)}`)
+      if (active && vehicleId === activeVehicleId) {
         onState(adaptBackendState(payload))
         onConnection(true)
       }
     } catch (error) {
-      if (active) onConnection(error instanceof ApiRequestError && error.status === 404)
+      if (active && vehicleId === activeVehicleId) onConnection(error instanceof ApiRequestError && error.status === 404)
     } finally {
       requestRunning = false
     }
@@ -124,8 +125,16 @@ export async function analyzeDemo(image: File, scenario: DemoScenario): Promise<
   form.append('image', image)
   form.append('scenario', scenario)
   const response = await request<BackendDemoResponse>('/api/v1/demo/analyze', { method: 'POST', body: form })
-  activeVehicleId = response.vehicle_state.vehicle_id
-  return adaptDemoResponse(response)
+  const vehicleId = response.vehicle_state.vehicle_id
+  const demoState = adaptDemoResponse(response)
+  activeVehicleId = vehicleId
+  try {
+    const committed = await request<BackendCabinState>(`/api/v1/state/${encodeURIComponent(vehicleId)}`)
+    return adaptBackendState(committed)
+  } catch {
+    // The synchronous response still contains the committed verdict if the follow-up read fails.
+    return demoState
+  }
 }
 
 export async function fetchEventHistory(): Promise<AgentState[]> {
