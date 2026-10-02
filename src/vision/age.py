@@ -1,5 +1,6 @@
 """Small, offline person-crop classifier. Scores are not calibrated probabilities."""
 
+import copy
 import math
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from torchvision import transforms
 from torchvision.models import mobilenet_v3_small
 
 CLASSES = ["adult", "child"]
+LEGACY_CLASSES = ["adult", "child", "infant"]
 IMAGE_SIZE = 224
 CROP_PADDING = 0.1
 
@@ -57,11 +59,25 @@ def image_transform(training=False):
     )
 
 
-def build_model(backbone=None):
+def merge_age_scores(scores):
+    """Merge historical infant probability into child before making a decision."""
+    return {"adult": scores.get("adult", 0.0),
+            "child": scores.get("child", 0.0) + scores.get("infant", 0.0)}
+
+
+def choose_age(scores, child_threshold=0.5, adult_threshold=0.9):
+    choose_group(0.5, child_threshold, adult_threshold)
+    if not scores or any(not math.isfinite(value) or not 0 <= value <= 1 for value in scores.values()):
+        return "unknown"
+    merged = merge_age_scores(scores)
+    return choose_group(merged["child"], child_threshold, adult_threshold)
+
+
+def build_model(backbone=None, classes=None):
     model = mobilenet_v3_small(weights=None)
     if backbone is not None:
         model.load_state_dict(torch.load(backbone, map_location="cpu", weights_only=True))
-    model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, len(CLASSES))
+    model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, len(CLASSES if classes is None else classes))
     return model
 
 
@@ -70,16 +86,42 @@ class AgeClassifier:
         choose_group(0.5, child_threshold, adult_threshold)
         saved = torch.load(Path(checkpoint), map_location="cpu", weights_only=True)
         if (
-            saved.get("format_version") != 1
-            or saved.get("classes") != CLASSES
+            saved.get("format_version") not in (1, 2)
+            or saved.get("classes") not in (CLASSES, LEGACY_CLASSES)
             or saved.get("image_size") != IMAGE_SIZE
             or saved.get("crop_padding") != CROP_PADDING
             or saved.get("trained_epochs", 0) < 1
+            or (saved.get("format_version") == 2 and not saved.get("domain_adapter"))
         ):
             raise ValueError("Incompatible or untrained age classifier checkpoint")
-        self.model = build_model()
+        self.classes = list(CLASSES)
+        self.model_classes = saved["classes"]
+        if self.model_classes == CLASSES:
+            choose_group(0.5, child_threshold, adult_threshold)
+        self.model = build_model(classes=self.model_classes)
         self.model.load_state_dict(saved["model_state"])
         self.model.eval()
+        self.real_head = None
+        self.domain_gate = None
+        adapter = saved.get("domain_adapter")
+        if adapter is not None:
+            if adapter.get("version") != 1:
+                raise ValueError("Incompatible real-domain age adapter")
+            width = self.model.classifier[0].in_features
+            self.real_head = copy.deepcopy(self.model.classifier)
+            self.real_head.load_state_dict(adapter["real_head_state"])
+            self.real_head.eval()
+            self.domain_gate = nn.Linear(width, 1)
+            self.domain_gate.load_state_dict(adapter["gate_state"])
+            self.domain_gate.eval()
+            self.domain_mean = adapter["feature_mean"]
+            self.domain_scale = adapter["feature_scale"]
+            if (
+                self.domain_mean.shape != (width,) or self.domain_scale.shape != (width,)
+                or not torch.isfinite(self.domain_mean).all() or not torch.isfinite(self.domain_scale).all()
+                or not (self.domain_scale > 0).all()
+            ):
+                raise ValueError("Invalid domain-adapter feature normalization")
         self.transform = image_transform()
         self.child_threshold = child_threshold
         self.adult_threshold = adult_threshold
@@ -97,12 +139,27 @@ class AgeClassifier:
                 crops.append(self.transform(image.crop(rect)))
                 indices.append(index)
         if crops:
-            scores = self.model(torch.stack(crops)).softmax(dim=1).tolist()
-            for index, (adult, child) in zip(indices, scores, strict=True):
+            batch = torch.stack(crops)
+            domains = None
+            if self.domain_gate is None:
+                logits = self.model(batch)
+            else:
+                features = self.model.avgpool(self.model.features(batch)).flatten(1)
+                domains = self.domain_gate((features - self.domain_mean) / self.domain_scale).flatten() >= 0
+                logits = self.model.classifier(features)
+                if domains.any():
+                    logits[domains] = self.real_head(features[domains])
+            scores = logits.softmax(dim=1).tolist()
+            for index, values in zip(indices, scores, strict=True):
+                age_scores = merge_age_scores(dict(zip(self.model_classes, values, strict=True)))
+                group = choose_age(age_scores, self.child_threshold, self.adult_threshold)
                 answers[index] = {
-                    "age_group": choose_group(child, self.child_threshold, self.adult_threshold),
-                    "age_scores": {"adult": adult, "child": child},
+                    "age_group": group,
+                    "age_scores": age_scores,
                 }
+            if domains is not None:
+                for index, real in zip(indices, domains.tolist(), strict=True):
+                    answers[index]["age_domain"] = "real" if real else "synthetic"
         return answers
 
 

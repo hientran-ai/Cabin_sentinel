@@ -2,6 +2,13 @@
 
 Run from the repo root in the virtual environment:
 
+Detector configuration and same-frame comparisons: [person accuracy](person-accuracy.md).
+
+Optional foreground motion detection is available with `--motion`; see
+[motion detection](motion-detection.md) for output fields and limitations.
+Face-blurred MP4 export is available with `--mask-faces --video-output`;
+see [face blurring](face-blurring.md).
+
 ```powershell
 python -m pip install -r requirements-vision.txt
 python scripts/run_vision.py --source data/videos/cabin_test.mp4
@@ -16,8 +23,8 @@ computed from frame index and nominal FPS (constant-frame-rate video).
 Boxes are [x1,y1,x2,y2] in original-image pixels. Frames without detections
 still produce a record with detections: [].
 
-latency_ms now measures CPU detection, detection assembly and optional age
-classification, excluding video decoding and JSON/file writes. Individual
+latency_ms now measures CPU detection, detection assembly and optional age/motion
+stages, excluding video decoding and JSON/file writes. Individual
 detector_latency_ms and age_latency_ms fields separate model stages. Older
 logs measured model.predict only; compare definitions before comparing runs. One warmup
 prediction is excluded; frame 1 is processed again and logged. The summary
@@ -29,7 +36,10 @@ distinguish child/adult. These measurements do not establish precision/recall.
 A frame-count mismatch raises an error and sets complete=false. Partial logs
 from failed/interrupted runs must not be treated as successful output.
 
-Optional child/adult classification: see [SVIRO pipeline](sviro-child-adult.md).
+Optional child/adult classification: see [two-label pipeline](sviro-child-adult.md).
+Historical infant scores are merged into child for existing three-class checkpoints.
+The [binary SVIRO baseline](sviro-child-adult.md) and combined video results below
+describe the previous two-class checkpoint.
 
 ## Combined video smoke test (2026-09-24)
 

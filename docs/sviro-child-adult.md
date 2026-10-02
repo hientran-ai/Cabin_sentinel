@@ -1,5 +1,15 @@
 ﻿# SVIRO child/adult baseline
 
+The system uses two age labels: `child` includes both historical infant and child
+categories; `adult` is unchanged. Existing binary, three-class and domain-adapter
+checkpoints remain usable. For three-class checkpoints, child and infant scores
+are added before thresholding, JSONL output, counts and video overlays. Uncertain
+cases still use `unknown` internally and display `?`.
+
+New preparation/training defaults are `data/sviro-child-adult` and
+`runs/age-child-adult`. Use a fresh output directory when those already exist.
+The metrics below are historical results; this change does not retrain a model.
+
 Run commands from `D:\P-068` using `.venv\Scripts\python.exe`.
 
 ## What is implemented

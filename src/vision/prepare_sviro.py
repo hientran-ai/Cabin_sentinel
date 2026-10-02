@@ -149,7 +149,7 @@ def prepare(source, output, audit_only=False, seed=68):
         "missing_rgb_scenes": missing_rgb,
         "seed": seed,
         "crop_padding": CROP_PADDING,
-        "mapping": {"1": "child (infant)", "2": "child", "3": "adult"},
+        "mapping": {"1": "child", "2": "child", "3": "adult"},
         "source": "https://sviro.kl.dfki.de/data/",
         "limitations": "Synthetic single-vehicle data; scene split does not separate train/val human identities.",
     }
@@ -160,7 +160,7 @@ def prepare(source, output, audit_only=False, seed=68):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, default=Path("data/sviro/extracted"))
-    parser.add_argument("--output", type=Path, default=Path("data/sviro-child"))
+    parser.add_argument("--output", type=Path, default=Path("data/sviro-child-adult"))
     parser.add_argument("--audit-only", action="store_true")
     parser.add_argument("--seed", type=int, default=68)
     args = parser.parse_args()

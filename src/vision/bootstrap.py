@@ -47,8 +47,8 @@ def extract_archives(dataset):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", type=Path, default=Path("data/sviro"))
-    parser.add_argument("--crops", type=Path, default=Path("data/sviro-child"))
-    parser.add_argument("--output", type=Path, default=Path("runs/age-baseline"))
+    parser.add_argument("--crops", type=Path, default=Path("data/sviro-child-adult"))
+    parser.add_argument("--output", type=Path, default=Path("runs/age-child-adult"))
     parser.add_argument("--backbone", type=Path, default=Path("data/models/mobilenet_v3_small-047dcff4.pth"))
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--wait", action="store_true", help="Wait up to 12 hours for the separate downloader")

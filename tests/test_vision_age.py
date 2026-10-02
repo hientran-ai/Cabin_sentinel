@@ -9,7 +9,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from src.vision.age import AgeClassifier, apply_age, build_model, choose_group, padded_box
+from src.vision.age import AgeClassifier, apply_age, build_model, choose_age, choose_group, padded_box
 from src.vision.prepare_sviro import labelled_boxes, prepare, scene_info, split_for
 
 
@@ -21,6 +21,56 @@ class AgeDecisionsTest(unittest.TestCase):
         self.assertEqual(choose_group(float("nan")), "unknown")
         with self.assertRaises(ValueError):
             choose_group(0.5, 0.4, 0.6)
+
+    def test_merged_child_decisions(self):
+        self.assertEqual(choose_age({"adult": 0.1, "child": 0.2, "infant": 0.7}), "child")
+        self.assertEqual(choose_age({"adult": 0.1, "child": 0.7, "infant": 0.2}), "child")
+        self.assertEqual(choose_age({"adult": 0.8, "child": 0.1, "infant": 0.1}), "unknown")
+        self.assertEqual(choose_age({"adult": 0.95, "child": 0.03, "infant": 0.02}), "adult")
+        with self.assertRaises(ValueError):
+            choose_age({"infant": 1.0}, child_threshold=0)
+
+        self.assertEqual(choose_age({"adult": 0.45, "child": 0.3, "infant": 0.25}), "child")
+
+    def test_legacy_checkpoint(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "legacy.pt"
+            torch.save(
+                {
+                    "format_version": 1,
+                    "classes": ["adult", "child"],
+                    "image_size": 224,
+                    "crop_padding": 0.1,
+                    "trained_epochs": 1,
+                    "model_state": build_model(classes=["adult", "child"]).state_dict(),
+                },
+                path,
+            )
+            classifier = AgeClassifier(path)
+            self.assertEqual(classifier.classes, ["adult", "child"])
+            result = classifier.classify(np.zeros((64, 64, 3), dtype=np.uint8), [[0, 0, 32, 64]])
+            self.assertEqual(set(result[0]["age_scores"]), {"adult", "child"})
+
+    def test_infant_checkpoint_outputs_only_binary_scores(self):
+        torch.set_num_threads(2)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "infant.pt"
+            model = build_model(classes=["adult", "child", "infant"])
+            with torch.no_grad():
+                for parameter in model.parameters():
+                    parameter.zero_()
+                model.classifier[-1].bias[2] = 6
+            torch.save({"format_version": 1, "classes": ["adult", "child", "infant"],
+                        "image_size": 224, "crop_padding": 0.1, "trained_epochs": 1,
+                        "model_state": model.state_dict()}, path)
+            classifier = AgeClassifier(path)
+            age = classifier.classify(np.zeros((64, 64, 3), np.uint8), [[0, 0, 64, 64]])[0]
+            self.assertEqual(classifier.classes, ["adult", "child"])
+            self.assertEqual(age["age_group"], "child")
+            self.assertEqual(set(age["age_scores"]), {"adult", "child"})
+            result = apply_age({"class": "person", "confidence": .8}, age)
+            self.assertEqual(result["class"], "child")
+            self.assertAlmostEqual(result["confidence"], .8 * age["age_scores"]["child"])
 
     def test_crop_clips_and_rejects_invalid_geometry(self):
         self.assertEqual(padded_box([-3, 0, 90, 100], 100, 100), (0, 0, 100, 100))
@@ -45,11 +95,11 @@ class AgeDecisionsTest(unittest.TestCase):
             path = Path(folder) / "fixture.pt"
             saved = {
                 "format_version": 1,
-                "classes": ["adult", "child"],
+                "classes": ["adult", "child", "infant"],
                 "image_size": 224,
                 "crop_padding": 0.1,
                 "trained_epochs": 0,
-                "model_state": build_model().state_dict(),
+                "model_state": build_model(classes=["adult", "child", "infant"]).state_dict(),
             }
             torch.save(saved, path)
             with self.assertRaises(ValueError):
@@ -75,6 +125,8 @@ class SviroPreparationTest(unittest.TestCase):
         self.assertEqual([r["class"] for r in records], ["child", "adult"])
         self.assertEqual(records[0]["sviro_seat_label"], 1)
         self.assertFalse(rejected)
+        records, _ = labelled_boxes(mask, [[3, 2, 2, 17, 17]], (2, 6, 3))
+        self.assertEqual(records[0]["class"], "child")
 
     def test_empty_child_seat_cannot_become_child(self):
         mask = np.full((20, 20), 226, dtype=np.uint8)

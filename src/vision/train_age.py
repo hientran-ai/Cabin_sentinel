@@ -11,30 +11,30 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torchvision.datasets import ImageFolder
 
-from src.vision.age import CLASSES, CROP_PADDING, IMAGE_SIZE, build_model, choose_group, image_transform
+from src.vision.age import CLASSES, CROP_PADDING, IMAGE_SIZE, build_model, choose_age, image_transform
 
 
 @torch.inference_mode()
 def evaluate(model, loader, device):
     model.eval()
-    confusion = [[0, 0], [0, 0]]
-    decisions = {name: {"adult": 0, "child": 0, "unknown": 0} for name in CLASSES}
+    confusion = [[0] * len(CLASSES) for _ in CLASSES]
+    decisions = {name: {decision: 0 for decision in [*CLASSES, "unknown"]} for name in CLASSES}
     for images, labels in loader:
         probabilities = model(images.to(device)).softmax(dim=1).cpu()
         for label, scores in zip(labels.tolist(), probabilities.tolist(), strict=True):
-            predicted = int(scores[1] > scores[0])
+            predicted = max(range(len(CLASSES)), key=scores.__getitem__)
             confusion[label][predicted] += 1
-            decisions[CLASSES[label]][choose_group(scores[1])] += 1
+            decisions[CLASSES[label]][choose_age(dict(zip(CLASSES, scores, strict=True)))] += 1
     support = [sum(row) for row in confusion]
     if not all(support):
-        raise ValueError("Evaluation must contain both adult and child examples")
-    recalls = [confusion[i][i] / support[i] for i in range(2)]
+        raise ValueError("Evaluation must contain both child and adult examples")
+    recalls = [confusion[i][i] / support[i] for i in range(len(CLASSES))]
     return {
         "confusion_matrix_actual_rows": confusion,
         "classes": CLASSES,
         "adult_recall_argmax": recalls[0],
         "child_recall_argmax": recalls[1],
-        "balanced_accuracy_argmax": sum(recalls) / 2,
+        "balanced_accuracy_argmax": sum(recalls) / len(CLASSES),
         "decisions_at_default_thresholds": decisions,
         "child_threshold": 0.5,
         "adult_threshold": 0.9,
@@ -59,7 +59,7 @@ def train(data, output, backbone, epochs=5, batch_size=32, seed=68, device="cpu"
         for split in ("train", "val", "test")
     }
     for split, dataset in datasets.items():
-        if dataset.classes != CLASSES or not all(dataset.targets.count(i) for i in range(2)):
+        if dataset.classes != CLASSES or not all(dataset.targets.count(i) for i in range(len(CLASSES))):
             raise ValueError(f"{split} must contain adult and child classes")
     loaders = {
         split: DataLoader(
@@ -75,8 +75,8 @@ def train(data, output, backbone, epochs=5, batch_size=32, seed=68, device="cpu"
     model = build_model(backbone).to(device)
     for parameter in model.features.parameters():
         parameter.requires_grad_(False)
-    counts = torch.tensor([datasets["train"].targets.count(i) for i in range(2)], dtype=torch.float32)
-    criterion = nn.CrossEntropyLoss(weight=(counts.sum() / (2 * counts)).to(device))
+    counts = torch.tensor([datasets["train"].targets.count(i) for i in range(len(CLASSES))], dtype=torch.float32)
+    criterion = nn.CrossEntropyLoss(weight=(counts.sum() / (len(CLASSES) * counts)).to(device))
     optimizer = torch.optim.AdamW(model.classifier.parameters(), lr=0.001)
     best, history = -1, []
     for epoch in range(1, epochs + 1):
@@ -127,7 +127,7 @@ def train(data, output, backbone, epochs=5, batch_size=32, seed=68, device="cpu"
         "test": test_metrics,
         "limitations": [
             "Synthetic BMW X5 only; requires held-out real-cabin evaluation.",
-            "Infant and child are combined into child.",
+            "Infant/child labels describe SVIRO seat categories, not exact chronological ages.",
             "Empty child seats are excluded, not treated as adults.",
             "Detector misses cannot be recovered by the crop classifier.",
             "Default thresholds are provisional and scores are not calibrated.",
@@ -140,8 +140,8 @@ def train(data, output, backbone, epochs=5, batch_size=32, seed=68, device="cpu"
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data", type=Path, default=Path("data/sviro-child"))
-    parser.add_argument("--output", type=Path, default=Path("runs/age-baseline"))
+    parser.add_argument("--data", type=Path, default=Path("data/sviro-child-adult"))
+    parser.add_argument("--output", type=Path, default=Path("runs/age-child-adult"))
     parser.add_argument("--backbone", type=Path, default=Path("data/models/mobilenet_v3_small-047dcff4.pth"))
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--batch-size", type=int, default=32)
