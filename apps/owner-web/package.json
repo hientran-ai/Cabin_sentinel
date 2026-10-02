@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "scripts": { "dev": "vite", "build": "tsc -b && vite build", "typecheck": "tsc -b --pretty false" },
+  "scripts": { "dev": "vite", "build": "tsc -b && vite build", "typecheck": "tsc -b --pretty false", "test": "vitest run --config vitest.config.ts" },
   "dependencies": {
     "@cabinsentinel/api-client": "*", "@cabinsentinel/contracts": "*", "@cabinsentinel/design-tokens": "*", "@cabinsentinel/domain": "*",
-    "@tanstack/react-query": "^5.90.2", "react": "^19.2.0", "react-dom": "^19.2.0", "react-router-dom": "^7.9.3"
+    "@tanstack/react-query": "^5.90.2", "react": "19.1.0", "react-dom": "19.1.0", "react-router-dom": "^7.9.3"
   },
-  "devDependencies": { "@types/react": "^19.2.0", "@types/react-dom": "^19.2.0", "@vitejs/plugin-react": "^6.0.0", "typescript": "~6.0.2", "vite": "^8.0.0" }
+  "devDependencies": { "@types/react": "^19.2.0", "@types/react-dom": "^19.2.0", "@vitejs/plugin-react": "^6.0.0", "typescript": "~6.0.2", "vite": "^8.0.0", "vitest": "^3.2.7" }
 }

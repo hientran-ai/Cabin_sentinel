@@ -14,7 +14,7 @@
     "build:mobile:production:android": "npm run eas:production:android --workspace @cabinsentinel/mobile",
     "build:mobile:production:ios": "npm run eas:production:ios --workspace @cabinsentinel/mobile",
     "typecheck": "npm run typecheck --workspaces --if-present && npm --prefix frontend run typecheck",
-    "test": "npm run test --workspace @cabinsentinel/api-client --workspace @cabinsentinel/domain --workspace @cabinsentinel/mobile && npm --prefix frontend test",
+    "test": "npm run test --workspace @cabinsentinel/api-client --workspace @cabinsentinel/domain --workspace @cabinsentinel/mobile --workspace @cabinsentinel/owner-web && npm --prefix frontend test",
     "lint": "oxlint apps packages && npm --prefix frontend run lint",
     "validate:frontend": "npm --prefix frontend run typecheck && npm --prefix frontend test && npm --prefix frontend run build"
   },
