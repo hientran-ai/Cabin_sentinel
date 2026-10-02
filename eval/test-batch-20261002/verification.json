@@ -1,0 +1,62 @@
+[
+  {
+    "name": "instagram",
+    "decoded_frames": 50,
+    "counts": {
+      "person": 19,
+      "cat": 0,
+      "dog": 0,
+      "adult": 74,
+      "child": 9,
+      "infant": 0
+    }
+  },
+  {
+    "name": "funny-funny",
+    "decoded_frames": 50,
+    "counts": {
+      "person": 8,
+      "cat": 0,
+      "dog": 0,
+      "adult": 50,
+      "child": 0,
+      "infant": 40
+    }
+  },
+  {
+    "name": "people-original",
+    "decoded_frames": 50,
+    "counts": {
+      "person": 19,
+      "cat": 0,
+      "dog": 0,
+      "adult": 58,
+      "child": 6,
+      "infant": 0
+    }
+  },
+  {
+    "name": "family-vacation",
+    "decoded_frames": 50,
+    "counts": {
+      "person": 63,
+      "cat": 0,
+      "dog": 0,
+      "adult": 59,
+      "child": 21,
+      "infant": 0
+    }
+  },
+  {
+    "name": "you-would-swear",
+    "decoded_frames": 50,
+    "counts": {
+      "person": 20,
+      "cat": 0,
+      "dog": 0,
+      "adult": 79,
+      "child": 0,
+      "infant": 0
+    }
+  }
+]

@@ -1,0 +1,65 @@
+{
+  "source": "data\\videos\\test-batch-20261002\\people-original-sample.mp4",
+  "model": "yolov8s.pt",
+  "age_classifier": "runs\\age-three-class\\best.pt",
+  "age_thresholds": {
+    "child": 0.5,
+    "adult": 0.9,
+    "infant": 0.5
+  },
+  "device": "cpu",
+  "torch_threads": 2,
+  "ultralytics_version": "8.4.159",
+  "imgsz": 640,
+  "confidence_threshold": 0.4,
+  "nms_iou_threshold": 0.5,
+  "video_fps": 10.0,
+  "expected_frames": 50,
+  "processed_frames": 50,
+  "complete": true,
+  "frames_with_detections": 50,
+  "detections_by_class": {
+    "person": 19,
+    "cat": 0,
+    "dog": 0,
+    "adult": 58,
+    "child": 6,
+    "infant": 0
+  },
+  "latency_mean_ms": 1256.4841439994052,
+  "latency_p95_ms": 1780.0586149998705,
+  "latency_definition": "Detector plus optional age/motion stages and detection assembly; excludes decoding, serialization and writing",
+  "warmup_predictions_excluded": 1,
+  "processing_elapsed_seconds": 68.23957450001035,
+  "processing_fps": 0.7327126578140141,
+  "motion": {
+    "algorithm": "MOG2",
+    "max_processing_width": 640,
+    "warmup_frames": 10,
+    "min_area_ratio": 0.001,
+    "moving_threshold": 0.02,
+    "ready_frames": 40,
+    "warming_up_frames": 10,
+    "global_change_frames": 0,
+    "frames_with_motion": 40,
+    "latency_mean_ms": 36.59749799990095,
+    "latency_p95_ms": 45.417659980012104
+  },
+  "privacy": {
+    "method": "YuNet plus smooth feathered oval blur",
+    "face_model": "data\\models\\face_detection_yunet_2023mar.onnx",
+    "face_threshold": 0.3,
+    "video_output": "data\\videos\\test-batch-20261002\\people-original-preview.mp4",
+    "video_codec": "h264",
+    "overlay": "infant/child/adult; ? marks below-threshold argmax; motion status",
+    "exported_frames": 50,
+    "export_size": [
+      640,
+      392
+    ],
+    "detected_faces_across_frames": 75,
+    "latency_mean_ms": 97.08337600226514,
+    "latency_p95_ms": 133.0392399802804,
+    "audio_preserved": false
+  }
+}
