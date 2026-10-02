@@ -11,8 +11,9 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
 
-if [ -x "/Users/mac/BUILD_PHASE/.venv/bin/python" ]; then
-  PY="/Users/mac/BUILD_PHASE/.venv/bin/python"
+# Optional shared workspace venv, e.g. export BUILD_PHASE_ROOT=~/BUILD_PHASE
+if [ -n "${BUILD_PHASE_ROOT:-}" ] && [ -x "$BUILD_PHASE_ROOT/.venv/bin/python" ]; then
+  PY="$BUILD_PHASE_ROOT/.venv/bin/python"
 elif [ -x "$REPO_DIR/.venv/bin/python" ]; then
   PY="$REPO_DIR/.venv/bin/python"
 elif command -v python3 >/dev/null 2>&1; then

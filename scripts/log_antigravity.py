@@ -70,7 +70,8 @@ if sys.platform == "win32":
 VN_TZ = timezone(timedelta(hours=7))
 GEMINI_HOME = Path.home() / ".gemini"
 REPO_ROOT = Path(__file__).resolve().parent.parent
-BUILD_PHASE_ROOT = Path("/Users/mac/BUILD_PHASE")
+# Optional shared workspace whose conversations also count as this repo's.
+BUILD_PHASE_ROOT = os.environ.get("BUILD_PHASE_ROOT", "")
 
 # Antigravity has shipped under two folder names; prefer the newer IDE one.
 BRAIN_CANDIDATES = (
@@ -190,7 +191,7 @@ def _conv_matches_repo(cwds: set[str], repo_root_n: str) -> bool:
     roots = {
         repo_root_n,
         _normalize(str(REPO_ROOT)),
-        _normalize(str(BUILD_PHASE_ROOT)),
+        _normalize(BUILD_PHASE_ROOT) if BUILD_PHASE_ROOT else "",
     }
     roots.discard("")
     for target in roots:
