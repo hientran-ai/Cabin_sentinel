@@ -1,0 +1,11 @@
+:root {
+  --cs-font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --cs-ink: #172033;
+  --cs-muted: #5e687b;
+  --cs-surface: #ffffff;
+  --cs-canvas: #f4f6f8;
+  --cs-border: #dce1e8;
+  --cs-accent: #194f63;
+  --cs-focus: #2563eb;
+  --cs-radius: 0.75rem;
+}
