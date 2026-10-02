@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "deploy": "npm run build && wrangler deploy",
     "lint": "oxlint",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run --config vitest.config.mjs --configLoader runner",
@@ -24,10 +25,11 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "jsdom": "^26.0.0",
     "oxlint": "^1.81.0",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
     "vitest": "^3.0.5",
-    "jsdom": "^26.0.0"
+    "wrangler": "^4.146.0"
   }
 }
