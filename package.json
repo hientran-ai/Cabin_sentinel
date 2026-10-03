@@ -4,19 +4,19 @@
   "version": "0.1.0",
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "build:web": "npm run build --workspace @cabinsentinel/owner-web",
-    "deploy:web": "npm run build:web && npx --yes wrangler@4.146.0 deploy",
+    "build": "npm run build --workspaces --if-present && npm --prefix frontend run build",
+    "build:web": "npm --prefix frontend run build",
+    "deploy:web": "npm --prefix frontend run deploy",
     "start:mobile": "npm run start --workspace @cabinsentinel/mobile",
     "typecheck:mobile": "npm run typecheck --workspace @cabinsentinel/mobile",
     "build:mobile:preview:android": "npm run eas:preview:android --workspace @cabinsentinel/mobile",
     "build:mobile:preview:ios": "npm run eas:preview:ios --workspace @cabinsentinel/mobile",
     "build:mobile:production:android": "npm run eas:production:android --workspace @cabinsentinel/mobile",
     "build:mobile:production:ios": "npm run eas:production:ios --workspace @cabinsentinel/mobile",
-    "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspace @cabinsentinel/api-client --workspace @cabinsentinel/domain --workspace @cabinsentinel/mobile --workspace @cabinsentinel/owner-web",
-    "lint": "oxlint apps packages",
-    "validate:frontend": "npm run typecheck --workspace @cabinsentinel/owner-web && npm run test --workspace @cabinsentinel/owner-web && npm run build:web"
+    "typecheck": "npm run typecheck --workspaces --if-present && npm --prefix frontend run typecheck",
+    "test": "npm run test --workspace @cabinsentinel/api-client --workspace @cabinsentinel/domain --workspace @cabinsentinel/mobile --workspace @cabinsentinel/owner-web && npm --prefix frontend test",
+    "lint": "oxlint apps packages && npm --prefix frontend run lint",
+    "validate:frontend": "npm --prefix frontend run typecheck && npm --prefix frontend test && npm --prefix frontend run build"
   },
   "devDependencies": { "oxlint": "^1.81.0" },
   "engines": { "node": ">=20" }
