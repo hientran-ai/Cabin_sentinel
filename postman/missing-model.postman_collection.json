@@ -1,0 +1,77 @@
+{
+  "info": {
+    "name": "CabinSentinel missing model runtime check",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Run against a fresh isolated instance with MODEL_PATH unset. Three iterations must leave session/state/event/action tables empty (inspect DB separately). No model inference or real actuator executes."
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8015"
+    },
+    {
+      "key": "image_path",
+      "value": "",
+      "description": "Set to a local path for the included postman/empty-synthetic.png fixture before sending the request."
+    }
+  ],
+  "item": [
+    {
+      "name": "Missing model readiness is explicit",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 503\",()=>pm.response.to.have.status(503));",
+              "const b=pm.response.json(); pm.test(\"Model unavailable, store ready\",()=>{pm.expect(b.vision).eq(\"unavailable\");pm.expect(b.database).eq(\"ready\");});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Valid image cannot create a session without a model",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{base_url}}/api/v1/demo/analyze",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "scenario",
+              "value": "parked_locked",
+              "type": "text"
+            },
+            {
+              "key": "image",
+              "type": "file",
+              "src": "{{image_path}}",
+              "contentType": "image/png"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 503\",()=>pm.response.to.have.status(503));",
+              "pm.test(\"Explicit unavailable response without credentials\",()=>{const b=pm.response.json();pm.expect(b.detail).eq(\"Vision model unavailable\");pm.expect(b).not.have.property(\"session_token\");});",
+              "pm.test(\"No cache\",()=>pm.expect(pm.response.headers.get(\"Cache-Control\")).eq(\"no-store\"));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
