@@ -3,11 +3,11 @@
 from datetime import timedelta
 
 import pytest
-from tests.fleet_helpers import NOW, sensor, vision
 
 from src.cabinsentinel.actions import MockActions
 from src.cabinsentinel.models import SensorPayload, VisionPayload
 from src.cabinsentinel.service import CabinService
+from tests.fleet_helpers import NOW, sensor, vision
 
 VEHICLE = "VF8-DEMO-01"
 

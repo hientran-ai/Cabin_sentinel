@@ -11,8 +11,8 @@ import gradio as gr
 from PIL import Image
 from starlette.testclient import TestClient
 
-from tests.test_live_camera_sessions import NOW, detector
 from src.cabinsentinel.service import CabinService
+from tests.test_live_camera_sessions import NOW, detector
 
 
 def test_registered_camera_api_upload_sse_and_stop(tmp_path, monkeypatch):
@@ -88,6 +88,7 @@ def test_registered_camera_api_upload_sse_and_stop(tmp_path, monkeypatch):
 def test_camera_yolo_reuses_model_and_selects_allocated_gpu(monkeypatch, tmp_path):
     import sys
     from types import SimpleNamespace
+
     from src.cabinsentinel import camera_gradio as module
 
     path = tmp_path / "existing-model.pt"

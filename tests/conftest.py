@@ -1,11 +1,19 @@
 import importlib.util
+from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
+from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 
+from src.cabinsentinel import fleet_api
+from src.cabinsentinel.api import get_cabin_service
+from src.cabinsentinel.fleet import Fleet
+from src.cabinsentinel.platform_store import PlatformStore
+from src.cabinsentinel.service import CabinService
 from src.main import app
+from tests.fleet_helpers import NOW
 
 # Camera/privacy suites need optional packages (requirements-camera.txt); skip them cleanly otherwise.
 OPTIONAL_SUITES = {
@@ -39,3 +47,21 @@ def mock_llm():
     mock = AsyncMock()
     mock.ainvoke.return_value = AsyncMock(content="Mocked LLM response")
     return mock
+
+
+@pytest.fixture
+def env(tmp_path, monkeypatch):
+    """Platform API harness: real routing, SQLite stores, controllable clock."""
+    clock = [NOW]
+    service = CabinService(tmp_path / "svc.db", clock=lambda: clock[0])
+    store = PlatformStore(tmp_path / "platform.db", clock=lambda: clock[0], signing_key="test-key")
+    fleet = Fleet(service, device_token="legacy-device", device_source="SIMULATED")
+    store.attach(fleet)
+    app.dependency_overrides[fleet_api.get_fleet] = lambda: fleet
+    app.dependency_overrides[get_cabin_service] = lambda: service
+    monkeypatch.setattr(fleet_api, "get_fleet", lambda: fleet)
+    client = TestClient(app)
+    yield SimpleNamespace(client=client, service=service, store=store, fleet=fleet, clock=clock)
+    app.dependency_overrides.clear()
+    service._db.close()
+    store._db.close()

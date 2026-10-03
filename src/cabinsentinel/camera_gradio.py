@@ -1,16 +1,15 @@
 """Additive Gradio API; device clients own camera capture and shutdown."""
 
-import spaces
-
 import logging
 import os
 import sqlite3
 from threading import Lock
 
 import gradio as gr
+import spaces
 
-from src.cabinsentinel.camera import CameraError, CameraSessions
 from src.cabinsentinel.api import get_cabin_service
+from src.cabinsentinel.camera import CameraError, CameraSessions
 from src.vision.preview import FacePreview
 
 logger = logging.getLogger(__name__)
@@ -46,10 +45,11 @@ def infer_frame(image_bytes):
             _provider = (model, device)
         provider = _provider
     model, device = provider
-    import cv2
-    import numpy as np
     from datetime import UTC, datetime
     from time import perf_counter
+
+    import cv2
+    import numpy as np
 
     decoded = cv2.imdecode(np.frombuffer(image_bytes, dtype=np.uint8), cv2.IMREAD_COLOR)
     if decoded is None:

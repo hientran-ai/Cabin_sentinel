@@ -2,7 +2,7 @@
 import importlib
 import importlib.util
 import inspect
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from PIL import Image
@@ -24,13 +24,16 @@ def test_privacy_rejects_untrusted_model_and_corrupt_image(tmp_path, monkeypatch
 
 def test_privacy_preserves_original_and_returns_only_processed_jpeg():
     assert importlib.util.find_spec('src.vision.preview'), 'Privacy preview module missing'
-    from io import BytesIO
     import base64
+    from io import BytesIO
+
     import numpy as np
+
     from src.vision.preview import FacePreview
     original = np.random.default_rng(5).integers(0, 255, (80, 80, 3), dtype=np.uint8)
     image = Image.fromarray(original)
-    buffer = BytesIO(); image.save(buffer, format='PNG')
+    buffer = BytesIO()
+    image.save(buffer, format='PNG')
     seen = []
 
     class Blurrer:
@@ -51,7 +54,7 @@ def test_privacy_preserves_original_and_returns_only_processed_jpeg():
 @pytest.fixture
 def rig(tmp_path):
     assert 'preview_factory' in inspect.signature(CameraSessions).parameters, 'Camera privacy integration missing'
-    clock = [datetime(2026, 10, 3, tzinfo=timezone.utc)]
+    clock = [datetime(2026, 10, 3, tzinfo=UTC)]
     service = CabinService(tmp_path / 'privacy.db', clock=lambda: clock[0])
     yield service, clock
     service._db.close()
