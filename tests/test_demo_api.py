@@ -372,7 +372,7 @@ async def test_cors_only_allows_configured_frontend_origin():
             headers={"origin": "https://unlisted.example", "access-control-request-method": "POST"},
         )
     assert allowed.headers["access-control-allow-origin"] == "http://localhost:3000"
-    assert allowed.headers.get("access-control-allow-credentials") is None
+    assert allowed.headers.get("access-control-allow-credentials") == "true"  # refresh-cookie sessions
     assert denied.headers.get("access-control-allow-origin") is None
 
 

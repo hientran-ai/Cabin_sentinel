@@ -1,7 +1,9 @@
 import logging
 import sqlite3
+import time
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from uuid import uuid4
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,11 +11,15 @@ from fastapi.responses import JSONResponse
 
 from src.api.routes import router
 from src.cabinsentinel import capabilities, fleet_api
+from src.cabinsentinel.admin_api import router as admin_router
 from src.cabinsentinel.api import get_cabin_service
 from src.cabinsentinel.api import router as cabin_router
 from src.cabinsentinel.demo_api import router as demo_router
 from src.cabinsentinel.fleet_api import router as fleet_router
+from src.cabinsentinel.monitoring import metrics
 from src.cabinsentinel.mqtt import SensorSubscriber
+from src.cabinsentinel.platform_api import router as platform_router
+from src.cabinsentinel.platform_store import get_store
 from src.cabinsentinel.service import CabinService
 from src.cabinsentinel.timer import SafetyTimer
 from src.cabinsentinel.upload_limit import DemoUploadLimitMiddleware
@@ -36,6 +42,16 @@ async def lifespan(app: FastAPI):
             logger.exception("Vision model initialization failed; demo endpoint unavailable")
     else:
         logger.warning("MODEL_PATH is unset; Vision demo endpoint unavailable")
+    admin_email = getattr(settings, "bootstrap_admin_email", "")
+    admin_password = getattr(settings, "bootstrap_admin_password", "")
+    if admin_email and admin_password:
+        store = get_store()
+        try:
+            store.create_user(admin_email, admin_password, role="admin",
+                              full_name="Bootstrap admin")
+            logger.info("Bootstrap admin created")
+        except ValueError:
+            pass  # already exists
     timer = SafetyTimer(get_cabin_service())
     timer.start()
     app.state.safety_timer = timer
@@ -73,20 +89,31 @@ app.add_middleware(DemoUploadLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()],
-    allow_credentials=False,
+    allow_credentials=True,  # origins are explicit (production rejects '*'); needed for the HttpOnly refresh cookie
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Correlation-ID"],
 )
 
 app.include_router(router, prefix="/api/v1")
 app.include_router(cabin_router)
 app.include_router(demo_router)
 app.include_router(fleet_router)
+app.include_router(platform_router)
+app.include_router(admin_router)
 
 
 @app.middleware("http")
 async def private_api_responses(request, call_next):
-    response = await call_next(request)
+    request.state.correlation_id = request.headers.get("X-Correlation-ID", "")[:64] or uuid4().hex
+    started = time.perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        metrics.record(request.url.path, 500, (time.perf_counter() - started) * 1000)
+        raise
+    metrics.record(request.url.path, response.status_code, (time.perf_counter() - started) * 1000)
+    response.headers["X-Correlation-ID"] = request.state.correlation_id
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "no-referrer"
     if request.url.path.startswith("/api/"):

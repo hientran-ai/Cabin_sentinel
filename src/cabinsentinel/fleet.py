@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
-ROLES = {"admin", "owner", "guardian", "device"}
+ROLES = {"admin", "operator", "owner", "caregiver", "guardian", "device"}
 TRIP_EVENTS = {"entered_vehicle": "INSIDE", "exited_vehicle": "EXITED"}
 ONLINE_WINDOW_S = 10
 TOKEN_TTL = timedelta(hours=12)
@@ -42,6 +42,9 @@ class Grant:
     expires_at: datetime | None
     trip_id: str | None = None
     source: str | None = None
+    tenant_id: str | None = None
+    vehicle_id: str | None = None  # set for per-device credentials
+    session_id: str | None = None
 
 
 @dataclass
@@ -83,6 +86,7 @@ class Fleet:
         self._trips: dict[str, Trip] = {}
         self._data_source: dict[str, str] = {}
         self._lock = threading.RLock()
+        self.store = None  # PlatformStore attaches itself: persistent accounts, caregivers, devices
         self.device_ingest_enabled = bool(device_token)
         if device_token:
             self._grants[_digest(device_token)] = Grant("device", "device", None, source=device_source)
@@ -101,6 +105,9 @@ class Fleet:
             raise AccessDeniedError("Access token required")
         with self._lock:
             grant = self._grants.get(_digest(token))
+        if grant is None and self.store is not None:
+            grant = self.store.resolve_token(token)
+        with self._lock:
             if grant is None or (grant.expires_at is not None and self.clock() >= grant.expires_at):
                 raise AccessDeniedError("Invalid or expired access token")
             return grant
@@ -109,7 +116,13 @@ class Fleet:
         vehicle = self.vehicles.get(vehicle_id)
         if vehicle is None:
             return False
-        return grant.role == "admin" or (grant.role == "owner" and vehicle["owner"] == grant.subject)
+        if grant.role in {"admin", "operator"}:
+            return grant.tenant_id is None or vehicle.get("tenant_id") == grant.tenant_id
+        if grant.role == "owner":
+            return vehicle["owner"] == grant.subject
+        if grant.role == "caregiver" and self.store is not None:
+            return self.store.caregiver_can_view(grant.subject, vehicle_id)
+        return False
 
     def require_view(self, grant: Grant, vehicle_id: str) -> dict:
         if not self.can_view(grant, vehicle_id):
@@ -118,7 +131,7 @@ class Fleet:
         return self.vehicles[vehicle_id]
 
     def require_device(self, grant: Grant, vehicle_id: str) -> None:
-        if grant.role != "device" or vehicle_id not in self.vehicles:
+        if grant.role != "device" or vehicle_id not in self.vehicles or (grant.vehicle_id and grant.vehicle_id != vehicle_id):
             raise AccessDeniedError("Device credentials required for a registered vehicle")
 
     def note_source(self, vehicle_id: str, source: str | None) -> None:

@@ -22,11 +22,14 @@ router = APIRouter(prefix="/api/v1", tags=["CabinSentinel Fleet"], dependencies=
 
 @lru_cache
 def get_fleet() -> Fleet:
-    return Fleet(
+    fleet = Fleet(
         get_cabin_service(),
         device_token=os.environ.get("CABINSENTINEL_DEVICE_TOKEN") or None,
         device_source=os.environ.get("CABINSENTINEL_DEVICE_SOURCE", "SIMULATED"),
     )
+    from src.cabinsentinel.platform_store import get_store
+    get_store().attach(fleet)
+    return fleet
 
 
 def demo_login_enabled() -> bool:
@@ -89,13 +92,13 @@ def demo_login(payload: DemoLoginInput, fleet: Fleet = Depends(get_fleet)) -> di
 @router.get("/auth/me")
 def who_am_i(grant: Grant = Depends(current_grant), fleet: Fleet = Depends(get_fleet)) -> dict:
     return {"role": grant.role, "subject": grant.subject, "trip_id": grant.trip_id,
-            "vehicle_ids": fleet.visible(grant) if grant.role in {"owner", "admin"} else []}
+            "vehicle_ids": fleet.visible(grant) if grant.role in {"owner", "admin", "operator", "caregiver"} else []}
 
 
 @router.get("/vehicles")
 def list_vehicles(grant: Grant = Depends(current_grant), fleet: Fleet = Depends(get_fleet)) -> dict:
-    if grant.role not in {"owner", "admin"}:
-        raise HTTPException(status_code=403, detail="Owner or admin access required")
+    if grant.role not in {"owner", "admin", "operator", "caregiver"}:
+        raise HTTPException(status_code=403, detail="Owner, caregiver, operator or admin access required")
     vehicles = [fleet.summary(vid) for vid in fleet.visible(grant)]
     return {"as_of": fleet.clock().isoformat(), "role": grant.role, "vehicles": vehicles}
 
@@ -122,6 +125,8 @@ def _ingest(fleet: Fleet, grant: Grant, vehicle_id: str, payload, ingest) -> dic
     before = fleet.service.get_state(vehicle_id)
     state = _guard(lambda: ingest(payload))
     fleet.note_source(vehicle_id, grant.source)
+    if fleet.store is not None and state is not None:
+        fleet.store.record_sample(vehicle_id, fleet.service.get_state_with_freshness(vehicle_id))
     accepted = state is not None and (before is None or state["revision"] != before["revision"])
     return {
         # Replayed sequences/frames return the committed state and run no actions.
