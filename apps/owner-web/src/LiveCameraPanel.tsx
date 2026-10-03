@@ -156,12 +156,12 @@ export function LiveCameraPanel({ locale }: { locale: Locale }) {
     <div className="live-camera-heading"><div><span className="eyebrow">Live camera · YOLO</span><h2>{vi ? 'Bật camera để detect' : 'Turn on camera detection'}</h2></div><span className={`camera-phase phase-${phase.toLowerCase()}`}><i />{phase}</span></div>
     <div className="live-camera-layout">
       <div className="raw-camera-stage">
-        <video ref={videoRef} muted playsInline hidden aria-hidden="true" />
+        <video ref={videoRef} muted playsInline className={privacyPreview ? 'camera-capture-hidden' : 'camera-raw-preview'} aria-label={vi ? 'Camera trực tiếp chưa che mặt' : 'Live unmasked camera'} />
         {privacyPreview && <img className="privacy-camera-preview" src={privacyPreview.data_url} alt={vi ? 'Preview camera đã che mặt' : 'Face-masked camera preview'} />}
-        {!privacyPreview && <div className="camera-empty"><strong>{!active ? (vi ? 'Camera chưa bật' : 'Camera is off') : (vi ? 'Đang chờ preview đã che mặt' : 'Waiting for masked preview')}</strong><span>{!active ? (vi ? 'Cho phép camera rồi nhấn Bật camera.' : 'Grant camera access, then start detection.') : (vi ? 'Ảnh gốc không được hiển thị khi backend chưa trả preview an toàn.' : 'Raw video stays hidden until the backend returns a safe preview.')}</span></div>}
-        <span className={`raw-camera-warning ${privacyPreview ? 'privacy-preview-ready' : ''}`}>{privacyPreview ? (vi ? 'PREVIEW ĐÃ CHE MẶT' : 'FACE-MASKED PREVIEW') : (vi ? 'PREVIEW KHÔNG KHẢ DỤNG' : 'PREVIEW UNAVAILABLE')}</span>
+        {!active && <div className="camera-empty"><strong>{vi ? 'Camera chưa bật' : 'Camera is off'}</strong><span>{vi ? 'Cho phép camera rồi nhấn Bật camera.' : 'Grant camera access, then start detection.'}</span></div>}
+        <span className={`raw-camera-warning ${privacyPreview ? 'privacy-preview-ready' : ''}`}>{privacyPreview ? (vi ? 'PREVIEW ĐÃ CHE MẶT' : 'FACE-MASKED PREVIEW') : active ? (vi ? 'CAMERA ĐANG BẬT · CHƯA CHE MẶT' : 'CAMERA ON · FACE NOT MASKED') : (vi ? 'CAMERA ĐANG TẮT' : 'CAMERA OFF')}</span>
         {phase === 'RUNNING' && <span className="detect-live"><i />LIVE DETECT</span>}
-        {privacyPreview && frame && snapshot.vision_detections.map((detection, index) => detection.bbox && <span className="detection-box" key={`${frame.sequence}-${index}`} style={{ left: `${detection.bbox[0] / frame.width * 100}%`, top: `${detection.bbox[1] / frame.height * 100}%`, width: `${(detection.bbox[2] - detection.bbox[0]) / frame.width * 100}%`, height: `${(detection.bbox[3] - detection.bbox[1]) / frame.height * 100}%` }}><b>{detection.class} {Math.round(detection.confidence * 100)}%</b></span>)}
+        {active && frame && snapshot.vision_detections.map((detection, index) => detection.bbox && <span className="detection-box" key={`${frame.sequence}-${index}`} style={{ left: `${(privacyPreview ? detection.bbox[0] : frame.width - detection.bbox[2]) / frame.width * 100}%`, top: `${detection.bbox[1] / frame.height * 100}%`, width: `${(detection.bbox[2] - detection.bbox[0]) / frame.width * 100}%`, height: `${(detection.bbox[3] - detection.bbox[1]) / frame.height * 100}%` }}><b>{detection.class} {Math.round(detection.confidence * 100)}%</b></span>)}
       </div>
       <aside className="camera-result-panel">
         <div><small>Backend verdict</small><strong className={`camera-risk risk-text-${snapshot?.risk_level.toLowerCase() ?? 'error'}`}>{snapshot?.risk_level ?? 'NO DATA'}</strong></div>
@@ -172,10 +172,10 @@ export function LiveCameraPanel({ locale }: { locale: Locale }) {
       </aside>
     </div>
     <div className="camera-controls-row">
-      <label className="camera-consent"><input type="checkbox" checked={consent} disabled={active} onChange={event => setConsent(event.target.checked)} /><span>{vi ? 'Tôi đồng ý bật camera và gửi frame lên backend để detect. Frontend chỉ hiển thị preview đã che mặt do backend trả về.' : 'I consent to sending camera frames to the backend for detection. The frontend only displays the face-masked preview returned by the backend.'}</span></label>
-      <div><button className="primary-button" disabled={!consent || active || apiReady === false} onClick={() => void start()}>{vi ? 'Bật camera' : 'Start camera'}</button><button className="secondary-button" disabled={!active} onClick={() => void stop()}>{vi ? 'Tắt camera' : 'Stop camera'}</button></div>
+      <label className="camera-consent"><input type="checkbox" checked={consent} disabled={active} onChange={event => setConsent(event.target.checked)} /><span>{vi ? 'Tôi đồng ý bật camera, hiển thị hình trực tiếp và gửi frame lên backend để detect. Camera sẽ hiện cảnh báo nếu backend chưa che được mặt.' : 'I consent to showing the live camera and sending frames to the backend for detection. A warning is shown while face masking is unavailable.'}</span></label>
+      <div><button className="primary-button" disabled={!consent || active} onClick={() => void start()}>{vi ? 'Bật camera' : 'Start camera'}</button><button className="secondary-button" disabled={!active} onClick={() => void stop()}>{vi ? 'Tắt camera' : 'Stop camera'}</button></div>
     </div>
-    <p className="camera-api-state">Camera API: {apiReady === undefined ? 'checking…' : apiReady ? 'ready' : 'unavailable'} · {vi ? 'Ảnh không được frontend lưu vào storage.' : 'Frames are not stored in frontend storage.'}</p>
+    <p className="camera-api-state">Camera API: {apiReady === undefined ? 'checking…' : apiReady ? 'ready' : (vi ? 'sẽ thử lại khi bật camera' : 'will retry on start')} · {vi ? 'Ảnh không được frontend lưu vào storage.' : 'Frames are not stored in frontend storage.'}</p>
     {error && <p className="camera-error" role="alert">{error}</p>}
   </section>
 }
