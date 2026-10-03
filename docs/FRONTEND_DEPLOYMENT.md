@@ -2,27 +2,20 @@
 
 Node.js 20+ is required. From the repository root run `npm ci`, then `npm run typecheck`, `npm run lint`, `npm test` and `npm run build`.
 
-## Live dashboard (`frontend/`)
+## Owner portal (`apps/owner-web/`) — primary web deployment
 
-- Build: `npm --prefix frontend run build`
-- Output: `frontend/dist`
-- Required: `VITE_API_BASE_URL`, `VITE_VEHICLE_ID`
-- Configure the backend CORS allow-list with the exact deployed origin. For
-  Cloudflare Workers Static Assets, `frontend/wrangler.jsonc` supplies SPA
-  fallback through `assets.not_found_handling = "single-page-application"`.
-- Set the Workers Builds root directory to `frontend` so the web deployment
-  neither installs the Python backend nor builds the mobile workspace.
-- Workers build command: `npm ci && npm run build`.
-- Workers deploy command: `npx wrangler deploy`. The asset directory,
-  Worker name and compatibility date are committed in `wrangler.jsonc`.
-- Health check: load the site, verify `/health` is reported ready, then confirm state polling and one image-analysis request. The upload endpoint name remains `/api/v1/demo/analyze`; it performs real model inference but uses a required telemetry preset.
-
-## Owner portal (`apps/owner-web/`)
-
-- Build: `npm run build --workspace @cabinsentinel/owner-web`
+- Build: `npm run build:web`
 - Output: `apps/owner-web/dist`
 - Required: `VITE_API_BASE_URL`, `VITE_VEHICLE_ID`
-- Deploy as an independent SPA. Current live coverage is one configured vehicle through V1 state/events. Login, multi-vehicle access, acknowledgement, profile and notification preferences require the APIs in `FRONTEND_BACKEND_REQUIREMENTS.md`.
+- Configure the backend CORS allow-list with the exact deployed origin. For
+  Cloudflare Workers Static Assets, root `wrangler.jsonc` supplies SPA
+  fallback through `assets.not_found_handling = "single-page-application"`.
+- Set the Workers Builds root directory to the repository root because Owner Web
+  imports shared npm workspace packages.
+- Workers build command: `npm ci && npm run build:web`.
+- Workers deploy command: `npm run deploy:web`. The asset directory,
+  Worker name and compatibility date are committed in `wrangler.jsonc`.
+- Health check: load the site, verify `/health` is reported ready, then confirm state polling and one image-analysis request. The upload endpoint name remains `/api/v1/demo/analyze`; it performs real model inference but uses a required telemetry preset.
 
 ## Operations portal (`apps/operations-web/`)
 

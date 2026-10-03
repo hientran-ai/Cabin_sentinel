@@ -41,10 +41,10 @@ persistent volume vào `/app/data`, lịch sử sẽ mất khi service được 
 
 ## 3. Deploy frontend trên Cloudflare Pages
 
-> Nếu project đang dùng **Workers Builds** với lệnh `wrangler deploy` như log
-> hiện tại, đặt **Root directory** là `frontend`, dùng `frontend/wrangler.jsonc`
-> và deploy bằng
-> `npx wrangler deploy`. Không thêm catch-all `_redirects`: Workers
+> Website chính hiện là Owner Web trong `apps/owner-web`. Với **Workers Builds**,
+> để **Root directory** ở gốc repository, build bằng
+> `npm ci && npm run build:web`, rồi deploy bằng `npm run deploy:web`.
+> Không thêm catch-all `_redirects`: Workers
 > Static Assets dùng `not_found_handling = "single-page-application"` để tránh
 > vòng lặp redirect.
 
@@ -55,10 +55,10 @@ chọn repository và cấu hình:
 | --- | --- |
 | Project name | `cabinsentinel-demo` (hoặc sửa `CORS_ORIGINS` theo tên thực tế) |
 | Production branch | Nhánh chứa code mới nhất đã push |
-| Root directory | `frontend` |
+| Root directory | để trống (repository root) |
 | Framework preset | React (Vite) |
-| Build command | `npm run build` |
-| Build output directory | `dist` |
+| Build command | `npm ci && npm run build:web` |
+| Build output directory | `apps/owner-web/dist` |
 
 Thêm **build environment variables** cho Pages:
 

@@ -4,20 +4,20 @@ Web và mobile dùng chung backend API nhưng có pipeline phát hành riêng. K
 `npm run build` ở root cho dịch vụ Cloudflare vì lệnh đó build toàn bộ workspace,
 bao gồm cả bundle mobile.
 
-## 1. Web dashboard trên Cloudflare Workers
+## 1. Owner Web trên Cloudflare Workers
 
-Cloudflare chỉ cần build thư mục `frontend/`. Cấu hình Workers Static Assets nằm
-trong `frontend/wrangler.jsonc` và đã bật SPA fallback; không tạo
-`frontend/public/_redirects` vì rule catch-all đó gây vòng lặp khi dùng Workers.
+Website chính dùng giao diện trong `apps/owner-web/`. Cloudflare cần build từ gốc
+repository để npm workspaces resolve được các package dùng chung. Cấu hình Workers
+Static Assets nằm trong `wrangler.jsonc` và đã bật SPA fallback.
 
 Thiết lập Workers Builds:
 
 | Mục | Giá trị |
 | --- | --- |
-| Root directory | `frontend` |
-| Build command | `npm ci && npm run build` |
-| Deploy command | `npx wrangler deploy` |
-| Output directory | Không cần nhập; `wrangler.jsonc` dùng `dist` |
+| Root directory | để trống (repository root) |
+| Build command | `npm ci && npm run build:web` |
+| Deploy command | `npm run deploy:web` |
+| Output directory | Không cần nhập; `wrangler.jsonc` dùng `apps/owner-web/dist` |
 
 Biến môi trường lúc build:
 
@@ -32,9 +32,8 @@ Deploy thủ công từ root:
 npm run deploy:web
 ```
 
-Nếu log còn báo `Invalid _redirects configuration`, chọn **Retry deployment** từ
-commit có thay đổi `Fix Cloudflare Workers SPA routing` (`e9a6ec1`) hoặc commit mới
-hơn. Log lỗi ngày 02/10/2026 đã build từ phiên bản cũ còn file `_redirects`.
+App demo cũ trong `frontend/` đã được xóa khỏi repository. Owner Web là giao
+diện web duy nhất được phát hành.
 
 ## 2. Mobile bằng Expo EAS
 
