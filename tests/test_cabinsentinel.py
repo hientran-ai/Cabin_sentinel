@@ -220,7 +220,7 @@ def test_simulator_can_publish_confirmed_ev_pet_mode():
         (28, "OFF", ["backpack"], False, "OK", {}, "NOTICE"),
         (30, "ON", ["person"], False, "BLOCKED", {}, "ERROR"),
         (25, "OFF", [], True, "OK", {}, "WARNING"),
-        (28, "ON", ["dog"], False, "OK", {"powertrain_type": "EV", "operation_mode": "PET", "hvac_status": "ACTIVE", "battery_soc_pct": 40}, "NOTICE"),
+        (28, "ON", ["dog"], False, "OK", {"powertrain_type": "EV", "operation_mode": "PET", "hvac_status": "ACTIVE", "battery_soc_pct": 40}, "WARNING"),
         (28, "ON", ["person"], False, "OK", {"powertrain_type": "EV", "operation_mode": "CAMP", "hvac_status": "ACTIVE", "battery_soc_pct": 40}, "WARNING"),
         (28, "ON", ["dog"], False, "OK", {"powertrain_type": "ICE", "operation_mode": "REMOTE_START", "hvac_status": "ACTIVE"}, "WARNING"),
         (28, "ON", ["dog"], False, "OK", {"powertrain_type": "ICE", "driver_present": False}, "WARNING"),

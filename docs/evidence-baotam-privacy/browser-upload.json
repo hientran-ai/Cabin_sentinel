@@ -1,0 +1,33 @@
+{
+  "actions": "",
+  "alerts": [
+    "IMMEDIATE INTERVENTION REQUIRED\nCritical cabin risk\n9500cebd-2aa7-4a85-915b-8826d9c97d53\n\nLiving being detected in hot parked cabin\n\nChi tiết và thao tác"
+  ],
+  "count": 2,
+  "uploads": [
+    {
+      "actions": [],
+      "error": "Image cannot be decoded",
+      "http": 422
+    },
+    {
+      "actions": [
+        {
+          "action": "trigger_horn",
+          "status": "simulated"
+        },
+        {
+          "action": "send_sms",
+          "status": "simulated"
+        },
+        {
+          "action": "request_unlock",
+          "status": "pending_human_confirmation"
+        }
+      ],
+      "current": true,
+      "http": 200,
+      "risk": "CRITICAL"
+    }
+  ]
+}

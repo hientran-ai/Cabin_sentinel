@@ -11,6 +11,7 @@ class SafetyState(TypedDict, total=False):
     sensor: dict | None
     vision: dict | None
     now: object
+    unresolved_incident: bool
     risk_level: str
     rule_id: str
     reason: str
@@ -23,7 +24,7 @@ class SafetyState(TypedDict, total=False):
 
 
 def evaluate(state: SafetyState) -> dict:
-    return decide(state.get("sensor"), state.get("vision"), state["now"])
+    return decide(state.get("sensor"), state.get("vision"), state["now"], unresolved_incident=state.get("unresolved_incident", False))
 
 
 def risk_route(state: SafetyState) -> str:
