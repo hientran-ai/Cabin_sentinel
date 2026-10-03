@@ -1,4 +1,4 @@
-import { cp, mkdir, rm, writeFile } from 'node:fs/promises'
+import { cp, mkdir, rm } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -11,10 +11,5 @@ await rm(outputDirectory, { recursive: true, force: true })
 await mkdir(outputDirectory, { recursive: true })
 await cp(ownerBuild, outputDirectory, { recursive: true })
 await cp(operationsBuild, join(outputDirectory, 'admin'), { recursive: true })
-await writeFile(
-  join(outputDirectory, '_redirects'),
-  '/admin/* /admin/index.html 200\n/* /index.html 200\n',
-  'utf8',
-)
 
-console.log('Assembled Cloudflare web bundle in dist/')
+console.log('Assembled Cloudflare Workers bundle in dist/')

@@ -196,8 +196,33 @@ export interface V1DemoLoginResponse {
   owners: string[]
 }
 
+export type V1AccountRole = 'admin' | 'operator' | 'owner' | 'caregiver'
+
+export interface V1PlatformUser {
+  user_id: string
+  tenant_id: string | null
+  email: string
+  full_name: string
+  phone: string | null
+  language: 'vi' | 'en'
+  role: V1AccountRole
+  active: boolean
+  last_login_at: string | null
+  created_at: string
+}
+
+export interface V1SessionResponse {
+  user: V1PlatformUser
+  access_token: string
+  token_type: 'bearer'
+  expires_at: string
+  refresh_expires_at: string
+  csrf_token?: string
+  refresh_token?: string
+}
+
 export interface V1Me {
-  role: V1DemoRole | 'guardian' | 'device'
+  role: V1AccountRole | 'guardian' | 'device'
   subject: string
   trip_id: string | null
   vehicle_ids: string[]

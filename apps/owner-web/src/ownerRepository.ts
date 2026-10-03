@@ -1,15 +1,17 @@
 import { CabinSentinelClient } from '@cabinsentinel/api-client'
-import { getV1DemoAccessToken } from '@cabinsentinel/auth'
+import { getPortalAccessToken, type AuthMode } from '@cabinsentinel/auth'
 import type { V1FleetEvent, V1FleetVehicleState } from '@cabinsentinel/contracts'
 import { mockRepository } from './mockRepository'
 import type { Incident, OwnerRepository, RiskLevel, VehicleSnapshot } from './model'
 
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8000' : window.location.origin)
+const authMode: AuthMode = import.meta.env.VITE_AUTH_MODE === 'mock' ? 'mock' : import.meta.env.VITE_AUTH_MODE === 'v1-demo' || (import.meta.env.DEV && import.meta.env.VITE_AUTH_MODE !== 'session') ? 'v1-demo' : 'session'
 const api = new CabinSentinelClient({
-  baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
-  credentials: 'omit',
-  getAccessToken: async () => getV1DemoAccessToken(),
+  baseUrl: apiBaseUrl,
+  credentials: authMode === 'mock' ? 'omit' : 'include',
+  getAccessToken: () => getPortalAccessToken(apiBaseUrl, authMode),
 })
-const useV1Backend = import.meta.env.VITE_AUTH_MODE === 'v1-demo' || (import.meta.env.DEV && import.meta.env.VITE_AUTH_MODE !== 'mock' && import.meta.env.VITE_AUTH_MODE !== 'session')
+const useV1Backend = authMode !== 'mock'
 
 function risk(value?: string | null): RiskLevel { return ['SAFE', 'NOTICE', 'WARNING', 'CRITICAL', 'ERROR'].includes(value || '') ? value as RiskLevel : 'ERROR' }
 function occupancy(value?: string | null): VehicleSnapshot['occupancy'] { return ['PRESENT', 'SUSPECTED', 'ABSENT', 'UNKNOWN'].includes(value || '') ? value as VehicleSnapshot['occupancy'] : 'UNKNOWN' }

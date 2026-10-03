@@ -28,9 +28,33 @@ describe('CabinSentinelClient', () => {
     token = (await client.v1DemoLogin('admin')).access_token
     await client.v1Me()
 
-    expect(fetcher.mock.calls[0]?.[0]).toBe('https://example.test/api/v1/auth/demo-login')
-    expect(JSON.parse(String((fetcher.mock.calls[0]?.[1] as RequestInit).body))).toEqual({ role: 'admin' })
-    expect(new Headers((fetcher.mock.calls[1]?.[1] as RequestInit).headers).get('Authorization')).toBe('Bearer demo-token')
+    const [loginUrl, loginInit] = fetcher.mock.calls[0] as [string, RequestInit]
+    const [, meInit] = fetcher.mock.calls[1] as [string, RequestInit]
+    expect(loginUrl).toBe('https://example.test/api/v1/auth/demo-login')
+    expect(JSON.parse(String(loginInit.body))).toEqual({ role: 'admin' })
+    expect(new Headers(meInit.headers).get('Authorization')).toBe('Bearer demo-token')
+  })
+
+  it('uses production session endpoints without attaching a stale access token', async () => {
+    const session = {
+      access_token: 'fresh-token',
+      token_type: 'bearer',
+      expires_at: '2026-10-03T10:00:00Z',
+      user: { id: 'user-1', email: 'owner@example.com', full_name: 'Owner', role: 'owner', is_active: true },
+    }
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(session), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const getAccessToken = vi.fn().mockResolvedValue('stale-token')
+    const client = new CabinSentinelClient({ baseUrl: 'https://example.test', fetch: fetcher, getAccessToken, credentials: 'include' })
+
+    await client.v1PlatformLogin('owner@example.com', 'secret')
+
+    expect(fetcher).toHaveBeenCalledTimes(1)
+    const [url, init] = fetcher.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('https://example.test/api/v1/auth/login')
+    expect(JSON.parse(String(init.body))).toEqual({ email: 'owner@example.com', password: 'secret', use_cookie: true })
+    expect(new Headers(init.headers).has('Authorization')).toBe(false)
+    expect(init.credentials).toBe('include')
+    expect(getAccessToken).not.toHaveBeenCalled()
   })
 })
 

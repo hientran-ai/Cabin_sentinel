@@ -18,6 +18,7 @@ env/
 .env.production
 .env.*
 !.env.example
+.dev.vars
 
 # Local agent rules (keep off GitHub)
 .agents/rules/global-rules.md
