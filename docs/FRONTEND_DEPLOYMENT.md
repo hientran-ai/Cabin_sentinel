@@ -2,33 +2,24 @@
 
 Node.js 20+ is required. From the repository root run `npm ci`, then `npm run typecheck`, `npm run lint`, `npm test` and `npm run build`.
 
-## Live dashboard (`frontend/`)
-
-- Build: `npm --prefix frontend run build`
-- Output: `frontend/dist`
-- Required: `VITE_API_BASE_URL`, `VITE_VEHICLE_ID`
-- Configure the backend CORS allow-list with the exact deployed origin. For
-  Cloudflare Workers Static Assets, `frontend/wrangler.jsonc` supplies SPA
-  fallback through `assets.not_found_handling = "single-page-application"`.
-- Set the Workers Builds root directory to `frontend` so the web deployment
-  neither installs the Python backend nor builds the mobile workspace.
-- Workers build command: `npm ci && npm run build`.
-- Workers deploy command: `npx wrangler deploy`. The asset directory,
-  Worker name and compatibility date are committed in `wrangler.jsonc`.
-- Health check: load the site, verify `/health` is reported ready, then confirm state polling and one image-analysis request. The upload endpoint name remains `/api/v1/demo/analyze`; it performs real model inference but uses a required telemetry preset.
-
 ## Owner portal (`apps/owner-web/`)
 
 - Build: `npm run build --workspace @cabinsentinel/owner-web`
 - Output: `apps/owner-web/dist`
-- Required: `VITE_API_BASE_URL`, `VITE_VEHICLE_ID`
+- Required: `VITE_API_BASE_URL`, `VITE_VEHICLE_ID`, `VITE_AUTH_MODE`
+- Cloudflare Pages root directory: repository root.
+- Cloudflare Pages build command: `npm ci && npm run build --workspace @cabinsentinel/owner-web`.
+- Cloudflare Pages output directory: `apps/owner-web/dist`.
 - Deploy as an independent SPA. Current live coverage is one configured vehicle through V1 state/events. Login, multi-vehicle access, acknowledgement, profile and notification preferences require the APIs in `FRONTEND_BACKEND_REQUIREMENTS.md`.
 
 ## Operations portal (`apps/operations-web/`)
 
 - Build: `npm run build --workspace @cabinsentinel/operations-web`
 - Output: `apps/operations-web/dist`
-- Required: `VITE_API_BASE_URL`, `VITE_VEHICLE_ID`
+- Required: `VITE_API_BASE_URL`, `VITE_VEHICLE_ID`, `VITE_AUTH_MODE`
+- Cloudflare Pages root directory: repository root.
+- Cloudflare Pages build command: `npm ci && npm run build --workspace @cabinsentinel/operations-web`.
+- Cloudflare Pages output directory: `apps/operations-web/dist`.
 - Deploy as an independent SPA and protect it at the platform edge until backend OIDC/RBAC exists. V1 provides a single-vehicle evaluation stream, not a fleet incident queue.
 
 ## Mobile (`apps/mobile/`)

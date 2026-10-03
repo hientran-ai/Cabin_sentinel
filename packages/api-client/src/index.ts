@@ -1,4 +1,4 @@
-import type { ApiErrorEnvelope, Incident, Page, RealtimeEvent, User, V1CabinState, V1Health, Vehicle, VehicleStatus } from '@cabinsentinel/contracts'
+import type { ApiErrorEnvelope, Incident, Page, RealtimeEvent, User, V1CabinState, V1DemoLoginResponse, V1DemoRole, V1FleetVehicleState, V1Health, V1Me, V1VehicleEvents, V1VehicleList, Vehicle, VehicleStatus } from '@cabinsentinel/contracts'
 import { acceptNewerRevision } from '@cabinsentinel/domain'
 
 export class ApiError extends Error {
@@ -86,6 +86,22 @@ export class CabinSentinelClient {
     })
   }
   operationsIncidents(signal?: AbortSignal) { return this.request<Page<Incident>>('/api/v2/operations/incidents', { signal }) }
+
+  /** Development-only V1 authentication. The backend disables this endpoint in production. */
+  v1DemoLogin(role: V1DemoRole, subject?: string, signal?: AbortSignal) {
+    return this.request<V1DemoLoginResponse>('/api/v1/auth/demo-login', {
+      method: 'POST', retry: false, signal,
+      body: JSON.stringify({ role, ...(subject ? { subject } : {}) }),
+    })
+  }
+  v1Me(signal?: AbortSignal) { return this.request<V1Me>('/api/v1/auth/me', { signal }) }
+  v1Vehicles(signal?: AbortSignal) { return this.request<V1VehicleList>('/api/v1/vehicles', { signal }) }
+  v1VehicleState(vehicleId: string, signal?: AbortSignal) {
+    return this.request<V1FleetVehicleState>(`/api/v1/vehicles/${encodeURIComponent(vehicleId)}/state`, { signal })
+  }
+  v1VehicleEvents(vehicleId: string, limit = 50, signal?: AbortSignal) {
+    return this.request<V1VehicleEvents>(`/api/v1/vehicles/${encodeURIComponent(vehicleId)}/events?limit=${Math.max(1, Math.min(limit, 500))}`, { signal })
+  }
 
   /** Confirmed endpoints from the repository's current V1 FastAPI service. */
   v1State(vehicleId: string, signal?: AbortSignal) {

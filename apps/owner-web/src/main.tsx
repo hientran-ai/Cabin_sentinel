@@ -1,14 +1,24 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { BrowserRouter } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { AuthCallback, AuthProvider, LoginPage, RequirePortal, type AuthConfig } from '@cabinsentinel/auth'
 import { App } from './App'
+import '@cabinsentinel/auth/styles.css'
 import './styles.css'
 import './theme.css'
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 5_000, retry: 1, refetchOnWindowFocus: true }, mutations: { retry: false } } })
+const authConfig: AuthConfig = {
+  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
+  mode: import.meta.env.VITE_AUTH_MODE === 'mock' ? 'mock' : import.meta.env.VITE_AUTH_MODE === 'session' ? 'session' : import.meta.env.VITE_AUTH_MODE === 'v1-demo' || import.meta.env.DEV ? 'v1-demo' : 'session',
+  ownerUrl: import.meta.env.VITE_OWNER_WEB_URL || window.location.origin,
+  operationsUrl: import.meta.env.VITE_OPERATIONS_WEB_URL || 'http://localhost:4174/admin',
+  loginUrl: import.meta.env.VITE_AUTH_LOGIN_URL,
+  logoutUrl: import.meta.env.VITE_AUTH_LOGOUT_URL,
+}
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode><QueryClientProvider client={queryClient}><BrowserRouter><App /></BrowserRouter></QueryClientProvider></React.StrictMode>,
+  <React.StrictMode><QueryClientProvider client={queryClient}><BrowserRouter><AuthProvider config={authConfig}><Routes><Route path="/login" element={<LoginPage portal="owner" />} /><Route path="/auth/callback" element={<AuthCallback portal="owner" />} /><Route path="*" element={<RequirePortal portal="owner"><App /></RequirePortal>} /></Routes></AuthProvider></BrowserRouter></QueryClientProvider></React.StrictMode>,
 )
 
 // A replaced session/context module invalidates memory credentials and consumers.

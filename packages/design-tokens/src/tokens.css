@@ -1,15 +1,15 @@
 :root {
   --cs-font-sans: "Nunito Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
-  --cs-ink: #2f2631;
-  --cs-muted: #746772;
+  --cs-ink: #3b2a1e;
+  --cs-muted: #6e5847;
   --cs-surface: #ffffff;
-  --cs-canvas: #fff8fa;
-  --cs-border: #ecdde4;
-  --cs-accent: #c94f78;
-  --cs-accent-strong: #923653;
-  --cs-coral: #e96667;
-  --cs-mint: #dff5ec;
-  --cs-sun: #fff1bd;
-  --cs-focus: #9f2f63;
+  --cs-canvas: #fbf7f0;
+  --cs-border: #e6daca;
+  --cs-accent: #8a6446;
+  --cs-accent-strong: #3b2a1e;
+  --cs-coral: #c4161c;
+  --cs-mint: #ddefe3;
+  --cs-sun: #fbe6d4;
+  --cs-focus: #8a6446;
   --cs-radius: 1rem;
 }

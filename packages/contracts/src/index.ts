@@ -184,3 +184,102 @@ export interface V1Health {
   database?: string
   mqtt?: string
 }
+
+/** Development authentication and fleet contracts exposed by the current V1 backend. */
+export type V1DemoRole = 'owner' | 'admin'
+
+export interface V1DemoLoginResponse {
+  access_token: string
+  role: V1DemoRole
+  subject: string
+  expires_at: string
+  owners: string[]
+}
+
+export interface V1Me {
+  role: V1DemoRole | 'guardian' | 'device'
+  subject: string
+  trip_id: string | null
+  vehicle_ids: string[]
+}
+
+export interface V1VehicleSummary {
+  vehicle_id: string
+  vehicle_name: string
+  plate: string | null
+  model: string | null
+  data_source: string
+  online: boolean
+  last_seen: string | null
+  risk_level: string | null
+  decision_current: boolean
+  rule_id: string | null
+  occupancy: { state: string; counts: Record<string, number> }
+  temperature_c: number | null
+  doors_locked: boolean | null
+  alert_count: number
+  active_incident: string | null
+  revision: number
+}
+
+export interface V1VehicleList {
+  as_of: string
+  role: V1DemoRole
+  vehicles: V1VehicleSummary[]
+}
+
+export interface V1FleetVehicleState extends V1VehicleSummary {
+  timestamp: string | null
+  as_of: string
+  sensors: null | {
+    temperature_c?: number | null
+    doors_locked?: boolean | null
+    door?: 'locked' | 'unlocked' | null
+    radar_presence?: boolean | null
+    ignition?: 'on' | 'off' | 'unknown'
+    hvac?: string | null
+    window?: string | null
+    sequence?: number | null
+    status?: FreshnessStatus
+    age_s?: number | null
+    observed_at?: string | null
+  }
+  vision: null | {
+    camera_status?: string | null
+    detections?: V1Detection[]
+    status?: FreshnessStatus
+    age_s?: number | null
+    observed_at?: string | null
+  }
+  risk: null | {
+    risk_level?: string
+    previous_risk_level?: string | null
+    rule_id?: string
+    reason?: string
+    occupancy_state?: string
+    occupancy_reason_code?: string
+    revision?: number
+    decision_current?: boolean
+    ruleset_version?: string
+    evidence_conflicts?: unknown[]
+    reasoning_latency_ms?: number
+  }
+  explanation: string
+  incident: Record<string, unknown> | null
+  alert: Record<string, unknown> | null
+  unlock_request: Record<string, unknown> | null
+  actions: V1ActionResult[]
+  action_ledger: V1ActionResult[]
+  data_quality: { status?: string; issues?: string[] } | null
+}
+
+export interface V1FleetEvent extends V1CabinState {
+  event_id: number
+  event_type: string
+  timestamp?: string
+}
+
+export interface V1VehicleEvents {
+  vehicle_id: string
+  events: V1FleetEvent[]
+}

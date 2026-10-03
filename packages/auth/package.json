@@ -1,0 +1,27 @@
+{
+  "name": "@cabinsentinel/auth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "typecheck": "tsc -b --pretty false" },
+  "exports": {
+    ".": "./src/index.tsx",
+    "./styles.css": "./src/styles.css"
+  },
+  "dependencies": {
+    "@cabinsentinel/api-client": "*",
+    "@cabinsentinel/contracts": "*"
+  },
+  "peerDependencies": {
+    "react": ">=19.1.0 <20",
+    "react-dom": ">=19.1.0 <20",
+    "react-router-dom": ">=7.9.3 <8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-router-dom": "^7.9.3",
+    "typescript": "~6.0.2"
+  }
+}

@@ -17,6 +17,21 @@ describe('CabinSentinelClient', () => {
     expect(new Headers(init.headers).get('Idempotency-Key')).toBe('key-1')
     expect(fetcher).toHaveBeenCalledTimes(1)
   })
+
+  it('uses the merged V1 demo auth and protected fleet routes', async () => {
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'demo-token', role: 'admin', subject: 'fleet-admin', expires_at: '2026-01-01T00:00:00Z', owners: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ role: 'admin', subject: 'fleet-admin', trip_id: null, vehicle_ids: ['VF8-DEMO-01'] }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    let token: string | undefined
+    const client = new CabinSentinelClient({ baseUrl: 'https://example.test', fetch: fetcher, getAccessToken: async () => token })
+
+    token = (await client.v1DemoLogin('admin')).access_token
+    await client.v1Me()
+
+    expect(fetcher.mock.calls[0]?.[0]).toBe('https://example.test/api/v1/auth/demo-login')
+    expect(JSON.parse(String((fetcher.mock.calls[0]?.[1] as RequestInit).body))).toEqual({ role: 'admin' })
+    expect(new Headers((fetcher.mock.calls[1]?.[1] as RequestInit).headers).get('Authorization')).toBe('Bearer demo-token')
+  })
 })
 
 describe('revision updates', () => {
