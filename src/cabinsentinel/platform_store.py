@@ -627,15 +627,19 @@ class PlatformStore:
         return {"vehicle_id": vehicle_id, "pairing_code": code, "expires_at": expires.isoformat()}
 
     def pair_device(self, code: str, serial: str, firmware: str | None) -> dict:
-        row = self._one("SELECT * FROM pairing_codes WHERE code_hash=? AND used_at IS NULL", (_digest(code.strip().upper()),))
-        if row is None or self.clock() >= datetime.fromisoformat(row["expires_at"]):
-            raise ValueError("Pairing code is invalid or expired")
-        vehicle = self._one("SELECT * FROM vehicles WHERE vehicle_id=? AND status='active'", (row["vehicle_id"],))
-        if vehicle is None:
-            raise ValueError("Pairing code is invalid or expired")
-        token, device_id, now = secrets.token_urlsafe(32), uuid4().hex, self._now()
+        digest = _digest(code.strip().upper())
+        token, device_id = secrets.token_urlsafe(32), uuid4().hex
+        # Check, consume and issue under one lock + transaction so a code can be used exactly once.
         with self._lock, self._db:
-            self._db.execute("UPDATE pairing_codes SET used_at=? WHERE code_hash=?", (now, row["code_hash"]))
+            row = self._db.execute("SELECT * FROM pairing_codes WHERE code_hash=? AND used_at IS NULL", (digest,)).fetchone()
+            now = self._now()
+            if row is None or self.clock() >= datetime.fromisoformat(row["expires_at"]):
+                raise ValueError("Pairing code is invalid or expired")
+            if not self._db.execute("SELECT 1 FROM vehicles WHERE vehicle_id=? AND status='active'", (row["vehicle_id"],)).fetchone():
+                raise ValueError("Pairing code is invalid or expired")
+            used = self._db.execute("UPDATE pairing_codes SET used_at=? WHERE code_hash=? AND used_at IS NULL", (now, digest)).rowcount
+            if used != 1:
+                raise ValueError("Pairing code is invalid or expired")
             self._db.execute("UPDATE devices SET status='revoked', revoked_at=? WHERE vehicle_id=? AND status='active'", (now, row["vehicle_id"]))
             self._db.execute("INSERT INTO devices VALUES (?,?,?,?,NULL,?,'active',?,NULL,NULL)",
                              (device_id, row["vehicle_id"], serial, firmware, _digest(token), now))
