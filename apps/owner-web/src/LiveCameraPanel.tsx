@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { CameraApi, CameraApiError, validateCameraSnapshot, type CameraSnapshot } from './cameraApi'
+import { CameraApi, CameraApiError, getPrivacyPreview, validateCameraSnapshot, type CameraSnapshot } from './cameraApi'
 import type { Locale } from './model'
 
 type Phase = 'IDLE' | 'STARTING' | 'RUNNING' | 'STOPPING' | 'STOPPED' | 'ERROR'
@@ -80,7 +80,10 @@ export function LiveCameraPanel({ locale }: { locale: Locale }) {
       } catch (reason) {
         if (generation !== generationRef.current) return
         const message = reason instanceof Error ? reason.message : 'Không detect được frame camera.'
-        if (mountedRef.current) setError(message)
+        if (mountedRef.current) {
+          setError(message)
+          setSnapshot(current => current ? { ...current, preview: undefined } : current)
+        }
         if (reason instanceof CameraApiError && ['STOPPED', 'SESSION_NOT_FOUND', 'UNAUTHORIZED', 'INVALID_RESPONSE'].includes(reason.code)) {
           if (mountedRef.current) setPhase('ERROR')
           releaseLocalCamera()
@@ -116,7 +119,9 @@ export function LiveCameraPanel({ locale }: { locale: Locale }) {
         return
       }
       credentialsRef.current = { id: created.session_id, token: created.session_token }
-      setSnapshot(created)
+      const current = await apiRef.current.call('camera_status', [created.session_id, created.session_token])
+      validateCameraSnapshot(current)
+      setSnapshot(current)
       setPhase('RUNNING')
       void runFrames(generation)
     } catch (reason) {
@@ -145,25 +150,29 @@ export function LiveCameraPanel({ locale }: { locale: Locale }) {
   }
 
   const frame = snapshot?.frame
+  const privacyPreview = snapshot ? getPrivacyPreview(snapshot) : undefined
+  const previewUnavailable = snapshot?.preview?.status === 'UNAVAILABLE' ? snapshot.preview : undefined
   return <section className="surface live-camera-card">
     <div className="live-camera-heading"><div><span className="eyebrow">Live camera · YOLO</span><h2>{vi ? 'Bật camera để detect' : 'Turn on camera detection'}</h2></div><span className={`camera-phase phase-${phase.toLowerCase()}`}><i />{phase}</span></div>
     <div className="live-camera-layout">
       <div className="raw-camera-stage">
-        <video ref={videoRef} muted playsInline />
-        {!active && <div className="camera-empty"><strong>{vi ? 'Camera chưa bật' : 'Camera is off'}</strong><span>{vi ? 'Cho phép camera rồi nhấn Bật camera.' : 'Grant camera access, then start detection.'}</span></div>}
-        <span className="raw-camera-warning">{vi ? 'CAMERA GỐC · CHƯA CHE MẶT' : 'RAW CAMERA · FACE BLUR OFF'}</span>
+        <video ref={videoRef} muted playsInline hidden aria-hidden="true" />
+        {privacyPreview && <img className="privacy-camera-preview" src={privacyPreview.data_url} alt={vi ? 'Preview camera đã che mặt' : 'Face-masked camera preview'} />}
+        {!privacyPreview && <div className="camera-empty"><strong>{!active ? (vi ? 'Camera chưa bật' : 'Camera is off') : (vi ? 'Đang chờ preview đã che mặt' : 'Waiting for masked preview')}</strong><span>{!active ? (vi ? 'Cho phép camera rồi nhấn Bật camera.' : 'Grant camera access, then start detection.') : (vi ? 'Ảnh gốc không được hiển thị khi backend chưa trả preview an toàn.' : 'Raw video stays hidden until the backend returns a safe preview.')}</span></div>}
+        <span className={`raw-camera-warning ${privacyPreview ? 'privacy-preview-ready' : ''}`}>{privacyPreview ? (vi ? 'PREVIEW ĐÃ CHE MẶT' : 'FACE-MASKED PREVIEW') : (vi ? 'PREVIEW KHÔNG KHẢ DỤNG' : 'PREVIEW UNAVAILABLE')}</span>
         {phase === 'RUNNING' && <span className="detect-live"><i />LIVE DETECT</span>}
-        {frame && snapshot.vision_detections.map((detection, index) => detection.bbox && <span className="detection-box" key={`${frame.sequence}-${index}`} style={{ left: `${(frame.width - detection.bbox[2]) / frame.width * 100}%`, top: `${detection.bbox[1] / frame.height * 100}%`, width: `${(detection.bbox[2] - detection.bbox[0]) / frame.width * 100}%`, height: `${(detection.bbox[3] - detection.bbox[1]) / frame.height * 100}%` }}><b>{detection.class} {Math.round(detection.confidence * 100)}%</b></span>)}
+        {privacyPreview && frame && snapshot.vision_detections.map((detection, index) => detection.bbox && <span className="detection-box" key={`${frame.sequence}-${index}`} style={{ left: `${detection.bbox[0] / frame.width * 100}%`, top: `${detection.bbox[1] / frame.height * 100}%`, width: `${(detection.bbox[2] - detection.bbox[0]) / frame.width * 100}%`, height: `${(detection.bbox[3] - detection.bbox[1]) / frame.height * 100}%` }}><b>{detection.class} {Math.round(detection.confidence * 100)}%</b></span>)}
       </div>
       <aside className="camera-result-panel">
         <div><small>Backend verdict</small><strong className={`camera-risk risk-text-${snapshot?.risk_level.toLowerCase() ?? 'error'}`}>{snapshot?.risk_level ?? 'NO DATA'}</strong></div>
-        <dl><div><dt>{vi ? 'Phát hiện' : 'Detections'}</dt><dd>{snapshot?.vision_detections.length ?? 0}</dd></div><div><dt>Occupancy</dt><dd>{snapshot?.occupancy_state ?? 'UNKNOWN'}</dd></div><div><dt>Rule</dt><dd>{snapshot?.rule_id ?? '—'}</dd></div><div><dt>YOLO</dt><dd>{frame?.latency_ms == null ? '—' : `${Math.round(frame.latency_ms)} ms`}</dd></div></dl>
+        <dl><div><dt>{vi ? 'Phát hiện' : 'Detections'}</dt><dd>{snapshot?.vision_detections.length ?? 0}</dd></div><div><dt>Occupancy</dt><dd>{snapshot?.occupancy_state ?? 'UNKNOWN'}</dd></div><div><dt>{vi ? 'Mặt đã che' : 'Masked faces'}</dt><dd>{privacyPreview?.masked_regions ?? '—'}</dd></div><div><dt>YOLO / Privacy</dt><dd>{frame?.latency_ms == null ? '—' : `${Math.round(frame.latency_ms)} ms`}{privacyPreview ? ` / ${Math.round(privacyPreview.latency_ms)} ms` : ''}</dd></div></dl>
         <div className="camera-detections">{snapshot?.vision_detections.length ? snapshot.vision_detections.map((item, index) => <span key={`${item.class}-${index}`}>{item.class} · {Math.round(item.confidence * 100)}%</span>) : <span>NO DETECTION</span>}</div>
         {snapshot?.reason && <p>{snapshot.reason}</p>}
+        {previewUnavailable && <p className="privacy-unavailable">{previewUnavailable.reason ?? (vi ? 'Backend chưa tạo được preview che mặt.' : 'The backend could not create a face-masked preview.')}</p>}
       </aside>
     </div>
     <div className="camera-controls-row">
-      <label className="camera-consent"><input type="checkbox" checked={consent} disabled={active} onChange={event => setConsent(event.target.checked)} /><span>{vi ? 'Tôi đồng ý hiển thị camera chưa che mặt và gửi frame lên backend để detect.' : 'I consent to showing the unblurred camera and sending frames to the backend for detection.'}</span></label>
+      <label className="camera-consent"><input type="checkbox" checked={consent} disabled={active} onChange={event => setConsent(event.target.checked)} /><span>{vi ? 'Tôi đồng ý bật camera và gửi frame lên backend để detect. Frontend chỉ hiển thị preview đã che mặt do backend trả về.' : 'I consent to sending camera frames to the backend for detection. The frontend only displays the face-masked preview returned by the backend.'}</span></label>
       <div><button className="primary-button" disabled={!consent || active || apiReady === false} onClick={() => void start()}>{vi ? 'Bật camera' : 'Start camera'}</button><button className="secondary-button" disabled={!active} onClick={() => void stop()}>{vi ? 'Tắt camera' : 'Stop camera'}</button></div>
     </div>
     <p className="camera-api-state">Camera API: {apiReady === undefined ? 'checking…' : apiReady ? 'ready' : 'unavailable'} · {vi ? 'Ảnh không được frontend lưu vào storage.' : 'Frames are not stored in frontend storage.'}</p>

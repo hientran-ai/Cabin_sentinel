@@ -6,6 +6,27 @@ export interface CameraDetection {
   bbox?: [number, number, number, number]
 }
 
+export interface PrivacyPreview {
+  status: 'PROCESSED'
+  method: 'YUNET_SOFT_OVAL'
+  model_sha256: string
+  data_url: string
+  width: number
+  height: number
+  detected_faces: number
+  masked_regions: number
+  latency_ms: number
+  sequence: number
+  captured_at: string
+}
+
+export interface UnavailablePrivacyPreview {
+  status: 'UNAVAILABLE'
+  reason?: string
+  sequence?: number
+  captured_at?: string
+}
+
 export interface CameraSnapshot {
   session_id: string
   session_token?: string
@@ -19,6 +40,7 @@ export interface CameraSnapshot {
   camera: { requested: 'RUNNING' | 'STOPPED'; device_reported: string }
   frame: null | { sequence: number; captured_at: string; width: number; height: number; latency_ms?: number }
   vision_detections: CameraDetection[]
+  preview?: PrivacyPreview | UnavailablePrivacyPreview
 }
 
 type CameraRecord = Record<string, unknown>
@@ -49,6 +71,23 @@ export function validateCameraSnapshot(value: unknown): asserts value is CameraS
   if (!value.vision_detections.every(item => isRecord(item) && typeof item.class === 'string' &&
     typeof item.confidence === 'number' && item.confidence >= 0 && item.confidence <= 1 &&
     (item.bbox == null || (Array.isArray(item.bbox) && item.bbox.length === 4 && item.bbox.every(Number.isFinite))))) invalidResponse()
+  if (value.preview != null && !isRecord(value.preview)) invalidResponse()
+}
+
+const PRIVACY_MODEL_SHA256 = '8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4'
+
+export function getPrivacyPreview(snapshot: CameraSnapshot, now = Date.now()): PrivacyPreview | undefined {
+  const { frame, preview } = snapshot
+  if (!frame || !preview || preview.status !== 'PROCESSED' || preview.method !== 'YUNET_SOFT_OVAL' ||
+    preview.model_sha256 !== PRIVACY_MODEL_SHA256 || typeof preview.data_url !== 'string' ||
+    !preview.data_url.startsWith('data:image/jpeg;base64,') || preview.sequence !== frame.sequence ||
+    preview.captured_at !== frame.captured_at || preview.width !== frame.width || preview.height !== frame.height ||
+    !Number.isInteger(preview.detected_faces) || preview.detected_faces < 0 ||
+    !Number.isInteger(preview.masked_regions) || preview.masked_regions < 0 ||
+    typeof preview.latency_ms !== 'number' || !Number.isFinite(preview.latency_ms)) return undefined
+  const capturedAt = Date.parse(preview.captured_at)
+  const age = now - capturedAt
+  return Number.isFinite(capturedAt) && age >= 0 && age <= 3_000 ? preview : undefined
 }
 
 function cameraBaseUrl() {
