@@ -1,0 +1,38 @@
+{
+  "source": {
+    "repository": "https://github.com/AI20K-Build-Phase-Cohort-4/P-068",
+    "branch": "BaoTam",
+    "commit": "f7c04a0af31f7e7847a02a012e5d1c85f22e54fc"
+  },
+  "models": {
+    "yolov8n": {
+      "filename": "yolov8n.pt",
+      "sha256": "f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36",
+      "url": "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8n.pt",
+      "license": "AGPL-3.0",
+      "role": "Existing REST detector; stock weights, not a BaoTam-trained child detector"
+    },
+    "yolov8s": {
+      "filename": "yolov8s.pt",
+      "sha256": "1f47a78bf100391c2a140b7ac73a1caae18c32779be7d310658112f7ac9aa78a",
+      "url": "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8s.pt",
+      "license": "AGPL-3.0",
+      "role": "Optional BaoTam offline video detector; does not change REST defaults"
+    },
+    "yunet": {
+      "filename": "face_detection_yunet_2023mar.onnx",
+      "sha256": "8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4",
+      "url": "https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx",
+      "license": "MIT (models/YUNET-LICENSE)",
+      "role": "Bundled face privacy model"
+    },
+    "age-router": {
+      "filename": "age-real-router-20261002.pt",
+      "sha256": null,
+      "url": null,
+      "license": "Not supplied; obtain from VISION_AGENT before distribution",
+      "upstream_path": "runs/age-real-router-20261002/best.pt",
+      "role": "Optional offline research classifier; checkpoint absent from GitHub/source checkout; not integrated into safety"
+    }
+  }
+}

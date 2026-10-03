@@ -20,6 +20,11 @@ OPTIONAL_SUITES = {
     "test_camera_gradio.py": ("gradio", "spaces", "cv2"),
     "test_camera_privacy.py": ("cv2", "numpy"),
     "test_vision_privacy.py": ("cv2", "numpy"),
+    "test_vision_age.py": ("torch", "torchvision", "numpy"),
+    "test_vision_age_adapter.py": ("torch", "torchvision", "numpy"),
+    "test_vision_motion.py": ("cv2", "numpy"),
+    "test_vision_overlay.py": ("cv2", "numpy"),
+    "test_vision_video.py": ("cv2", "numpy", "imageio_ffmpeg"),
 }
 collect_ignore = [
     name for name, modules in OPTIONAL_SUITES.items()
