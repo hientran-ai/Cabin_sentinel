@@ -1,3 +1,7 @@
+## BaoTam model package (2026-10-03)
+
+Pinned YuNet is bundled; YOLO weights have checksum-verified setup; latest BaoTam offline inference source is included. The trained age-router checkpoint is still missing. [Artifact inventory, setup and limitations](docs/BAOTAM_MODEL_PACKAGE.md).
+
 ## BUILD_PHASE frontend integration (2026-10-02)
 
 Dashboard and Owner Web now use the verified V1 demo session API. Run instructions, source/deployment mismatches, screen/API matrix and test evidence: [integration report](docs/BUILD_PHASE_INTEGRATION_2026-10-02.md), [Owner README](apps/owner-web/README.md), [dashboard README](frontend/README.md). Backend source bundled upstream is historical; the audited live snapshot is recorded in the report. Operations/mobile runtime integration remains unverified.

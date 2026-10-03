@@ -25,3 +25,9 @@ models/
 .agents/
 .github/
 scripts/
+
+# Bundle only the pinned YuNet model and its license.
+!/models/
+/models/*
+!/models/face_detection_yunet_2023mar.onnx
+!/models/YUNET-LICENSE

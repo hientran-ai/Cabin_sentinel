@@ -1,0 +1,82 @@
+{
+  "checked_date": "2026-10-03",
+  "source": {
+    "repository": "https://github.com/AI20K-Build-Phase-Cohort-4/P-068",
+    "branch": "BaoTam",
+    "commit": "f7c04a0af31f7e7847a02a012e5d1c85f22e54fc"
+  },
+  "cabin_base": "7cd4955c226252f5b950b6c9f8aeca23117cf670",
+  "tests": {
+    "full_suite_passed": 287,
+    "subtests_passed": 11,
+    "warnings": 16,
+    "initial_sandbox_failures": 6,
+    "initial_failure_cause": "Loopback HTTP bind denied; unchanged tests pass with escalation",
+    "red_before_implementation": 6
+  },
+  "local_artifact_integrity": {
+    "yolov8n": {
+      "status": "VERIFIED",
+      "filename": "yolov8n.pt",
+      "sha256": "f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36",
+      "expected_sha256": "f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36"
+    },
+    "yolov8s": {
+      "status": "VERIFIED",
+      "filename": "yolov8s.pt",
+      "sha256": "1f47a78bf100391c2a140b7ac73a1caae18c32779be7d310658112f7ac9aa78a",
+      "expected_sha256": "1f47a78bf100391c2a140b7ac73a1caae18c32779be7d310658112f7ac9aa78a"
+    },
+    "yunet": {
+      "status": "VERIFIED",
+      "filename": "face_detection_yunet_2023mar.onnx",
+      "sha256": "8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4",
+      "expected_sha256": "8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4"
+    },
+    "age-router": {
+      "status": "MISSING",
+      "filename": "age-real-router-20261002.pt",
+      "sha256": null,
+      "expected_sha256": null
+    }
+  },
+  "binary_artifacts_committed": [
+    "models/face_detection_yunet_2023mar.onnx"
+  ],
+  "runtime": {
+    "python": "3.12.14",
+    "packages": {
+      "torch": "2.13.0",
+      "torchvision": "0.28.0",
+      "opencv-python": "5.0.0.93",
+      "ultralytics": "8.4.159",
+      "imageio-ffmpeg": "0.6.0"
+    },
+    "fixture_source": "https://raw.githubusercontent.com/ultralytics/assets/main/im/bus.jpg",
+    "fixture_sha256": "c02019c4979c191eb739ddd944445ef408dad5679acab6fd520ef9d434bfbc63",
+    "method": "4 repeated public sample frames, local CPU, latest offline video CLI run from another working directory",
+    "frames_processed": 4,
+    "frames_exported": 4,
+    "detections_by_class": {
+      "person": 16,
+      "cat": 0,
+      "dog": 0
+    },
+    "face_detections_across_frames": 12,
+    "codec": "h264",
+    "trained_age_checkpoint": "MISSING / NOT_RUNTIME_VERIFIED"
+  },
+  "checks": {
+    "ruff": "PASS",
+    "yaml_parse": "PASS",
+    "download_yunet_hash": "PASS",
+    "public_model_check": "PASS",
+    "missing_age_check": "Expected exit 1; complete=false",
+    "git_diff_check": "PASS"
+  },
+  "limits": [
+    "Docker daemon unavailable locally; container tests configured in existing Docker CI job",
+    "Genuine age-router artifact/hash/license unpublished; integrity complete=false",
+    "No hosted deployment, hardware, child-safety accuracy or anonymization validation"
+  ]
+}

@@ -54,6 +54,18 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build deployable image
         run: docker build -t cabinsentinel-v1:ci .
+      - name: Verify BaoTam inference and packaged model assets
+        run: |
+          docker run --rm -e APP_ENV=test -e OPENAI_API_KEY=test-key \
+            -e PYTHONDONTWRITEBYTECODE=1 \
+            -v "$PWD/tests:/app/tests:ro" \
+            -v "$PWD/scripts:/app/scripts:ro" \
+            -v "$PWD/vision-models.json:/app/vision-models.json:ro" \
+            cabinsentinel-v1:ci python -m pytest -q -p no:cacheprovider \
+              tests/test_vision_age.py tests/test_vision_age_adapter.py \
+              tests/test_vision_motion.py tests/test_vision_overlay.py \
+              tests/test_vision_video.py tests/test_vision_evaluation.py \
+              tests/test_vision_model_assets.py tests/test_vision_privacy.py
       - name: Smoke test deployable container
         run: |
           set -eu

@@ -1,2 +1,4 @@
 # Tâm's tested CPU YOLO baseline; model weights are supplied separately.
 ultralytics==8.4.159
+# Optional BaoTam CLI video export (CPU H.264 encoder).
+imageio-ffmpeg==0.6.0

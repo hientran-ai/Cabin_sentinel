@@ -32,6 +32,8 @@ RUN useradd -m appuser
 
 # Copy only runtime application code; model weights are supplied separately.
 COPY src ./src
+# Privacy preview works in a fresh image without an inference-time download.
+COPY models/face_detection_yunet_2023mar.onnx models/YUNET-LICENSE ./models/
 
 # Opt-in stock weights for a technical image demo. Never enable this for a
 # child-safety accuracy claim; use an approved, evaluated model instead.
