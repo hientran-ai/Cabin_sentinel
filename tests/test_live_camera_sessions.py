@@ -3,7 +3,7 @@
 import importlib
 import importlib.util
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from threading import Event
 
 import pytest
@@ -11,8 +11,7 @@ from PIL import Image
 
 from src.cabinsentinel.service import CabinService
 
-
-NOW = datetime(2026, 10, 2, 9, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 2, 9, tzinfo=UTC)
 
 
 @pytest.fixture
@@ -270,7 +269,7 @@ def test_stop_with_nonadvancing_clock_fails_explicit_but_blocks_new_frames(setup
     sessions, service, clock, error = setup
     creds = sessions.start("normal", "browser")
     clock[0] += timedelta(seconds=1)
-    first = send(sessions, creds, clock)
+    send(sessions, creds, clock)
     with pytest.raises(error, match="STATE_NOT_COMMITTED"):
         sessions.stop(creds["session_id"], creds["session_token"])
     state = sessions.status(creds["session_id"], creds["session_token"])

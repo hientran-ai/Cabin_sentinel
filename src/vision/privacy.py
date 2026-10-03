@@ -1,12 +1,12 @@
 """Blur detected faces on a copy; inference retains the original frame."""
 
+import math
 from collections import deque
 from pathlib import Path
 
 import cv2
 import numpy as np
 
-import math
 
 # Ported from BaoTam f7c04a0; crop math kept local to avoid loading the age model.
 def padded_box(box, width, height, padding=0.1):

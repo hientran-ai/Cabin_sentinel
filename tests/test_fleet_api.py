@@ -5,7 +5,6 @@ from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
-from tests.fleet_helpers import NOW, sensor, vision
 
 from src.cabinsentinel import fleet_api
 from src.cabinsentinel.api import get_cabin_service
@@ -13,6 +12,7 @@ from src.cabinsentinel.fleet import Fleet
 from src.cabinsentinel.models import SensorPayload
 from src.cabinsentinel.service import CabinService
 from src.main import app
+from tests.fleet_helpers import NOW, sensor, vision
 
 DEVICE = "test-device-token"
 
