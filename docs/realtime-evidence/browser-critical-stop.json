@@ -1,0 +1,32 @@
+{
+  "backendStop": [
+    {
+      "actions": [],
+      "at": "2026-10-02T17:08:39.236Z",
+      "camera": {
+        "device_reported": "STOPPED",
+        "inference_busy": false,
+        "last_sequence": 45,
+        "reported_at": "2026-10-02T17:08:39.221825+00:00",
+        "requested": "STOPPED",
+        "source": "browser"
+      },
+      "current": false,
+      "detections": [],
+      "frame": null,
+      "op": "camera_report",
+      "quality": {
+        "issues": [
+          "CAMERA_UNAVAILABLE"
+        ],
+        "status": "UNKNOWN"
+      },
+      "revision": 47,
+      "risk": "ERROR"
+    }
+  ],
+  "dialogClosed": true,
+  "hero": "BACKEND-ASSIGNED RISK STATE\nUNKNOWN\nCurrent decision unavailable\n\nLast backend verdict: ERROR · Camera cannot verify cabin occupancy\n\nRule\nCAMERA_UNAVAILABLE\nCaptured/read 10/3/2026, 12:08:39 AM · data age 6.8s\nUNVERIFIED\n0\nobjects detected",
+  "status": "Camera: STOPPED · Camera API khả dụng",
+  "videoReleased": true
+}

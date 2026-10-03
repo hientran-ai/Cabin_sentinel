@@ -1,0 +1,392 @@
+{
+  "evidence": [
+    {
+      "actions": [
+        {
+          "action_key": "DEMO_e840debd950a4b0ca5da0bcc3e924e88:2:trigger_horn",
+          "incident_id": "91576175-b4e7-47e2-b769-75f96a8d8e70",
+          "revision": 2,
+          "status": "simulated",
+          "tool": "trigger_horn",
+          "vehicle_id": "DEMO_e840debd950a4b0ca5da0bcc3e924e88"
+        },
+        {
+          "action_key": "DEMO_e840debd950a4b0ca5da0bcc3e924e88:2:send_sms",
+          "incident_id": "91576175-b4e7-47e2-b769-75f96a8d8e70",
+          "revision": 2,
+          "status": "simulated",
+          "tool": "send_sms",
+          "vehicle_id": "DEMO_e840debd950a4b0ca5da0bcc3e924e88"
+        },
+        {
+          "action_key": "DEMO_e840debd950a4b0ca5da0bcc3e924e88:2:request_unlock",
+          "expires_at": "2026-10-02T17:08:48.830619+00:00",
+          "incident_id": "91576175-b4e7-47e2-b769-75f96a8d8e70",
+          "request_id": "245e0190-02e0-4df5-ba80-a5d35e336425",
+          "revision": 2,
+          "status": "pending_human_confirmation",
+          "tool": "request_unlock",
+          "vehicle_id": "DEMO_e840debd950a4b0ca5da0bcc3e924e88"
+        }
+      ],
+      "at": "2026-10-02T17:07:48.875Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 1,
+        "reported_at": "2026-10-02T17:07:48.840923+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:07:48.718000+00:00",
+        "height": 480,
+        "latency_ms": 81.03733300231397,
+        "sequence": 1,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 2,
+      "risk": "CRITICAL"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:07:49.956Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 2,
+        "reported_at": "2026-10-02T17:07:49.942897+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:07:49.851000+00:00",
+        "height": 480,
+        "latency_ms": 51.8210000009276,
+        "sequence": 2,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 3,
+      "risk": "CRITICAL"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:07:51.074Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 3,
+        "reported_at": "2026-10-02T17:07:51.061965+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:07:50.955000+00:00",
+        "height": 480,
+        "latency_ms": 62.144875002559274,
+        "sequence": 3,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 4,
+      "risk": "CRITICAL"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:07:52.250Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 4,
+        "reported_at": "2026-10-02T17:07:52.237364+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:07:52.097000+00:00",
+        "height": 480,
+        "latency_ms": 54.502041020896286,
+        "sequence": 4,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 5,
+      "risk": "CRITICAL"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:07:53.356Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 5,
+        "reported_at": "2026-10-02T17:07:53.342273+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:07:53.251000+00:00",
+        "height": 480,
+        "latency_ms": 46.45404196344316,
+        "sequence": 5,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 6,
+      "risk": "CRITICAL"
+    }
+  ],
+  "hotViews": [
+    {
+      "at": "2026-10-02T17:07:48.874Z",
+      "text": "IMMEDIATE INTERVENTION REQUIRED\nCritical cabin risk\n91576175-b4e7-47e2-b769-75f96a8d8e70\n\nLiving being detected in hot parked cabin\n\nTemperature\nUNKNOWN°C\nElapsed\n0:00\nRule ID\nHOT_OCCUPANT\nEvidence\nperson (88%), person (87%), person (83%), person (47%)\nDetection metadata only · no raw frame rendered\nActions managed by backend\nSound horn\nMô Phỏng — No Physical Action Was Performed.\nRecorded At Revision 2 · 91576175-B4e7-47e2-B769-75f96a8d8e70\nSIMULATED\nNotify contacts\nMô Phỏng — No Physical Action Was Performed.\nRecorded At Revision 2 · 91576175-B4e7-47e2-B769-75f96a8d8e70\nSIMULATED\nRequest unlock\nWaiting For Human Confirmation.\nRecorded At Revision 2 · 91576175-B4e7-47e2-B769-75f96a8d8e70\nPENDING_CONFIRMATION\nTắt camera\n\nDừng capture không xác nhận cabin an toàn hoặc mở khóa. Verdict cũ là lịch sử khi data unavailable.\n\nThis alert stays open until the backend reports a different risk state."
+    },
+    {
+      "at": "2026-10-02T17:07:49.041Z",
+      "text": "IMMEDIATE INTERVENTION REQUIRED\nCritical cabin risk\n91576175-b4e7-47e2-b769-75f96a8d8e70\n\nLiving being detected in hot parked cabin\n\nTemperature\nUNKNOWN°C\nElapsed\n0:00\nRule ID\nHOT_OCCUPANT\nEvidence\nperson (88%), person (87%), person (83%), person (47%)\nDetection metadata only · no raw frame rendered\nActions managed by backend\nSound horn\nMô Phỏng — No Physical Action Was Performed.\nRecorded At Revision 2 · 91576175-B4e7-47e2-B769-75f96a8d8e70\nSIMULATED\nNotify contacts\nMô Phỏng — No Physical Action Was Performed.\nRecorded At Revision 2 · 91576175-B4e7-47e2-B769-75f96a8d8e70\nSIMULATED\nRequest unlock\nWaiting For Human Confirmation.\nRecorded At Revision 2 · 91576175-B4e7-47e2-B769-75f96a8d8e70\nPENDING_CONFIRMATION\nTắt camera\n\nDừng capture không xác nhận cabin an toàn hoặc mở khóa. Verdict cũ là lịch sử khi data unavailable.\n\nThis alert stays open until the backend reports a different risk state."
+    },
+    {
+      "at": "2026-10-02T17:07:49.540Z",
+      "text": "IMMEDIATE INTERVENTION REQUIRED\nCritical cabin risk\n91576175-b4e7-47e2-b769-75f96a8d8e70\n\nLiving being detected in hot parked cabin\n\nTemperature\nUNKNOWN°C\nElapsed\n0:00\nRule ID\nHOT_OCCUPANT\nEvidence\nperson (88%), person (87%), person (83%), person (47%)\nDetection metadata only · no raw frame rendered\nActions managed by backend\nSound horn\nMô Phỏng — No Physical Action Was Performed.\nRecorded At Revision 2 · 91576175-B4e7-47e2-B769-75f96a8d8e70\nSIMULATED\nNotify contacts\nMô Phỏng — No Physical Action Was Performed.\nRecorded At Revision 2 · 91576175-B4e7-47e2-B769-75f96a8d8e70\nSIMULATED\nRequest unlock\nWaiting For Human Confirmation.\nRecorded At Revision 2 · 91576175-B4e7-47e2-B769-75f96a8d8e70\nPENDING_CONFIRMATION\nTắt camera\n\nDừng capture không xác nhận cabin an toàn hoặc mở khóa. Verdict cũ là lịch sử khi data unavailable.\n\nThis alert stays open until the backend reports a different risk state."
+    }
+  ],
+  "source": "Public fixture fake camera; YOLO real CPU; vehicle/actions SIMULATED",
+  "status": "Camera: RUNNING · Camera API khả dụng"
+}

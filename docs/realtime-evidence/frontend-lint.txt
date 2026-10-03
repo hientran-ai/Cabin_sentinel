@@ -1,0 +1,8 @@
+
+> cabinsentinel-platform@0.1.0 lint
+> oxlint apps packages && npm --prefix frontend run lint
+
+
+> frontend@0.0.0 lint
+> oxlint
+

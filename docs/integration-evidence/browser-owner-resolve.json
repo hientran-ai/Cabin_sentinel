@@ -1,0 +1,30 @@
+{
+  "case": "owner-explicit-cabin-check",
+  "controlsClosed": false,
+  "currentBadge": "CẢNH BÁO",
+  "requests": [
+    {
+      "actions": [
+        {
+          "status": "simulated",
+          "tool": "send_notification"
+        }
+      ],
+      "operation": "analyze",
+      "revision": 10,
+      "risk": "WARNING",
+      "status": 200
+    },
+    {
+      "actions": [],
+      "incidentStatus": "RESOLVED",
+      "operation": "resolve",
+      "revision": 11,
+      "risk": "SAFE",
+      "status": 200
+    }
+  ],
+  "resolveDone": true,
+  "controlsClosedAfterFollowupRead": true,
+  "uiAfterFreshnessExpires": "UNKNOWN"
+}

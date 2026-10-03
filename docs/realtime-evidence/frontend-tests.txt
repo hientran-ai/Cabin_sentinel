@@ -1,0 +1,89 @@
+
+> cabinsentinel-platform@0.1.0 test
+> npm run test --workspace @cabinsentinel/api-client --workspace @cabinsentinel/domain --workspace @cabinsentinel/mobile --workspace @cabinsentinel/owner-web && npm --prefix frontend test
+
+
+> @cabinsentinel/api-client@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.7 /Users/mac/BUILD_PHASE/Cabin-frontend/packages/api-client
+
+ ✓ src/index.test.ts (3 tests) 6ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  00:32:25
+   Duration  311ms (transform 74ms, setup 0ms, collect 72ms, tests 6ms, environment 0ms, prepare 54ms)
+
+
+> @cabinsentinel/domain@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.7 /Users/mac/BUILD_PHASE/Cabin-frontend/packages/domain
+
+ ✓ src/index.test.ts (4 tests) 30ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  00:32:26
+   Duration  231ms (transform 27ms, setup 0ms, collect 27ms, tests 30ms, environment 0ms, prepare 39ms)
+
+
+> @cabinsentinel/mobile@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.7 /Users/mac/BUILD_PHASE/Cabin-frontend/apps/mobile
+
+ ✓ src/navigation/deepLinks.test.ts (2 tests) 2ms
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  00:32:26
+   Duration  210ms (transform 29ms, setup 0ms, collect 29ms, tests 2ms, environment 0ms, prepare 39ms)
+
+
+> @cabinsentinel/owner-web@0.1.0 test
+> vitest run --config vitest.config.ts
+
+
+ RUN  v3.2.7 /Users/mac/BUILD_PHASE/Cabin-frontend/apps/owner-web
+
+ ✓ src/i18n.test.ts (1 test) 2ms
+ ✓ src/mockRepository.test.ts (4 tests) 3ms
+ ✓ src/backendMapping.test.ts (2 tests) 3ms
+
+ Test Files  3 passed (3)
+      Tests  7 passed (7)
+   Start at  00:32:27
+   Duration  231ms (transform 89ms, setup 0ms, collect 126ms, tests 8ms, environment 0ms, prepare 126ms)
+
+
+> frontend@0.0.0 test
+> vitest run --config vitest.config.mjs --configLoader runner
+
+
+ RUN  v3.2.7 /Users/mac/BUILD_PHASE/Cabin-frontend/frontend
+
+ ✓ src/test/incident-controls.test.tsx (2 tests) 76ms
+ ✓ src/test/camera-stream.test.ts (5 tests) 112ms
+ ✓ src/test/store.test.tsx (5 tests) 117ms
+ ✓ src/test/dashboard.test.tsx (5 tests) 88ms
+ ✓ src/test/integration-safety.test.tsx (9 tests) 91ms
+ ✓ src/test/realtime-feed.test.tsx (2 tests) 112ms
+ ✓ src/test/demo-panel.test.tsx (3 tests) 188ms
+ ✓ src/test/components.test.tsx (13 tests) 247ms
+ ✓ src/test/current-verdict.test.tsx (3 tests) 261ms
+ ✓ src/test/api-client.test.ts (1 test) 9ms
+ ✓ src/test/adapter.test.ts (5 tests) 4ms
+ ✓ src/test/camera-mode.test.tsx (4 tests) 30ms
+ ✓ src/test/blurred-preview.test.ts (3 tests) 2ms
+ ✓ src/test/camera-api.test.ts (7 tests) 9ms
+
+ Test Files  14 passed (14)
+      Tests  67 passed (67)
+   Start at  00:32:28
+   Duration  2.03s (transform 661ms, setup 2.31s, collect 1.66s, tests 1.35s, environment 7.50s, prepare 944ms)
+

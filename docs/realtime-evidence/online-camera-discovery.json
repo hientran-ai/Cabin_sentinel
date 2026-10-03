@@ -1,0 +1,8 @@
+{
+  "url": "https://khanh3636-cabinsentinel-backend.hf.space/gradio_api/info",
+  "checked_at": "2026-10-03 Asia/Ho_Chi_Minh",
+  "named_endpoints": [
+    "/analyze"
+  ],
+  "camera_available": false
+}

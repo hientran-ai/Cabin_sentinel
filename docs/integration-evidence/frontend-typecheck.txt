@@ -1,0 +1,40 @@
+
+> cabinsentinel-platform@0.1.0 typecheck
+> npm run typecheck --workspaces --if-present && npm --prefix frontend run typecheck
+
+
+> @cabinsentinel/mobile@0.1.0 typecheck
+> tsc --noEmit
+
+
+> @cabinsentinel/operations-web@0.1.0 typecheck
+> tsc -b --pretty false
+
+
+> @cabinsentinel/owner-web@0.1.0 typecheck
+> tsc -b --pretty false
+
+
+> @cabinsentinel/api-client@0.1.0 typecheck
+> tsc -p tsconfig.json
+
+
+> @cabinsentinel/contracts@0.1.0 typecheck
+> tsc -p tsconfig.json
+
+
+> @cabinsentinel/design-tokens@0.1.0 typecheck
+> tsc -p tsconfig.json
+
+
+> @cabinsentinel/domain@0.1.0 typecheck
+> tsc -p tsconfig.json
+
+
+> @cabinsentinel/test-fixtures@0.1.0 typecheck
+> tsc -p tsconfig.json
+
+
+> frontend@0.0.0 typecheck
+> tsc -b --pretty false
+

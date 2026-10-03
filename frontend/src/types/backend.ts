@@ -5,6 +5,9 @@ export interface BackendFreshnessSource {
 }
 
 export interface BackendActionResult {
+  action_key?: string
+  revision?: number
+  incident_id?: string | null
   tool?: string
   status?: string
   error?: string
@@ -57,6 +60,9 @@ export interface BackendCabinState {
   revision?: number
   previous_risk_level?: string | null
   incident_id?: string | null
+  incident?: { incident_id: string; status: string; acknowledged_at?: string | null }
+  data_quality?: { status: string; issues: string[] }
+  simulation?: { vehicle_source: string; action_mode: string; vision_source: string }
   risk_level?: string
   rule_id?: string
   reason?: string
@@ -74,6 +80,7 @@ export interface BackendCabinState {
   reasoning_latency_ms?: number | null
   unlock_request?: BackendUnlockRequest | null
   action_results?: BackendActionResult[]
+  action_ledger?: Array<BackendActionResult & { outcome?: string }>
   evaluated_at?: string
   freshness?: {
     as_of?: string
@@ -84,6 +91,7 @@ export interface BackendCabinState {
 }
 
 export interface BackendDemoResponse {
+  session_token?: string | null
   session_id: string
   vision: {
     source: 'MODEL_INFERENCE'

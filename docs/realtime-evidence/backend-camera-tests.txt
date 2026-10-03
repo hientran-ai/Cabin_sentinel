@@ -1,0 +1,29 @@
+............................                                             [100%]
+=============================== warnings summary ===============================
+deploy/huggingface/tests_camera/test_camera_gradio.py::test_registered_camera_api_upload_sse_and_stop
+deploy/huggingface/tests_camera/test_camera_gradio.py::test_registered_camera_api_upload_sse_and_stop
+deploy/huggingface/tests_camera/test_camera_gradio.py::test_registered_camera_api_upload_sse_and_stop
+deploy/huggingface/tests_camera/test_camera_gradio.py::test_registered_camera_api_upload_sse_and_stop
+deploy/huggingface/tests_camera/test_camera_gradio.py::test_registered_camera_api_upload_sse_and_stop
+deploy/huggingface/tests_camera/test_camera_gradio.py::test_registered_camera_api_upload_sse_and_stop
+deploy/huggingface/tests_camera/test_camera_gradio.py::test_registered_camera_api_upload_sse_and_stop
+deploy/huggingface/tests_camera/test_camera_gradio.py::test_registered_camera_api_upload_sse_and_stop
+  /opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:137: Pandas4Warning: 'future.no_silent_downcasting' is deprecated, please refrain from using it.
+    return next(self.gen)
+
+deploy/huggingface/tests_camera/test_camera_gradio.py::test_registered_camera_api_upload_sse_and_stop
+deploy/huggingface/tests_camera/test_camera_gradio.py::test_registered_camera_api_upload_sse_and_stop
+deploy/huggingface/tests_camera/test_camera_gradio.py::test_registered_camera_api_upload_sse_and_stop
+deploy/huggingface/tests_camera/test_camera_gradio.py::test_registered_camera_api_upload_sse_and_stop
+  /private/tmp/cabinsentinel-camera-deps/gradio/queueing.py:178: Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 which utilizes a lazy copy mechanism that defers copies until necessary. Use .copy() to make an eager copy if necessary.
+    pd.DataFrame(records).fillna(value=np.nan).infer_objects(copy=False)  # type: ignore
+
+deploy/huggingface/tests_camera/test_camera_gradio.py::test_registered_camera_api_upload_sse_and_stop
+deploy/huggingface/tests_camera/test_camera_gradio.py::test_registered_camera_api_upload_sse_and_stop
+deploy/huggingface/tests_camera/test_camera_gradio.py::test_registered_camera_api_upload_sse_and_stop
+deploy/huggingface/tests_camera/test_camera_gradio.py::test_registered_camera_api_upload_sse_and_stop
+  /opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:144: Pandas4Warning: 'future.no_silent_downcasting' is deprecated, please refrain from using it.
+    next(self.gen)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+28 passed, 16 warnings in 2.49s

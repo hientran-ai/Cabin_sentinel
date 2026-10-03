@@ -1,0 +1,27 @@
+
+> frontend@0.0.0 test
+> vitest run --config vitest.config.mjs --configLoader runner
+
+
+ RUN  v3.2.7 /Users/mac/BUILD_PHASE/Cabin-frontend/frontend
+
+ ✓ src/test/incident-controls.test.tsx (2 tests) 102ms
+ ✓ src/test/camera-stream.test.ts (4 tests) 109ms
+ ✓ src/test/store.test.tsx (5 tests) 169ms
+ ✓ src/test/integration-safety.test.tsx (9 tests) 102ms
+ ✓ src/test/dashboard.test.tsx (5 tests) 129ms
+ ✓ src/test/realtime-feed.test.tsx (2 tests) 180ms
+ ✓ src/test/demo-panel.test.tsx (3 tests) 246ms
+ ✓ src/test/current-verdict.test.tsx (3 tests) 262ms
+ ✓ src/test/components.test.tsx (13 tests) 379ms
+ ✓ src/test/api-client.test.ts (1 test) 9ms
+ ✓ src/test/camera-mode.test.tsx (1 test) 23ms
+ ✓ src/test/camera-api.test.ts (7 tests) 8ms
+ ✓ src/test/blurred-preview.test.ts (3 tests) 3ms
+ ✓ src/test/adapter.test.ts (5 tests) 3ms
+
+ Test Files  14 passed (14)
+      Tests  63 passed (63)
+   Start at  00:25:51
+   Duration  2.02s (transform 661ms, setup 2.35s, collect 1.66s, tests 1.72s, environment 6.69s, prepare 1.05s)
+

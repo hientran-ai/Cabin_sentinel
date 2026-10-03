@@ -1,0 +1,15 @@
+{
+  "activeCamera": true,
+  "blurredBackground": false,
+  "canvasFilter": "none",
+  "collapsed": true,
+  "critical": true,
+  "cssFilter": "none",
+  "focusOutside": true,
+  "inline": "MAIN",
+  "modalCount": 0,
+  "noticeHeight": 210,
+  "position": "static",
+  "previewLabel": "Preview camera nguyên bản",
+  "viewportHeight": 577
+}

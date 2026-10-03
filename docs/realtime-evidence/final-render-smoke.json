@@ -1,0 +1,7 @@
+{
+  "consent": false,
+  "feed": "Camera: IDLE · Contract camera phù hợp",
+  "header": "REST backend offline\nState API unavailable",
+  "rawVideoHidden": true,
+  "url": "http://127.0.0.1:5183/?final=1#live-cabin"
+}

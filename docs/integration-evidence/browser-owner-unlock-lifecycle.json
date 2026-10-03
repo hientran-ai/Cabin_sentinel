@@ -1,0 +1,5 @@
+{
+  "rendered": true,
+  "rowsHaveRevision": true,
+  "unlockLifecycle": "Current unlock request: canceled\n\nRequest 722ff92d-9d1a-4971-a9a4-ba3f75e5fe80 · incident 905ba0cc-953a-4d8c-9d85-f59771f1100a · expires 2026-10-02T16:10:29.310927+00:00.\n\nAction ledger rows describe earlier recorded results. This read-only request does not unlock a vehicle; no unlock confirmation endpoint is available."
+}

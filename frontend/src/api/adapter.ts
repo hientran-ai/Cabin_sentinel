@@ -7,7 +7,7 @@ const cameraStates: CameraStatus[] = ['OK', 'BLOCKED', 'NO_FEED']
 const occupancyStates: OccupancyState[] = ['PRESENT', 'SUSPECTED', 'ABSENT', 'UNKNOWN']
 const objectClasses: DetectedObject['class'][] = ['person', 'dog', 'cat', 'cell_phone', 'backpack']
 const toolActions: ToolResult['action'][] = ['TRIGGER_HORN', 'CRACK_WINDOW', 'SEND_SMS', 'SEND_NOTIFICATION', 'REQUEST_UNLOCK']
-const toolStatuses: ToolResult['status'][] = ['IDLE', 'RUNNING', 'SUCCESS', 'FAILED', 'SIMULATED', 'PENDING_CONFIRMATION']
+const toolStatuses: ToolResult['status'][] = ['IDLE', 'RUNNING', 'SUCCESS', 'FAILED', 'SIMULATED', 'PENDING_CONFIRMATION', 'PLANNED', 'ATTEMPTED', 'UNKNOWN']
 
 function record(value: unknown): UnknownRecord {
   return value !== null && typeof value === 'object' ? (value as UnknownRecord) : {}
@@ -60,21 +60,25 @@ const backendActionMap: Record<string, ToolResult['action'] | undefined> = {
 const backendStatusMap: Record<string, ToolResult['status'] | undefined> = {
   idle: 'IDLE', running: 'RUNNING', success: 'SUCCESS', failed: 'FAILED',
   simulated: 'SIMULATED', pending_human_confirmation: 'PENDING_CONFIRMATION',
+  planned: 'PLANNED', attempted: 'ATTEMPTED', unknown: 'UNKNOWN',
 }
 
 function adaptBackendTools(value: BackendActionResult[] | undefined): ToolResult[] {
   if (!Array.isArray(value)) return []
   return value.flatMap((item) => {
-    const action = backendActionMap[item.tool ?? '']
-    const status = backendStatusMap[item.status ?? '']
+    const action = backendActionMap[item.tool ?? ''] ?? 'UNKNOWN_ACTION'
+    const status = backendStatusMap[item.status ?? ''] ?? 'UNKNOWN'
     if (!action || !status) return []
     return [{
       action,
       status,
+      actionKey: item.action_key,
+      revision: item.revision,
+      incidentId: item.incident_id,
       message: item.error
         ? `Backend error: ${item.error}`
         : status === 'SIMULATED'
-          ? 'Simulation only — no physical action was performed.'
+          ? 'Mô phỏng — no physical action was performed.'
           : status === 'PENDING_CONFIRMATION'
             ? 'Waiting for human confirmation.'
             : undefined,
@@ -151,10 +155,13 @@ function adaptUnlockRequest(value: BackendUnlockRequest | null | undefined): Unl
 }
 
 function backendDataAgeMs(payload: BackendCabinState): number {
-  const ages = [payload.freshness?.sensor?.age_s, payload.freshness?.vision?.age_s]
-    .filter((age): age is number => typeof age === 'number' && Number.isFinite(age))
-  if (payload.decision_current === false) return Math.max(3001, ...ages.map((age) => age * 1000))
-  return ages.length ? Math.max(...ages) * 1000 : 3001
+  const sources = [payload.freshness?.sensor, payload.freshness?.vision]
+  const knownAges = sources.map(source => source?.age_s).filter((age): age is number => typeof age === 'number' && Number.isFinite(age) && age >= 0)
+  if (sources.some(source => !source || source.status !== 'FRESH' ||
+    typeof source.age_s !== 'number' || !Number.isFinite(source.age_s) || source.age_s < 0)) return Math.max(3001, ...knownAges.map(age => age * 1000))
+  const ages = sources.map(source => source!.age_s as number)
+  if (payload.decision_current === false) return Math.max(3001, ...ages.map(age => age * 1000))
+  return Math.max(...ages) * 1000
 }
 
 export function adaptBackendState(payload: BackendCabinState): AgentState {
@@ -174,11 +181,11 @@ export function adaptBackendState(payload: BackendCabinState): AgentState {
     reason: text(payload.reason, 'Backend did not provide a reason.'),
     cameraStatus: cameraRaw === 'OK' ? 'OK' : cameraRaw === 'BLOCKED' ? 'BLOCKED' : 'NO_FEED',
     sensors: {
-      temperatureC: number(payload.temperature),
+      temperatureC: typeof payload.temperature === 'number' && Number.isFinite(payload.temperature) ? payload.temperature : null,
       engine: ['ON', 'OFF'].includes(text(payload.engine_status, '').toUpperCase())
         ? text(payload.engine_status, '').toUpperCase() as 'ON' | 'OFF'
         : 'UNKNOWN',
-      doorsLocked: boolean(payload.doors_locked, true),
+      doorsLocked: typeof payload.doors_locked === 'boolean' ? payload.doors_locked : null,
     },
     objects: adaptObjects(payload.detected_objects, true),
     occupancyState: occupancyStates.includes(occupancy as OccupancyState) ? occupancy as OccupancyState : 'UNKNOWN',
@@ -188,13 +195,21 @@ export function adaptBackendState(payload: BackendCabinState): AgentState {
     seatEvidence: adaptSeatEvidence(payload.seat_evidence),
     seatConfigurationState: text(payload.seat_configuration_state, 'NOT_ENOUGH_EVIDENCE'),
     reasoningLatencyMs: typeof payload.reasoning_latency_ms === 'number' && Number.isFinite(payload.reasoning_latency_ms) ? payload.reasoning_latency_ms : undefined,
-    decisionCurrent: typeof payload.decision_current === 'boolean' ? payload.decision_current : undefined,
+    decisionCurrent: payload.decision_current === true
+      ? typeof payload.temperature === 'number' && Number.isFinite(payload.temperature) &&
+        ['ON', 'OFF'].includes(text(payload.engine_status, '').toUpperCase()) &&
+        typeof payload.doors_locked === 'boolean' && typeof payload.camera_status === 'string' &&
+        Array.isArray(payload.detected_objects) && occupancyStates.includes(occupancy as OccupancyState)
+      : typeof payload.decision_current === 'boolean' ? false : undefined,
     unlockRequest: adaptUnlockRequest(payload.unlock_request),
     durationSeconds: 0,
     internetAvailable: true,
     dataAgeMs: backendDataAgeMs(payload),
-    toolResults: adaptBackendTools(payload.action_results),
-    acknowledgementStatus: 'NONE',
+    toolResults: adaptBackendTools([...(payload.action_results ?? []), ...(payload.action_ledger ?? []).filter(item => !(payload.action_results ?? []).some(result => result.action_key && result.action_key === item.action_key))]),
+    dataQuality: payload.data_quality,
+    incident: payload.incident ? { incidentId: payload.incident.incident_id, status: payload.incident.status, acknowledgedAt: payload.incident.acknowledged_at } : undefined,
+    simulation: payload.simulation?.vehicle_source === 'SIMULATED',
+    acknowledgementStatus: payload.incident?.acknowledged_at ? 'ACKNOWLEDGED' : 'NONE',
   }
 }
 

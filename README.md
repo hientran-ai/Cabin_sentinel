@@ -1,3 +1,7 @@
+## BUILD_PHASE frontend integration (2026-10-02)
+
+Dashboard and Owner Web now use the verified V1 demo session API. Run instructions, source/deployment mismatches, screen/API matrix and test evidence: [integration report](docs/BUILD_PHASE_INTEGRATION_2026-10-02.md), [Owner README](apps/owner-web/README.md), [dashboard README](frontend/README.md). Backend source bundled upstream is historical; the audited live snapshot is recorded in the report. Operations/mobile runtime integration remains unverified.
+
 # CabinSentinel — Backend & Sensor Sprint 0
 
 V1 online image demo instructions: [docs/V1_ONLINE_DEMO.md](docs/V1_ONLINE_DEMO.md).

@@ -1,0 +1,12 @@
+{
+  "camera": "Camera: STOPPED · Camera API khả dụng",
+  "hero": "BACKEND-ASSIGNED RISK STATE\nUNKNOWN\nCurrent decision unavailable\n\nLast backend verdict: ERROR · Sensor data is stale or in the future\n\nRule\nSENSOR_STALE\nEvaluated 10/3/2026, 12:14:48 AM · data age 15.9s\nUNVERIFIED\n4\nobjects detected",
+  "quality": [
+    "Data quality: STALE · SENSOR_STALE, VISION_STALE",
+    "Camera: STOPPED · Camera API khả dụng",
+    "Vision model ready for image analysis."
+  ],
+  "sensors": "CABIN TEMPERATURE\n25.0°C\nMô phỏng · vehicle scenario\nENGINE\nON\nReported power state; does not establish cabin safety\nDOORS\nUNLOCKED\nReported door state\nCAMERA\nOK\nBackend image evidence; no live feed supplied",
+  "url": "http://127.0.0.1:5183/",
+  "videoReleased": true
+}
