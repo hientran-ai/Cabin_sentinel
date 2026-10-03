@@ -1,0 +1,714 @@
+{
+  "started_at": "2026-10-03T04:29:25.985Z",
+  "frontend": "http://127.0.0.1:5183",
+  "api": "http://127.0.0.1:7863",
+  "scenarios": {
+    "1_normal_camera": {
+      "passed": true,
+      "hero": [
+        "BACKEND-ASSIGNED RISK STATE",
+        "CRITICAL",
+        "Living being detected in hot parked cabin"
+      ],
+      "actions_panel": [
+        "BACKEND ACTION RESULTS",
+        "Response actions",
+        "Sound horn",
+        "Mô Phỏng — No Physical Action Was Performed.",
+        "Recorded At Revision 2 · Cb14392f-C98d-40b9-A09b-Becba2872971",
+        "SIMULATED",
+        "Notify contacts",
+        "Mô Phỏng — No Physical Action Was Performed.",
+        "Recorded At Revision 2 · Cb14392f-C98d-40b9-A09b-Becba2872971",
+        "SIMULATED"
+      ],
+      "last_frame": {
+        "at": 1791001770768,
+        "sequence": 3,
+        "captured_at": "2026-10-03T04:29:30.681000+00:00",
+        "risk": "CRITICAL",
+        "rule": "HOT_OCCUPANT",
+        "current": true,
+        "yolo_ms": 41.696999999658146,
+        "detections": [
+          "person",
+          "person",
+          "person",
+          "person"
+        ],
+        "actions": [],
+        "preview": {
+          "status": "PROCESSED",
+          "method": "YUNET_SOFT_OVAL",
+          "sequence": 3,
+          "faces": 2,
+          "masked": 2,
+          "privacy_ms": 16.733916000248428,
+          "sha256_prefix": "16b3104739e5bc51"
+        },
+        "result_wait_ms": 75
+      },
+      "frames_seen": 3,
+      "privacy_before_start": {
+        "videos": [
+          {
+            "hidden": true,
+            "display": "none",
+            "visibility": "visible",
+            "opacity": "1",
+            "w": 0,
+            "h": 0,
+            "has_stream": false
+          }
+        ],
+        "images": [],
+        "canvas": {
+          "hidden": true,
+          "display": "none",
+          "filter": "none",
+          "width": 300,
+          "height": 150,
+          "w": 0,
+          "h": 0,
+          "corner_rgba": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "video_visible": false
+      },
+      "privacy_running": {
+        "videos": [
+          {
+            "hidden": true,
+            "display": "none",
+            "visibility": "visible",
+            "opacity": "1",
+            "w": 0,
+            "h": 0,
+            "has_stream": true
+          }
+        ],
+        "images": [],
+        "canvas": {
+          "hidden": false,
+          "display": "block",
+          "filter": "none",
+          "width": 640,
+          "height": 480,
+          "w": 697,
+          "h": 522,
+          "corner_rgba": [
+            100,
+            85,
+            46,
+            255
+          ]
+        },
+        "video_visible": false,
+        "pixel_diff": {
+          "faces": [
+            38.96,
+            43.32
+          ],
+          "background_band": 10.33
+        }
+      }
+    },
+    "2_backend_outage": {
+      "passed": true,
+      "hero": [
+        "BACKEND-ASSIGNED RISK STATE",
+        "UNKNOWN",
+        "Current decision unavailable"
+      ],
+      "camera_error": "Camera network or response error; result unavailable.",
+      "privacy": {
+        "videos": [
+          {
+            "hidden": true,
+            "display": "none",
+            "visibility": "visible",
+            "opacity": "1",
+            "w": 0,
+            "h": 0,
+            "has_stream": true
+          }
+        ],
+        "images": [],
+        "canvas": {
+          "hidden": false,
+          "display": "block",
+          "filter": "none",
+          "width": 640,
+          "height": 480,
+          "w": 697,
+          "h": 522,
+          "corner_rgba": [
+            39,
+            59,
+            62,
+            255
+          ]
+        },
+        "video_visible": false,
+        "pixel_diff": {
+          "faces": [
+            58.4,
+            80.36
+          ],
+          "background_band": 133.45
+        }
+      },
+      "preview_blank": true
+    },
+    "3_backend_recovery": {
+      "passed": true,
+      "hero": [
+        "BACKEND-ASSIGNED RISK STATE",
+        "CRITICAL",
+        "Living being detected in hot parked cabin"
+      ],
+      "camera_error_elements": 0,
+      "privacy": {
+        "videos": [
+          {
+            "hidden": true,
+            "display": "none",
+            "visibility": "visible",
+            "opacity": "1",
+            "w": 0,
+            "h": 0,
+            "has_stream": true
+          }
+        ],
+        "images": [],
+        "canvas": {
+          "hidden": false,
+          "display": "block",
+          "filter": "none",
+          "width": 640,
+          "height": 480,
+          "w": 697,
+          "h": 522,
+          "corner_rgba": [
+            100,
+            85,
+            46,
+            255
+          ]
+        },
+        "video_visible": false,
+        "pixel_diff": {
+          "faces": [
+            38.96,
+            43.32
+          ],
+          "background_band": 10.33
+        }
+      }
+    },
+    "4_stale_response": {
+      "passed": true,
+      "held_one_result_ms": 4000,
+      "preview_blank_while_late": true,
+      "hero_while_late": [
+        "BACKEND-ASSIGNED RISK STATE",
+        "UNKNOWN"
+      ],
+      "late_frames": [
+        {
+          "at": 1791001776984,
+          "sequence": 5,
+          "captured_at": "2026-10-03T04:29:36.899000+00:00",
+          "risk": "CRITICAL",
+          "rule": "HOT_OCCUPANT",
+          "current": true,
+          "yolo_ms": 39.526415999716846,
+          "detections": [
+            "person",
+            "person",
+            "person",
+            "person"
+          ],
+          "actions": [],
+          "preview": {
+            "status": "PROCESSED",
+            "method": "YUNET_SOFT_OVAL",
+            "sequence": 5,
+            "faces": 2,
+            "masked": 2,
+            "privacy_ms": 15.929292000237183,
+            "sha256_prefix": "16b3104739e5bc51"
+          },
+          "result_wait_ms": 72
+        },
+        {
+          "at": 1791001778082,
+          "sequence": 6,
+          "captured_at": "2026-10-03T04:29:37.992000+00:00",
+          "risk": "CRITICAL",
+          "rule": "HOT_OCCUPANT",
+          "current": true,
+          "yolo_ms": 41.005124999628606,
+          "detections": [
+            "person",
+            "person",
+            "person",
+            "person"
+          ],
+          "actions": [],
+          "preview": {
+            "status": "PROCESSED",
+            "method": "YUNET_SOFT_OVAL",
+            "sequence": 6,
+            "faces": 2,
+            "masked": 2,
+            "privacy_ms": 15.782208000018727,
+            "sha256_prefix": "16b3104739e5bc51"
+          },
+          "result_wait_ms": 74
+        },
+        {
+          "at": 1791001783123,
+          "sequence": 7,
+          "captured_at": "2026-10-03T04:29:39.092000+00:00",
+          "risk": "CRITICAL",
+          "rule": "HOT_OCCUPANT",
+          "current": true,
+          "yolo_ms": 37.17525000001842,
+          "detections": [
+            "person",
+            "person",
+            "person",
+            "person"
+          ],
+          "actions": [],
+          "preview": {
+            "status": "PROCESSED",
+            "method": "YUNET_SOFT_OVAL",
+            "sequence": 7,
+            "faces": 2,
+            "masked": 2,
+            "privacy_ms": 16.053583000029903,
+            "sha256_prefix": "16b3104739e5bc51"
+          },
+          "result_wait_ms": 4007
+        }
+      ],
+      "hero_after": [
+        "BACKEND-ASSIGNED RISK STATE",
+        "CRITICAL"
+      ]
+    },
+    "camera_stop_hides_preview": {
+      "passed": true,
+      "privacy": {
+        "videos": [
+          {
+            "hidden": true,
+            "display": "none",
+            "visibility": "visible",
+            "opacity": "1",
+            "w": 0,
+            "h": 0,
+            "has_stream": false
+          }
+        ],
+        "images": [],
+        "canvas": {
+          "hidden": true,
+          "display": "none",
+          "filter": "none",
+          "width": 640,
+          "height": 480,
+          "w": 0,
+          "h": 0,
+          "corner_rgba": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "video_visible": false
+      }
+    },
+    "6_corrupt_upload": {
+      "passed": true,
+      "http": [
+        {
+          "kind": "analyze",
+          "status": 422,
+          "started_ms": 19760,
+          "duration_ms": 7
+        }
+      ],
+      "ui_error": "Image cannot be decoded"
+    },
+    "7_duplicate_submission": {
+      "passed": true,
+      "analyze_requests_total": 2,
+      "note": "request 1 = corrupt upload (422); triple click on the valid image produced exactly one request",
+      "http": [
+        {
+          "kind": "analyze",
+          "status": 422,
+          "started_ms": 19760,
+          "duration_ms": 7
+        },
+        {
+          "kind": "analyze",
+          "status": 200,
+          "started_ms": 19802,
+          "duration_ms": 58
+        }
+      ],
+      "hero": [
+        "BACKEND-ASSIGNED RISK STATE",
+        "CRITICAL"
+      ]
+    },
+    "5_switch_vehicle": {
+      "passed": true,
+      "samples": [
+        {
+          "id": "VF5-DEMO-03",
+          "text": null
+        },
+        {
+          "id": "VF5-DEMO-03",
+          "text": "Vehicle off; cabin 24.0°C; doors locked; no occupant detected by camera. Rule EMPTY_CABIN: No occupant or radar presence detected."
+        },
+        {
+          "id": "VF5-DEMO-03",
+          "text": "Vehicle off; cabin 24.0°C; doors locked; no occupant detected by camera. Rule EMPTY_CABIN: No occupant or radar presence detected."
+        },
+        {
+          "id": "VF5-DEMO-03",
+          "text": "Vehicle off; cabin 24.0°C; doors locked; no occupant detected by camera. Rule EMPTY_CABIN: No occupant or radar presence detected."
+        },
+        {
+          "id": "VF5-DEMO-03",
+          "text": "Vehicle off; cabin 24.0°C; doors locked; no occupant detected by camera. Rule EMPTY_CABIN: No occupant or radar presence detected."
+        }
+      ],
+      "fleet_rows": [
+        "Family SUV | VF8-DEMO-01 · SIMULATED | online | 11:29:52 AM | CRITICAL | PRESENT | 1 person | 39.2°C | locked | 15 | OPEN",
+        "School-run MPV | VF9-DEMO-02 · SIMULATED | online | 11:29:52 AM | WARNING | PRESENT | 1 person | 28.0°C | locked | 15 | OPEN",
+        "City hatchback | VF5-DEMO-03 · SIMULATED | online | 11:29:52 AM | SAFE | ABSENT | — | 24.0°C | locked | 0 | —",
+        "Spare sedan | VF3-DEMO-04 · NONE | offline | never seen | UNKNOWN | UNKNOWN | — | — | UNKNOWN | 0 | —"
+      ]
+    },
+    "guardian_flow": {
+      "passed": true,
+      "guardian_card": [
+        "SCHOOL-RUN MPV · SCHOOL PICKUP",
+        "INSIDE",
+        "Child checked in — inside the vehicle",
+        "Last event: entered vehicle at 10/3/2026, 11:29:55 AM · source MANUAL_CHECKIN",
+        "Vehicle safety:",
+        "WARNING"
+      ],
+      "event_count_after_double_click": 1,
+      "guardian_cannot_list_vehicles": 403
+    }
+  },
+  "notes": [],
+  "camera_frames": [
+    {
+      "at": 1791001768582,
+      "sequence": 1,
+      "captured_at": "2026-10-03T04:29:28.359000+00:00",
+      "risk": "CRITICAL",
+      "rule": "HOT_OCCUPANT",
+      "current": true,
+      "yolo_ms": 127.79050000017378,
+      "detections": [
+        "person",
+        "person",
+        "person",
+        "person"
+      ],
+      "actions": [
+        "trigger_horn:simulated",
+        "send_sms:simulated",
+        "request_unlock:pending_human_confirmation"
+      ],
+      "preview": {
+        "status": "PROCESSED",
+        "method": "YUNET_SOFT_OVAL",
+        "sequence": 1,
+        "faces": 2,
+        "masked": 2,
+        "privacy_ms": 23.48204200006876,
+        "sha256_prefix": "16b3104739e5bc51"
+      },
+      "result_wait_ms": 201
+    },
+    {
+      "at": 1791001769672,
+      "sequence": 2,
+      "captured_at": "2026-10-03T04:29:29.586000+00:00",
+      "risk": "CRITICAL",
+      "rule": "HOT_OCCUPANT",
+      "current": true,
+      "yolo_ms": 40.537041000334284,
+      "detections": [
+        "person",
+        "person",
+        "person",
+        "person"
+      ],
+      "actions": [],
+      "preview": {
+        "status": "PROCESSED",
+        "method": "YUNET_SOFT_OVAL",
+        "sequence": 2,
+        "faces": 2,
+        "masked": 2,
+        "privacy_ms": 15.241583999795694,
+        "sha256_prefix": "16b3104739e5bc51"
+      },
+      "result_wait_ms": 72
+    },
+    {
+      "at": 1791001770768,
+      "sequence": 3,
+      "captured_at": "2026-10-03T04:29:30.681000+00:00",
+      "risk": "CRITICAL",
+      "rule": "HOT_OCCUPANT",
+      "current": true,
+      "yolo_ms": 41.696999999658146,
+      "detections": [
+        "person",
+        "person",
+        "person",
+        "person"
+      ],
+      "actions": [],
+      "preview": {
+        "status": "PROCESSED",
+        "method": "YUNET_SOFT_OVAL",
+        "sequence": 3,
+        "faces": 2,
+        "masked": 2,
+        "privacy_ms": 16.733916000248428,
+        "sha256_prefix": "16b3104739e5bc51"
+      },
+      "result_wait_ms": 75
+    },
+    {
+      "at": 1791001775892,
+      "sequence": 4,
+      "captured_at": "2026-10-03T04:29:35.795000+00:00",
+      "risk": "CRITICAL",
+      "rule": "HOT_OCCUPANT",
+      "current": true,
+      "yolo_ms": 41.13237499996103,
+      "detections": [
+        "person",
+        "person",
+        "person",
+        "person"
+      ],
+      "actions": [
+        "trigger_horn:simulated",
+        "send_sms:simulated",
+        "request_unlock:pending_human_confirmation"
+      ],
+      "preview": {
+        "status": "PROCESSED",
+        "method": "YUNET_SOFT_OVAL",
+        "sequence": 4,
+        "faces": 2,
+        "masked": 2,
+        "privacy_ms": 15.092500000264408,
+        "sha256_prefix": "16b3104739e5bc51"
+      },
+      "result_wait_ms": 77
+    },
+    {
+      "at": 1791001776984,
+      "sequence": 5,
+      "captured_at": "2026-10-03T04:29:36.899000+00:00",
+      "risk": "CRITICAL",
+      "rule": "HOT_OCCUPANT",
+      "current": true,
+      "yolo_ms": 39.526415999716846,
+      "detections": [
+        "person",
+        "person",
+        "person",
+        "person"
+      ],
+      "actions": [],
+      "preview": {
+        "status": "PROCESSED",
+        "method": "YUNET_SOFT_OVAL",
+        "sequence": 5,
+        "faces": 2,
+        "masked": 2,
+        "privacy_ms": 15.929292000237183,
+        "sha256_prefix": "16b3104739e5bc51"
+      },
+      "result_wait_ms": 72
+    },
+    {
+      "at": 1791001778082,
+      "sequence": 6,
+      "captured_at": "2026-10-03T04:29:37.992000+00:00",
+      "risk": "CRITICAL",
+      "rule": "HOT_OCCUPANT",
+      "current": true,
+      "yolo_ms": 41.005124999628606,
+      "detections": [
+        "person",
+        "person",
+        "person",
+        "person"
+      ],
+      "actions": [],
+      "preview": {
+        "status": "PROCESSED",
+        "method": "YUNET_SOFT_OVAL",
+        "sequence": 6,
+        "faces": 2,
+        "masked": 2,
+        "privacy_ms": 15.782208000018727,
+        "sha256_prefix": "16b3104739e5bc51"
+      },
+      "result_wait_ms": 74
+    },
+    {
+      "at": 1791001783123,
+      "sequence": 7,
+      "captured_at": "2026-10-03T04:29:39.092000+00:00",
+      "risk": "CRITICAL",
+      "rule": "HOT_OCCUPANT",
+      "current": true,
+      "yolo_ms": 37.17525000001842,
+      "detections": [
+        "person",
+        "person",
+        "person",
+        "person"
+      ],
+      "actions": [],
+      "preview": {
+        "status": "PROCESSED",
+        "method": "YUNET_SOFT_OVAL",
+        "sequence": 7,
+        "faces": 2,
+        "masked": 2,
+        "privacy_ms": 16.053583000029903,
+        "sha256_prefix": "16b3104739e5bc51"
+      },
+      "result_wait_ms": 4007
+    },
+    {
+      "at": 1791001784220,
+      "sequence": 8,
+      "captured_at": "2026-10-03T04:29:44.131000+00:00",
+      "risk": "CRITICAL",
+      "rule": "HOT_OCCUPANT",
+      "current": true,
+      "yolo_ms": 41.67804100006833,
+      "detections": [
+        "person",
+        "person",
+        "person",
+        "person"
+      ],
+      "actions": [
+        "trigger_horn:simulated",
+        "send_sms:simulated",
+        "request_unlock:pending_human_confirmation"
+      ],
+      "preview": {
+        "status": "PROCESSED",
+        "method": "YUNET_SOFT_OVAL",
+        "sequence": 8,
+        "faces": 2,
+        "masked": 2,
+        "privacy_ms": 15.451875000053406,
+        "sha256_prefix": "16b3104739e5bc51"
+      },
+      "result_wait_ms": 76
+    },
+    {
+      "at": 1791001785317,
+      "sequence": 9,
+      "captured_at": "2026-10-03T04:29:45.226000+00:00",
+      "risk": "CRITICAL",
+      "rule": "HOT_OCCUPANT",
+      "current": true,
+      "yolo_ms": 38.771750000250904,
+      "detections": [
+        "person",
+        "person",
+        "person",
+        "person"
+      ],
+      "actions": [],
+      "preview": {
+        "status": "PROCESSED",
+        "method": "YUNET_SOFT_OVAL",
+        "sequence": 9,
+        "faces": 2,
+        "masked": 2,
+        "privacy_ms": 15.888207999978476,
+        "sha256_prefix": "16b3104739e5bc51"
+      },
+      "result_wait_ms": 73
+    }
+  ],
+  "camera_calls_summary": [
+    {
+      "kind": "call:camera_start",
+      "n": 1,
+      "median_ms": 5
+    },
+    {
+      "kind": "result:camera_start",
+      "n": 1,
+      "median_ms": 329
+    },
+    {
+      "kind": "call:camera_status",
+      "n": 9,
+      "median_ms": 4
+    },
+    {
+      "kind": "result:camera_status",
+      "n": 9,
+      "median_ms": 3
+    },
+    {
+      "kind": "upload",
+      "n": 9,
+      "median_ms": 4
+    },
+    {
+      "kind": "call:camera_frame",
+      "n": 9,
+      "median_ms": 2
+    },
+    {
+      "kind": "result:camera_frame",
+      "n": 9,
+      "median_ms": 75
+    }
+  ],
+  "console_errors": [
+    "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+    "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+    "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+    "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+    "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+  ],
+  "finished_at": "2026-10-03T04:29:58.787Z",
+  "passed": true
+}

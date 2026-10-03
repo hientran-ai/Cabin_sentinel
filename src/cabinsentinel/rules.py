@@ -6,13 +6,17 @@ LIVING = {"person", "baby", "dog", "cat"}
 ITEMS = {"cell phone", "backpack"}
 BABY_SEAT = "baby seat"
 MIN_CONFIDENCE = 0.4
+DEMO_HOT_THRESHOLD_C = 35.0
 
 
-def decide(sensor: dict | None, vision: dict | None, now: datetime) -> dict:
+def decide(sensor: dict | None, vision: dict | None, now: datetime, *, unresolved_incident: bool = False) -> dict:
     """Return a decision without clocks, I/O, or action side effects."""
     occupancy = derive_occupancy(sensor, vision, now)
+    risk = _decide_risk(sensor, vision, now, occupancy)
+    if unresolved_incident and risk["risk_level"] in {"SAFE", "NOTICE"}:
+        risk = _result("WARNING", "UNRESOLVED_OCCUPANT", "Previous occupant incident requires a separate cabin check", ["send_notification"])
     return {
-        **_decide_risk(sensor, vision, now, occupancy), **occupancy,
+        **risk, **occupancy,
         "evidence_conflicts": derive_evidence_conflicts(sensor, vision, now),
         "seat_configuration_state": "NOT_ENOUGH_EVIDENCE",
     }
@@ -182,7 +186,7 @@ def _decide_risk(sensor: dict | None, vision: dict | None, now: datetime, occupa
         and sensor["driver_present"] is True
     )
 
-    if living and temperature >= 35:
+    if living and temperature >= DEMO_HOT_THRESHOLD_C:
         if moving_with_driver:
             return _result(
                 "WARNING", "HOT_ATTENDED_DRIVING", "Hot occupied moving vehicle",
@@ -198,6 +202,7 @@ def _decide_risk(sensor: dict | None, vision: dict | None, now: datetime, occupa
         only_pet = living <= {"dog", "cat"}
         if (
             only_pet
+            and not moving_with_driver
             and sensor["powertrain_type"] == "EV"
             and sensor["operation_mode"] == "PET"
             and sensor["hvac_status"] == "ACTIVE"
@@ -205,7 +210,7 @@ def _decide_risk(sensor: dict | None, vision: dict | None, now: datetime, occupa
             and sensor["battery_soc_pct"] > 30
             and temperature <= 30
         ):
-            return _result("NOTICE", "EV_PET_MONITORED", "Pet mode active and cabin monitored", ["send_notification"])
+            return _result("WARNING", "EV_PET_UNATTENDED", "Pet mode climate active; attendant not confirmed", ["send_notification"])
         if sensor["operation_mode"] == "REMOTE_START":
             deadline = sensor.get("remote_start_expires_at")
             if deadline is not None:

@@ -48,6 +48,8 @@ Env overrides:
   ANTIGRAVITY_BRAIN_DIR  point at a different brain/ directory
   AI_LOG_DIR             where session.jsonl is written (default: .ai-log)
 """
+from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -67,6 +69,9 @@ if sys.platform == "win32":
 
 VN_TZ = timezone(timedelta(hours=7))
 GEMINI_HOME = Path.home() / ".gemini"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+# Optional shared workspace whose conversations also count as this repo's.
+BUILD_PHASE_ROOT = os.environ.get("BUILD_PHASE_ROOT", "")
 
 # Antigravity has shipped under two folder names; prefer the newer IDE one.
 BRAIN_CANDIDATES = (
@@ -87,7 +92,7 @@ def git(cmd: str, cwd: Path | None = None) -> str:
     try:
         return subprocess.check_output(
             cmd.split(), shell=False, text=True, stderr=subprocess.DEVNULL,
-            cwd=cwd,
+            cwd=cwd or REPO_ROOT,
         ).strip()
     except Exception:
         return ""
@@ -96,19 +101,23 @@ def git(cmd: str, cwd: Path | None = None) -> str:
 def repo_context(cwd: Path | None = None) -> tuple[str, str, str, str]:
     """(repo, branch, commit, student) read from the git tree at `cwd`.
 
-    Hook mode passes the workspace root explicitly: the hook process does not
-    necessarily start inside the student's repo.
+    Always prefers REPO_ROOT (/Users/mac/AI/P-068) when it is a git repo so
+    hooks triggered from BUILD_PHASE still report P-068 metadata.
     """
-    root = cwd or Path.cwd()
-    repo = git("git remote get-url origin", cwd).rstrip("/").split("/")[-1]
+    root = REPO_ROOT if (REPO_ROOT / ".git").exists() else (cwd or Path.cwd())
+    repo = git("git remote get-url origin", root).rstrip("/").split("/")[-1]
     if repo.endswith(".git"):
         repo = repo[:-4]
+    student = (
+        git("git config user.email", root)
+        or git("git log -1 --format=%ae", root)
+        or os.environ.get("USERNAME", os.environ.get("USER", "unknown"))
+    )
     return (
         repo or root.name,
-        git("git rev-parse --abbrev-ref HEAD", cwd),
-        git("git rev-parse --short HEAD", cwd),
-        git("git config user.email", cwd)
-        or os.environ.get("USERNAME", os.environ.get("USER", "unknown")),
+        git("git rev-parse --abbrev-ref HEAD", root),
+        git("git rev-parse --short HEAD", root),
+        student,
     )
 
 
@@ -176,16 +185,23 @@ def _conv_cwds(transcript: Path) -> set[str]:
 
 
 def _conv_matches_repo(cwds: set[str], repo_root_n: str) -> bool:
-    """True if any cwd is equal to, ancestor of, or descendant of the repo."""
+    """True if any cwd is equal to, ancestor of, or descendant of the repo (or BUILD_PHASE)."""
     if not repo_root_n or not cwds:
         return False
-    for cwd in cwds:
-        if cwd == repo_root_n:
-            return True
-        if cwd.startswith(repo_root_n + "\\"):
-            return True
-        if repo_root_n.startswith(cwd + "\\"):
-            return True
+    roots = {
+        repo_root_n,
+        _normalize(str(REPO_ROOT)),
+        _normalize(BUILD_PHASE_ROOT) if BUILD_PHASE_ROOT else "",
+    }
+    roots.discard("")
+    for target in roots:
+        for cwd in cwds:
+            if cwd == target:
+                return True
+            if cwd.startswith(target + "\\"):
+                return True
+            if target.startswith(cwd + "\\"):
+                return True
     return False
 
 
@@ -211,20 +227,28 @@ def extract_user_prompt(content: str) -> str:
 
 def get_logged_entry_ids(log_file: Path) -> set[str]:
     logged: set[str] = set()
-    if not log_file.exists():
-        return logged
-    with open(log_file, encoding="utf-8-sig") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                entry = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            eid = entry.get("entry_id", "")
-            if eid:
-                logged.add(eid)
+    files = [log_file]
+    archive_dir = log_file.parent / "archive"
+    if archive_dir.is_dir():
+        files.extend(sorted(archive_dir.glob("*.jsonl")))
+    for fpath in files:
+        if not fpath.exists():
+            continue
+        try:
+            with open(fpath, encoding="utf-8-sig") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        entry = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    eid = entry.get("entry_id", "")
+                    if eid:
+                        logged.add(eid)
+        except OSError:
+            pass
     return logged
 
 
@@ -257,7 +281,10 @@ def iter_transcript_inputs(transcript: Path, conv_id: str,
                 except ValueError:
                     pass
 
-            text = extract_user_prompt(entry.get("content", ""))
+            raw_content = entry.get("content", "")
+            if "<original_task>" in raw_content or "<prior_attempt>" in raw_content:
+                continue
+            text = extract_user_prompt(raw_content)
             if len(text) < 2:
                 continue
 
@@ -360,7 +387,7 @@ def log_from_hook(transcript: Path, data: dict) -> int:
     """
     conv_id = data.get("conversationId") or transcript.parents[2].name
     workspaces = [w for w in (data.get("workspacePaths") or []) if w]
-    root = Path(workspaces[0]) if workspaces else Path.cwd()
+    root = REPO_ROOT if (REPO_ROOT / ".git").exists() else (Path(workspaces[0]) if workspaces else Path.cwd())
 
     log_dir = Path(os.environ.get("AI_LOG_DIR", ".ai-log"))
     if not log_dir.is_absolute():
@@ -407,6 +434,16 @@ def hook_mode() -> None:
             if n:
                 print(f"[antigravity-log] Logged {n} prompt(s).",
                       file=sys.stderr)
+                submit_script = REPO_ROOT / "scripts" / "submit_log.py"
+                if submit_script.is_file():
+                    subprocess.run(
+                        [sys.executable, str(submit_script)],
+                        cwd=REPO_ROOT,
+                        stdout=sys.stderr,
+                        stderr=sys.stderr,
+                        timeout=10,
+                        check=False,
+                    )
     except Exception:
         pass
     print("{}")
@@ -454,7 +491,9 @@ def main() -> None:
         sys.exit(0)
 
     log_dir = Path(os.environ.get("AI_LOG_DIR", ".ai-log"))
-    log_dir.mkdir(exist_ok=True)
+    if not log_dir.is_absolute():
+        log_dir = REPO_ROOT / log_dir
+    log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / "session.jsonl"
     logged_ids = get_logged_entry_ids(log_file)
 
@@ -462,7 +501,7 @@ def main() -> None:
     if not args.all:
         cutoff = datetime.now(tz=VN_TZ) - timedelta(hours=args.hours)
 
-    repo_root_n = "" if args.no_repo_filter else _normalize(str(Path.cwd()))
+    repo_root_n = "" if args.no_repo_filter else _normalize(str(REPO_ROOT))
 
     repo, branch, commit, student = repo_context()
 
