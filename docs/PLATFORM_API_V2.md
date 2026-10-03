@@ -1,7 +1,5 @@
 # Platform API V2 — Owner Web & Operations Web
 
-> Backend contract for the Owner/Operations web. Implemented in AI20K-Build-Phase-Cohort-4/P-068, branch `feat/backend-platform-apis` (PR linked there).
-
 Base: `/api/v1`. Swagger: `/docs`. All JSON. Auth: `Authorization: Bearer <access_token>`.
 Every mutation writes an audit entry; send `X-Correlation-ID` to tag a flow (echoed on the response).
 

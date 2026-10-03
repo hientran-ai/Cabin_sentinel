@@ -1,0 +1,9 @@
+# Optional: live camera API, YuNet face privacy preview and the Hugging Face Space entrypoint (app.py).
+# Without these, the REST/fleet/guardian API still runs; camera/privacy tests are skipped.
+-r requirements.txt
+-r requirements-vision.txt
+gradio==6.29.0
+spaces
+opencv-python-headless
+torch==2.13.0
+torchvision==0.28.0
