@@ -1,0 +1,8 @@
+{
+  "errors": [
+    "Camera permission denied (test)"
+  ],
+  "hero": "BACKEND-ASSIGNED RISK STATE\nUNKNOWN\nCurrent decision unavailable\n\nLast backend verdict: ERROR · Camera cannot verify cabin occupancy\n\nRule\nCAMERA_UNAVAILABLE\nCaptured/read 10/3/2026, 12:08:39 AM · data age 16.8s\nUNVERIFIED\n0\nobjects detected",
+  "status": "Camera: ERROR · Camera API khả dụng",
+  "videoReleased": true
+}

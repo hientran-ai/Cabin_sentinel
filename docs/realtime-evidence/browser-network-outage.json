@@ -1,0 +1,80 @@
+{
+  "chip": "PREVIEW CỤC BỘ · CHỜ FRAME YOLO",
+  "errors": [
+    "Camera network or response error; result unavailable."
+  ],
+  "evidenceLast": [
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:44.662Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 35,
+        "reported_at": "2026-10-02T17:04:44.650334+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:44.579000+00:00",
+        "height": 480,
+        "latency_ms": 38.99162501329556,
+        "sequence": 35,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 36,
+      "risk": "SAFE"
+    }
+  ],
+  "hero": "BACKEND-ASSIGNED RISK STATE\nUNKNOWN\nCurrent decision unavailable\n\nLast backend verdict: SAFE · Driver present and cabin climate active\n\nRule\nATTENDED_DRIVING\nCaptured/read 10/3/2026, 12:04:44 AM · data age 31.4s\nUNVERIFIED\n4\nobjects detected",
+  "rawVideoHidden": true,
+  "status": "Camera: RUNNING · Camera API khả dụng"
+}

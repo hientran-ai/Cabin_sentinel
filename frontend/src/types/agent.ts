@@ -16,14 +16,17 @@ export interface DetectedObject {
 }
 
 export interface SensorState {
-  temperatureC: number
+  temperatureC: number | null
   engine: EngineState
-  doorsLocked: boolean
+  doorsLocked: boolean | null
 }
 
 export interface ToolResult {
-  action: 'TRIGGER_HORN' | 'CRACK_WINDOW' | 'SEND_SMS' | 'SEND_NOTIFICATION' | 'REQUEST_UNLOCK'
-  status: 'IDLE' | 'RUNNING' | 'SUCCESS' | 'FAILED' | 'SIMULATED' | 'PENDING_CONFIRMATION'
+  action: 'TRIGGER_HORN' | 'CRACK_WINDOW' | 'SEND_SMS' | 'SEND_NOTIFICATION' | 'REQUEST_UNLOCK' | 'UNKNOWN_ACTION'
+  status: 'IDLE' | 'RUNNING' | 'SUCCESS' | 'FAILED' | 'SIMULATED' | 'PENDING_CONFIRMATION' | 'PLANNED' | 'ATTEMPTED' | 'UNKNOWN'
+  actionKey?: string
+  revision?: number
+  incidentId?: string | null
   message?: string
   timestamp?: string
   latencyMs?: number
@@ -75,6 +78,9 @@ export interface AgentState {
   reasoningLatencyMs?: number
   decisionCurrent?: boolean
   unlockRequest?: UnlockRequest
+  dataQuality?: { status: string; issues: string[] }
+  incident?: { incidentId: string; status: string; acknowledgedAt?: string | null }
+  simulation?: boolean
   evidenceFrameUrl?: string
   durationSeconds: number
   internetAvailable: boolean

@@ -1,0 +1,60 @@
+
+> cabinsentinel-platform@0.1.0 build
+> npm run build --workspaces --if-present && npm --prefix frontend run build
+
+
+> @cabinsentinel/mobile@0.1.0 build
+> expo export --platform android --output-dir dist
+
+Starting Metro Bundler
+Android Bundled 328ms apps/mobile/index.js (424 modules)
+
+› android bundles (1):
+_expo/static/js/android/index-f7bbbd04cde711201a17f93679be33f8.js (1.13 MB)
+
+› Files (1):
+metadata.json (149 B)
+
+Exported: dist
+
+> @cabinsentinel/operations-web@0.1.0 build
+> tsc -b && vite build
+
+vite v8.3.2 building client environment for production...
+transforming...
+✓ 77 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.16 kB │ gzip:  0.14 kB
+dist/assets/index-DXSuWr1C.css    5.37 kB │ gzip:  1.83 kB
+dist/assets/index-DGURusN-.js   307.11 kB │ gzip: 96.30 kB
+
+✓ built in 108ms
+
+> @cabinsentinel/owner-web@0.1.0 build
+> tsc -b && vite build
+
+vite v8.3.2 building client environment for production...
+transforming...
+✓ 1629 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.58 kB │ gzip:   0.36 kB
+dist/assets/index-BEbnzzTH.css   44.24 kB │ gzip:   9.77 kB
+dist/assets/index-BIgGk3gU.js   362.42 kB │ gzip: 112.41 kB
+
+✓ built in 167ms
+
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 1587 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.45 kB │ gzip:  0.29 kB
+dist/assets/index-D-qTqoZw.css   20.60 kB │ gzip:  5.40 kB
+dist/assets/index-Ba05yr16.js   280.03 kB │ gzip: 86.70 kB
+
+✓ built in 131ms

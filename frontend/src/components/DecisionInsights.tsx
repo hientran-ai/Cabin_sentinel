@@ -35,7 +35,7 @@ export function DecisionInsights({ state }: { state: AgentState }) {
     </div>
 
     <div className="insight-grid">
-      <Insight Icon={GitCompareArrows} label="Risk transition" value={transition} detail={state.decisionCurrent === false ? 'Decision is no longer current' : 'Latest committed decision'} />
+      <Insight Icon={GitCompareArrows} label="Risk transition" value={transition} detail={state.decisionCurrent === true ? 'Latest committed decision' : 'Historical verdict; current decision unavailable'} />
       <Insight Icon={BrainCircuit} label="Occupancy" value={state.occupancyState} detail={words(state.occupancyReasonCode)} />
       <Insight Icon={Radar} label="Cabin radar" value={radar} detail={state.radarPresence === undefined ? 'Backend did not report radar evidence' : 'Independent presence evidence'} />
       <Insight Icon={Clock3} label="Rule latency" value={latency} detail="Backend reasoning time" />
@@ -48,7 +48,7 @@ export function DecisionInsights({ state }: { state: AgentState }) {
 
     <div className="evidence-sections">
       <div className="evidence-group">
-        <div className="subheading"><ShieldAlert /><div><strong>Evidence conflicts</strong><span>{state.evidenceConflicts.length ? `${state.evidenceConflicts.length} conflict${state.evidenceConflicts.length === 1 ? '' : 's'} retained` : 'Sources agree'}</span></div></div>
+        <div className="subheading"><ShieldAlert /><div><strong>Evidence conflicts</strong><span>{state.evidenceConflicts.length ? `${state.evidenceConflicts.length} conflict${state.evidenceConflicts.length === 1 ? '' : 's'} retained` : 'No conflict reported'}</span></div></div>
         {state.evidenceConflicts.length ? <ul className="conflict-list">{state.evidenceConflicts.map((conflict, index) =>
           <li key={`${conflict.type}-${index}`}><strong>{words(conflict.type)}</strong><span>{conflict.detail}</span></li>)}</ul> : <p className="evidence-empty">No evidence conflicts reported by the backend.</p>}
       </div>

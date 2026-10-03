@@ -1,8 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, type ReactNode } from 'react'
-import { acknowledgeEvent, analyzeDemo, BACKEND_CAPABILITIES, executeEmergencyActions, fetchEventHistory, fetchSystemHealth, subscribeToAgentState, updateSimulation } from '../api/client'
+import { acknowledgeEvent, analyzeDemo, BACKEND_CAPABILITIES, executeEmergencyActions, fetchEventHistory, fetchSystemHealth, subscribeToAgentState, updateSimulation, updateDemoIncident, setExternalStateSource } from '../api/client'
 import type { AcknowledgementReason, AgentState, ConnectionState, DemoScenario, SimulationUpdate, SystemHealth, ToolResult } from '../types/agent'
 
 interface StoreState {
+  monitoringMode: 'IMAGE' | 'CAMERA'
+  cameraTracking: boolean
   current: AgentState
   history: AgentState[]
   health: SystemHealth
@@ -13,11 +15,16 @@ interface StoreState {
   lastReceivedAt: number
   clockMs: number
   error?: string
+  historyError?: string
 }
 
 type Action =
+  | { type: 'CAMERA_TRACKING'; active: boolean }
+  | { type: 'IMAGE_MODE' }
   | { type: 'STATE_RECEIVED'; state: AgentState; receivedAt: number }
   | { type: 'HISTORY'; history: AgentState[] }
+  | { type: 'HISTORY_ERROR'; message: string }
+  | { type: 'INVALIDATE' }
   | { type: 'HEALTH'; health: SystemHealth }
   | { type: 'CONNECTION'; connected: boolean }
   | { type: 'ACTION_START'; eventId: string }
@@ -39,7 +46,7 @@ const initialAgentState: AgentState = {
   ruleId: 'SYSTEM-INIT',
   reason: 'Waiting for the first verified state from the Edge unit.',
   cameraStatus: 'NO_FEED',
-  sensors: { temperatureC: 0, engine: 'UNKNOWN', doorsLocked: false },
+  sensors: { temperatureC: null, engine: 'UNKNOWN', doorsLocked: null },
   objects: [],
   occupancyState: 'UNKNOWN',
   occupancyReasonCode: 'SOURCE_UNAVAILABLE',
@@ -61,6 +68,7 @@ const initialHealth: SystemHealth = {
 }
 
 const initialState: StoreState = {
+  monitoringMode: 'IMAGE', cameraTracking: false,
   current: initialAgentState,
   history: [],
   health: initialHealth,
@@ -94,8 +102,12 @@ function completedTools(result?: AgentState, requestFailed = false): ToolResult[
 
 function reducer(state: StoreState, action: Action): StoreState {
   switch (action.type) {
+    case 'CAMERA_TRACKING': return { ...state, monitoringMode: 'CAMERA', cameraTracking: action.active, history: [], historyError: undefined,
+      connection: 'RECONNECTING', current: { ...state.current, decisionCurrent: false, dataAgeMs: Math.max(3001, state.current.dataAgeMs), cameraStatus: 'NO_FEED' } }
+    case 'IMAGE_MODE': return { ...state, monitoringMode: 'IMAGE', cameraTracking: false }
+
     case 'STATE_RECEIVED': {
-      if (timestamp(action.state) < timestamp(state.current)) return state
+      if (action.state.vehicleId === state.current.vehicleId && (action.state.revision < state.current.revision || timestamp(action.state) < timestamp(state.current))) return state
       const eventChanged = action.state.eventId !== state.current.eventId
       return {
         ...state,
@@ -104,12 +116,13 @@ function reducer(state: StoreState, action: Action): StoreState {
         clockMs: action.receivedAt,
         actionPending: eventChanged ? false : state.actionPending,
         acknowledgementPending: eventChanged ? false : state.acknowledgementPending,
-        error: undefined,
       }
     }
-    case 'HISTORY': return { ...state, history: action.history }
+    case 'HISTORY': return { ...state, history: action.history, historyError: undefined }
+    case 'HISTORY_ERROR': return { ...state, historyError: action.message }
+    case 'INVALIDATE': return { ...state, current: { ...state.current, decisionCurrent: false } }
     case 'HEALTH': return { ...state, health: action.health }
-    case 'CONNECTION': return { ...state, connection: action.connected ? 'CONNECTED' : 'RECONNECTING' }
+    case 'CONNECTION': return { ...state, connection: action.connected ? 'CONNECTED' : 'RECONNECTING', current: action.connected ? state.current : { ...state.current, decisionCurrent: false, internetAvailable: false } }
     case 'ACTION_START': return action.eventId !== state.current.eventId ? state : {
       ...state,
       actionPending: true,
@@ -140,7 +153,7 @@ function reducer(state: StoreState, action: Action): StoreState {
     }
     case 'TICK': return { ...state, clockMs: action.now }
     case 'ERROR': return { ...state, error: action.message }
-    case 'ANALYSIS_START': return { ...state, analysisPending: true, error: undefined }
+    case 'ANALYSIS_START': return { ...state, analysisPending: true, current: { ...state.current, decisionCurrent: false }, error: undefined }
     case 'ANALYSIS_END': return action.state ? {
       ...state,
       analysisPending: false,
@@ -149,7 +162,7 @@ function reducer(state: StoreState, action: Action): StoreState {
       clockMs: Date.now(),
       connection: 'CONNECTED',
       error: undefined,
-    } : { ...state, analysisPending: false, error: action.error }
+    } : { ...state, analysisPending: false, current: { ...state.current, decisionCurrent: false }, error: action.error }
   }
 }
 
@@ -159,6 +172,13 @@ interface AgentContextValue extends StoreState {
   simulate: (update: SimulationUpdate) => Promise<void>
   effectiveDataAgeMs: number
   analyze: (image: File, scenario: DemoScenario) => Promise<void>
+  incidentOperation: (operation: 'acknowledge' | 'resolve', incidentId: string, revision: number) => Promise<void>
+  registerCameraStop: (handler?: () => Promise<void>) => void
+  stopCamera: () => Promise<void>
+  receiveCameraControlState: (current: AgentState) => void
+  setCameraTracking: (active: boolean) => void
+  receiveCameraState: (current: AgentState) => void
+  invalidateCameraState: (message?: string) => void
   capabilities: typeof BACKEND_CAPABILITIES
 }
 
@@ -166,6 +186,12 @@ const AgentContext = createContext<AgentContextValue | null>(null)
 
 export function AgentProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState)
+  const cameraStop = useRef<(() => Promise<void>) | undefined>(undefined)
+  const mode = useRef<'IMAGE' | 'CAMERA'>('IMAGE')
+  const cameraVehicleId = useRef<string | undefined>(undefined)
+  const cameraFlight = useRef(false)
+  const analysisFlight = useRef(false)
+  const incidentFlight = useRef(false)
   const actionFlights = useRef(new Set<string>())
   const acknowledgementFlights = useRef(new Set<string>())
 
@@ -175,8 +201,9 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   ), [])
 
   useEffect(() => {
-    void fetchEventHistory().then((history) => dispatch({ type: 'HISTORY', history })).catch(() => undefined)
-  }, [])
+    if (state.monitoringMode === 'CAMERA') return
+    void fetchEventHistory().then((history) => dispatch({ type: 'HISTORY', history })).catch((error) => dispatch({ type: 'HISTORY_ERROR', message: error instanceof Error ? error.message : 'History request failed' }))
+  }, [state.current.vehicleId, state.current.revision, state.monitoringMode])
 
   useEffect(() => {
     const refreshHealth = () => {
@@ -237,17 +264,66 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const analyze = useCallback(async (image: File, scenario: DemoScenario) => {
+    if (analysisFlight.current || incidentFlight.current || cameraFlight.current) return
+    analysisFlight.current = true
+    mode.current = 'IMAGE'
+    cameraVehicleId.current = undefined
+    setExternalStateSource(false)
+    dispatch({ type: 'IMAGE_MODE' })
     dispatch({ type: 'ANALYSIS_START' })
     try {
       dispatch({ type: 'ANALYSIS_END', state: await analyzeDemo(image, scenario) })
-      void fetchEventHistory().then((history) => dispatch({ type: 'HISTORY', history })).catch(() => undefined)
+      void fetchEventHistory().then((history) => dispatch({ type: 'HISTORY', history })).catch((error) => dispatch({ type: 'HISTORY_ERROR', message: error instanceof Error ? error.message : 'History request failed' }))
     } catch (error) {
       dispatch({ type: 'ANALYSIS_END', error: error instanceof Error ? error.message : 'Image analysis failed' })
-    }
+    } finally { analysisFlight.current = false }
+  }, [])
+
+  const incidentOperation = useCallback(async (operation: 'acknowledge' | 'resolve', incidentId: string, revision: number) => {
+    if (incidentFlight.current || analysisFlight.current || cameraFlight.current || state.monitoringMode === 'CAMERA') return
+    incidentFlight.current = true
+    try {
+      const current = await updateDemoIncident(operation, incidentId, revision)
+      if (mode.current !== 'IMAGE') return
+      dispatch({ type: 'STATE_RECEIVED', state: current, receivedAt: Date.now() })
+      const history = await fetchEventHistory()
+      if (mode.current === 'IMAGE') dispatch({ type: 'HISTORY', history })
+    } catch (error) {
+      if (mode.current !== 'IMAGE') return
+      dispatch({ type: 'INVALIDATE' })
+      dispatch({ type: 'ERROR', message: error instanceof Error ? error.message : 'Incident request failed' })
+    } finally { incidentFlight.current = false }
+  }, [state.monitoringMode])
+
+  const registerCameraStop = useCallback((handler?: () => Promise<void>) => { cameraStop.current = handler }, [])
+  const stopCamera = useCallback(async () => { await cameraStop.current?.() }, [])
+  const receiveCameraControlState = useCallback((current: AgentState) => {
+    if (mode.current !== 'CAMERA' || cameraFlight.current || current.vehicleId !== cameraVehicleId.current) return
+    if (current.decisionCurrent !== false || current.cameraStatus !== 'NO_FEED') return
+    dispatch({ type: 'STATE_RECEIVED', state: current, receivedAt: Date.now() })
+  }, [])
+  const setCameraTracking = useCallback((active: boolean) => {
+    if (active) { mode.current = 'CAMERA'; cameraVehicleId.current = undefined }
+    else if (mode.current !== 'CAMERA') return
+    cameraFlight.current = active
+    setExternalStateSource(true)
+    dispatch({ type: 'CAMERA_TRACKING', active })
+  }, [])
+  const receiveCameraState = useCallback((current: AgentState) => {
+    if (!cameraFlight.current || mode.current !== 'CAMERA') return
+    cameraVehicleId.current = current.vehicleId
+    dispatch({ type: 'STATE_RECEIVED', state: current, receivedAt: Date.now() })
+    dispatch({ type: 'CONNECTION', connected: true })
+  }, [])
+  const invalidateCameraState = useCallback((message?: string) => {
+    if (mode.current !== 'CAMERA') return
+    dispatch({ type: 'INVALIDATE' })
+    dispatch({ type: 'CONNECTION', connected: false })
+    if (message) dispatch({ type: 'ERROR', message })
   }, [])
 
   const effectiveDataAgeMs = state.current.dataAgeMs + Math.max(0, state.clockMs - state.lastReceivedAt)
-  const value = useMemo(() => ({ ...state, effectiveDataAgeMs, runEmergencyActions, acknowledge, simulate, analyze, capabilities: BACKEND_CAPABILITIES }), [state, effectiveDataAgeMs, runEmergencyActions, acknowledge, simulate, analyze])
+  const value = useMemo(() => ({ ...state, effectiveDataAgeMs, runEmergencyActions, acknowledge, simulate, analyze, incidentOperation, registerCameraStop, stopCamera, receiveCameraControlState, setCameraTracking, receiveCameraState, invalidateCameraState, capabilities: BACKEND_CAPABILITIES }), [state, effectiveDataAgeMs, runEmergencyActions, acknowledge, simulate, analyze, incidentOperation, registerCameraStop, stopCamera, receiveCameraControlState, setCameraTracking, receiveCameraState, invalidateCameraState])
   return <AgentContext.Provider value={value}>{children}</AgentContext.Provider>
 }
 

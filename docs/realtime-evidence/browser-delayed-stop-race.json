@@ -1,0 +1,17 @@
+{
+  "after": {
+    "camera": "Camera: STOPPED · Contract camera phù hợp",
+    "header": "VEHICLE DEMO_31943C8A075444F795D535022161A62E · MAIN CABIN",
+    "hero": "BACKEND-ASSIGNED RISK STATE\nUNKNOWN\nCurrent decision unavailable\n\nLast backend verdict: ERROR · Sensor data is stale or in the future\n\nRule\nSENSOR_STALE\nEvaluated 10/3/2026, 12:36:18 AM · data age 36.0s\nUNVERIFIED\n4\nobjects detected",
+    "videoReleased": true
+  },
+  "beforeDelayedStop": {
+    "at": "2026-10-02T17:36:31.782Z",
+    "header": "VEHICLE DEMO_31943C8A075444F795D535022161A62E · MAIN CABIN",
+    "hero": "BACKEND-ASSIGNED RISK STATE\nUNKNOWN\nCurrent decision unavailable\n\nLast backend verdict: ERROR · Sensor data is stale or in the future\n\nRule\nSENSOR_STALE\nEvaluated 10/3/2026, 12:36:18 AM · data age 18.5s\nUNVERIFIED\n4\nobjects detected"
+  },
+  "oldCameraHeader": "VEHICLE DEMO_D3FDE94D17D24AFD9208CC0BD91A0CCD · MAIN CABIN",
+  "passed": true,
+  "stopDelayed": true,
+  "stopDelivered": true
+}

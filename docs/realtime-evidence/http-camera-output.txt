@@ -1,0 +1,56 @@
+{
+  "backend": "localhost verification harness importing existing approved camera contract",
+  "model": "existing yolov8n.pt, real CPU inference",
+  "camera": "public image fixture, no hardware",
+  "checks": [
+    {
+      "name": "discovery + production preview CORS",
+      "passed": true
+    },
+    {
+      "name": "initial no evidence is unavailable, never SAFE",
+      "passed": true
+    },
+    {
+      "name": "wrong session token rejected",
+      "passed": true
+    },
+    {
+      "name": "real YOLO + simulated car + backend CRITICAL",
+      "passed": true
+    },
+    {
+      "name": "truthful simulated action and pending unlock",
+      "passed": true
+    },
+    {
+      "name": "duplicate does not increment revision or replay action",
+      "passed": true
+    },
+    {
+      "name": "same sequence different payload conflict",
+      "passed": true
+    },
+    {
+      "name": "status only reads committed revision",
+      "passed": true
+    },
+    {
+      "name": "old capture explicitly rejected",
+      "passed": true
+    },
+    {
+      "name": "invalid image fails explicitly",
+      "passed": true
+    },
+    {
+      "name": "stop repeat idempotent + no current SAFE",
+      "passed": true
+    },
+    {
+      "name": "late frame cannot revive stopped session",
+      "passed": true
+    }
+  ],
+  "passed": true
+}

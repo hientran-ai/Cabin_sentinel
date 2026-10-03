@@ -10,3 +10,9 @@ const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 5_
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode><QueryClientProvider client={queryClient}><BrowserRouter><App /></BrowserRouter></QueryClientProvider></React.StrictMode>,
 )
+
+// A replaced session/context module invalidates memory credentials and consumers.
+// Reload all consumers together during development instead of retaining old context.
+import.meta.hot?.on('vite:beforeUpdate', ({ updates }) => {
+  if (updates.some(update => update.path.includes('AgentContext.tsx') || update.path.includes('/api/'))) window.location.reload()
+})

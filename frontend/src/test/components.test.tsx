@@ -28,9 +28,12 @@ describe('risk states', () => {
 })
 
 describe('CriticalModal', () => {
-  it('opens as an alertdialog and Escape cannot close it', () => {
+  it('shows a collapsed inline alert without resolving the incident', () => {
     render(<CriticalModal state={cloneScenario('CRITICAL')} actionPending={false} acknowledgementPending={false} onAction={vi.fn()} onAcknowledge={vi.fn()} />)
-    const dialog = screen.getByRole('alertdialog')
+    const dialog = screen.getByRole('alert', { name: 'Critical cabin risk' })
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(dialog).not.toHaveAttribute('aria-modal')
+    expect(screen.getByText('Chi tiết và thao tác').closest('details')).not.toHaveAttribute('open')
     expect(dialog).toBeInTheDocument()
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(dialog).toBeInTheDocument()
@@ -41,16 +44,17 @@ describe('CriticalModal', () => {
     const state = cloneScenario('CRITICAL')
     state.toolResults = state.toolResults.map((tool) => ({ ...tool, status: 'RUNNING' }))
     render(<CriticalModal state={state} actionPending={false} acknowledgementPending={false} onAction={onAction} onAcknowledge={vi.fn()} />)
+    fireEvent.click(screen.getByText('Chi tiết và thao tác'))
     const button = screen.getByRole('button', { name: /Emergency actions running/i })
     expect(button).toBeDisabled()
     fireEvent.click(button)
     expect(onAction).not.toHaveBeenCalled()
   })
 
-  it('returns focus to the modal when focus moves outside it', () => {
+  it('allows focus outside the alert', () => {
     render(<><button type="button">Outside</button><CriticalModal state={cloneScenario('CRITICAL')} actionPending={false} acknowledgementPending={false} onAction={vi.fn()} onAcknowledge={vi.fn()} /></>)
     screen.getByRole('button', { name: 'Outside' }).focus()
-    expect(screen.getByRole('alertdialog')).toContainElement(document.activeElement as HTMLElement)
+    expect(screen.getByRole('button', { name: 'Outside' })).toHaveFocus()
   })
 
   it('shows fallback and remains critical on partial tool failure', () => {
@@ -62,7 +66,7 @@ describe('CriticalModal', () => {
     ]
     render(<CriticalModal state={state} actionPending={false} acknowledgementPending={false} onAction={vi.fn()} onAcknowledge={vi.fn()} />)
     expect(screen.getByText(/One or more actions failed/)).toBeInTheDocument()
-    expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+    expect(screen.getByRole('alert', { name: 'Critical cabin risk' })).toBeInTheDocument()
   })
 })
 

@@ -1,0 +1,1393 @@
+{
+  "evidence": [
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:07.611Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 1,
+        "reported_at": "2026-10-02T17:04:07.598799+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:07.331000+00:00",
+        "height": 480,
+        "latency_ms": 202.3414580035023,
+        "sequence": 1,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 2,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:08.694Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 2,
+        "reported_at": "2026-10-02T17:04:08.682338+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:08.607000+00:00",
+        "height": 480,
+        "latency_ms": 40.21783295320347,
+        "sequence": 2,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 3,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:09.790Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 3,
+        "reported_at": "2026-10-02T17:04:09.778072+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:09.699000+00:00",
+        "height": 480,
+        "latency_ms": 42.53629199229181,
+        "sequence": 3,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 4,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:10.870Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 4,
+        "reported_at": "2026-10-02T17:04:10.858676+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:10.788000+00:00",
+        "height": 480,
+        "latency_ms": 35.9926670207642,
+        "sequence": 4,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 5,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:11.958Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 5,
+        "reported_at": "2026-10-02T17:04:11.946847+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:11.869000+00:00",
+        "height": 480,
+        "latency_ms": 36.01212502690032,
+        "sequence": 5,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 6,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:13.051Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 6,
+        "reported_at": "2026-10-02T17:04:13.032121+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:12.959000+00:00",
+        "height": 480,
+        "latency_ms": 38.663042010739446,
+        "sequence": 6,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 7,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:14.134Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 7,
+        "reported_at": "2026-10-02T17:04:14.123305+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:14.054000+00:00",
+        "height": 480,
+        "latency_ms": 37.112333986442536,
+        "sequence": 7,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 8,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:15.221Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 8,
+        "reported_at": "2026-10-02T17:04:15.210381+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:15.138000+00:00",
+        "height": 480,
+        "latency_ms": 38.87774999020621,
+        "sequence": 8,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 9,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:16.299Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 9,
+        "reported_at": "2026-10-02T17:04:16.287717+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:16.219000+00:00",
+        "height": 480,
+        "latency_ms": 37.62137499870733,
+        "sequence": 9,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 10,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:17.379Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 10,
+        "reported_at": "2026-10-02T17:04:17.368319+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:17.296000+00:00",
+        "height": 480,
+        "latency_ms": 36.27766598947346,
+        "sequence": 10,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 11,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:18.468Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 11,
+        "reported_at": "2026-10-02T17:04:18.457343+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:18.377000+00:00",
+        "height": 480,
+        "latency_ms": 39.31833303067833,
+        "sequence": 11,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 12,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:19.555Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 12,
+        "reported_at": "2026-10-02T17:04:19.542960+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:19.465000+00:00",
+        "height": 480,
+        "latency_ms": 39.79420801624656,
+        "sequence": 12,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 13,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:20.631Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 13,
+        "reported_at": "2026-10-02T17:04:20.621317+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:20.551000+00:00",
+        "height": 480,
+        "latency_ms": 36.65579203516245,
+        "sequence": 13,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 14,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:21.710Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 14,
+        "reported_at": "2026-10-02T17:04:21.699175+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:21.629000+00:00",
+        "height": 480,
+        "latency_ms": 37.47845796169713,
+        "sequence": 14,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 15,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:22.787Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 15,
+        "reported_at": "2026-10-02T17:04:22.776161+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:22.708000+00:00",
+        "height": 480,
+        "latency_ms": 37.28070802753791,
+        "sequence": 15,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 16,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:23.872Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 16,
+        "reported_at": "2026-10-02T17:04:23.860908+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:23.788000+00:00",
+        "height": 480,
+        "latency_ms": 37.14191698236391,
+        "sequence": 16,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 17,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:24.965Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 17,
+        "reported_at": "2026-10-02T17:04:24.953280+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:24.870000+00:00",
+        "height": 480,
+        "latency_ms": 39.02554098749533,
+        "sequence": 17,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 18,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:26.050Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 18,
+        "reported_at": "2026-10-02T17:04:26.030041+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:25.962000+00:00",
+        "height": 480,
+        "latency_ms": 37.62837499380112,
+        "sequence": 18,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 19,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:27.171Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 19,
+        "reported_at": "2026-10-02T17:04:27.159088+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:27.057000+00:00",
+        "height": 480,
+        "latency_ms": 56.05508299777284,
+        "sequence": 19,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 20,
+      "risk": "SAFE"
+    },
+    {
+      "actions": [],
+      "at": "2026-10-02T17:04:28.250Z",
+      "camera": {
+        "device_reported": "CAPTURING",
+        "inference_busy": false,
+        "last_sequence": 20,
+        "reported_at": "2026-10-02T17:04:28.238389+00:00",
+        "requested": "RUNNING",
+        "source": "browser"
+      },
+      "current": true,
+      "detections": [
+        {
+          "bbox": [
+            40.49542236328125,
+            170.2659912109375,
+            194.34695434570312,
+            403.37060546875
+          ],
+          "class": "person",
+          "confidence": 0.8762269616127014
+        },
+        {
+          "bbox": [
+            176.89373779296875,
+            179.97445678710938,
+            271.43701171875,
+            380.4907531738281
+          ],
+          "class": "person",
+          "confidence": 0.8670603036880493
+        },
+        {
+          "bbox": [
+            532.1661376953125,
+            172.516845703125,
+            639.6346435546875,
+            388.2347412109375
+          ],
+          "class": "person",
+          "confidence": 0.8332056403160095
+        },
+        {
+          "bbox": [
+            0,
+            246.2277679443359,
+            60.44402694702149,
+            387.90478515625
+          ],
+          "class": "person",
+          "confidence": 0.4673590958118438
+        }
+      ],
+      "frame": {
+        "captured_at": "2026-10-02T17:04:28.168000+00:00",
+        "height": 480,
+        "latency_ms": 38.043790962547064,
+        "sequence": 20,
+        "width": 640
+      },
+      "op": "camera_frame",
+      "quality": {
+        "issues": [],
+        "status": "CURRENT"
+      },
+      "revision": 21,
+      "risk": "SAFE"
+    }
+  ],
+  "hero": "BACKEND-ASSIGNED RISK STATE\nSAFE\nDriver present and cabin climate active\nRule\nATTENDED_DRIVING\nCaptured/read 10/3/2026, 12:04:40 AM · data age 0.8s\nMONITORING\n4\nobjects detected",
+  "rawVideoHidden": true,
+  "source": "Chromium fake camera from public Ultralytics bus fixture; real local YOLO CPU",
+  "status": "Camera: RUNNING · Camera API khả dụng",
+  "url": "http://127.0.0.1:5173/",
+  "webStorageKeys": {
+    "local": [],
+    "session": []
+  }
+}

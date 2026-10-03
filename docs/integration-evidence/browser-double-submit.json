@@ -1,0 +1,12 @@
+{
+  "badge": "AN TOÀN",
+  "bodyHasCurrentSafe": true,
+  "case": "owner-double-submit",
+  "last": {
+    "actions": [],
+    "decisionCurrent": true,
+    "risk": "SAFE",
+    "status": 200
+  },
+  "uploads": 1
+}

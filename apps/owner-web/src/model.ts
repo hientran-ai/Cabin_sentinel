@@ -20,7 +20,7 @@ export interface VehicleSnapshot {
   edge: 'CONNECTED' | 'DEGRADED' | 'OFFLINE'
   cloud: 'CONNECTED' | 'DEGRADED' | 'OFFLINE'
   engine: 'ON' | 'OFF' | 'UNKNOWN'
-  doorsLocked: boolean
+  doorsLocked: boolean | null
   decisionCurrent: boolean
   updatedAt: string
   activeIncidentId?: string
@@ -30,7 +30,7 @@ export interface VehicleSnapshot {
 export interface ActionResult {
   id: string
   label: LocalizedText
-  status: 'SIMULATED' | 'PENDING' | 'CONFIRMED' | 'FAILED'
+  status: 'SIMULATED' | 'PENDING' | 'CONFIRMED' | 'FAILED' | 'RUNNING' | 'PLANNED' | 'ATTEMPTED' | 'UNKNOWN' | 'IDLE'
   detail: LocalizedText
 }
 
@@ -41,7 +41,7 @@ export interface Incident {
   title: LocalizedText
   reason: LocalizedText
   ruleId: string
-  status: 'ACTIVE' | 'MONITORING' | 'RESOLVED'
+  status: 'ACTIVE' | 'MONITORING' | 'RESOLVED' | 'EVALUATION'
   occurredAt: string
   temperatureC?: number
   occupancy: VehicleSnapshot['occupancy']

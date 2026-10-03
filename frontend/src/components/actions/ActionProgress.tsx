@@ -7,15 +7,17 @@ const labels: Record<ToolResult['action'], string> = {
   SEND_SMS: 'Notify contacts',
   SEND_NOTIFICATION: 'Send notification',
   REQUEST_UNLOCK: 'Request unlock',
+  UNKNOWN_ACTION: 'Unrecognized backend action',
 }
 
 export function ActionProgress({ tools }: { tools: ToolResult[] }) {
   return <div className="action-progress" aria-label="Emergency action progress" aria-live="polite" aria-atomic="false">
-    {tools.map((tool) => {
+    {tools.map((tool, index) => {
       const Icon = tool.status === 'SUCCESS' ? Check : tool.status === 'FAILED' ? X : tool.status === 'RUNNING' ? LoaderCircle : tool.status === 'SIMULATED' ? FlaskConical : tool.status === 'PENDING_CONFIRMATION' ? Clock3 : CircleDashed
-      return <div className={`tool-row tool-${tool.status.toLowerCase()}`} key={tool.action}>
+      return <div className={`tool-row tool-${tool.status.toLowerCase()}`} key={tool.actionKey ?? `${tool.action}-${index}`}>
         <Icon aria-hidden="true" className={tool.status === 'RUNNING' ? 'spin' : ''} />
         <div><strong>{labels[tool.action]}</strong><span>{tool.message ?? tool.status.toLowerCase()}</span></div>
+        {tool.revision !== undefined && <small>Recorded at revision {tool.revision} · {tool.incidentId ?? 'no incident'}</small>}
         <small>{tool.latencyMs ? `${tool.latencyMs} ms` : tool.status}</small>
       </div>
     })}
