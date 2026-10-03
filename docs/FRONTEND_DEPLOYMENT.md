@@ -2,25 +2,24 @@
 
 Node.js 20+ is required. From the repository root run `npm ci`, then `npm run typecheck`, `npm run lint`, `npm test` and `npm run build`.
 
-## Owner portal (`apps/owner-web/`)
+## Unified Cloudflare website
 
-- Build: `npm run build --workspace @cabinsentinel/owner-web`
-- Output: `apps/owner-web/dist`
+- Build: `npm run build:web`
+- Output: `dist`
 - Required: `VITE_API_BASE_URL`, `VITE_VEHICLE_ID`, `VITE_AUTH_MODE`
 - Cloudflare Pages root directory: repository root.
-- Cloudflare Pages build command: `npm ci && npm run build --workspace @cabinsentinel/owner-web`.
-- Cloudflare Pages output directory: `apps/owner-web/dist`.
-- Deploy as an independent SPA. Current live coverage is one configured vehicle through V1 state/events. Login, multi-vehicle access, acknowledgement, profile and notification preferences require the APIs in `FRONTEND_BACKEND_REQUIREMENTS.md`.
+- Cloudflare Pages build command: `npm ci && npm run build:web`.
+- Cloudflare Pages output directory: `dist`.
+- Owner routes are served from `/overview`, `/vehicles`, `/events` and related paths.
+- Operations routes are served from `/admin` and `/admin/*`.
+- Both portals share one origin and authentication session. The authenticated role decides which portal is accessible.
+- The generated `_redirects` file provides separate SPA fallbacks for `/admin/*` and owner routes.
 
-## Operations portal (`apps/operations-web/`)
+### Source applications
 
-- Build: `npm run build --workspace @cabinsentinel/operations-web`
-- Output: `apps/operations-web/dist`
-- Required: `VITE_API_BASE_URL`, `VITE_VEHICLE_ID`, `VITE_AUTH_MODE`
-- Cloudflare Pages root directory: repository root.
-- Cloudflare Pages build command: `npm ci && npm run build --workspace @cabinsentinel/operations-web`.
-- Cloudflare Pages output directory: `apps/operations-web/dist`.
-- Deploy as an independent SPA and protect it at the platform edge until backend OIDC/RBAC exists. V1 provides a single-vehicle evaluation stream, not a fleet incident queue.
+- `apps/owner-web/` builds the owner-facing root application.
+- `apps/operations-web/` builds the role-protected application mounted under `/admin`.
+- Do not deploy their individual `dist` directories separately; `scripts/assemble-web.mjs` combines them into the root `dist` directory.
 
 ## Mobile (`apps/mobile/`)
 

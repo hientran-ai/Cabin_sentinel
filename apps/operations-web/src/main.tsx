@@ -11,7 +11,7 @@ const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 5_
 const authConfig: AuthConfig = {
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
   mode: import.meta.env.VITE_AUTH_MODE === 'mock' ? 'mock' : import.meta.env.VITE_AUTH_MODE === 'session' ? 'session' : import.meta.env.VITE_AUTH_MODE === 'v1-demo' || import.meta.env.DEV ? 'v1-demo' : 'session',
-  ownerUrl: import.meta.env.VITE_OWNER_WEB_URL || 'http://localhost:4173',
+  ownerUrl: import.meta.env.VITE_OWNER_WEB_URL || `${window.location.origin}/overview`,
   operationsUrl: import.meta.env.VITE_OPERATIONS_WEB_URL || `${window.location.origin}/admin`,
   loginUrl: import.meta.env.VITE_AUTH_LOGIN_URL,
   logoutUrl: import.meta.env.VITE_AUTH_LOGOUT_URL,
