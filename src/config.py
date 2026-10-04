@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     max_concurrent_demo_requests: int = Field(default=1, ge=1)
     model_path: str = ""
     model_confidence: float = Field(default=0.25, gt=0, le=1)
+    age_classifier_path: str = ""
+    age_child_threshold: float = Field(default=0.5, gt=0, le=1)
+    age_adult_threshold: float = Field(default=0.9, gt=0, le=1)
     cabinsentinel_mqtt_enabled: bool = False
     mqtt_broker_host: str = "localhost"
     mqtt_broker_port: int = Field(default=1883, ge=1, le=65535)

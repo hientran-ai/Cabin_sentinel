@@ -305,10 +305,10 @@ async def test_database_failure_returns_service_unavailable(tmp_path, monkeypatc
     service = CabinService(tmp_path / "demo.db", clock=lambda: now)
     provider = FixtureVisionProvider(now, [])
 
-    def fail_ingest(_payload):
+    def fail_ingest(*_payload):
         raise OperationalError("db down")
 
-    monkeypatch.setattr(service, "ingest_sensor", fail_ingest)
+    monkeypatch.setattr(service, "ingest_demo", fail_ingest)
     app.dependency_overrides[get_cabin_service] = lambda: service
     app.state.vision_provider = provider
     try:
@@ -338,6 +338,10 @@ async def test_unapproved_age_label_fails_without_committing_state(tmp_path):
 async def test_health_distinguishes_model_readiness(tmp_path):
     service = CabinService(tmp_path / "demo.db")
     app.dependency_overrides[get_cabin_service] = lambda: service
+    from src.cabinsentinel.timer import SafetyTimer
+    timer = SafetyTimer(service)
+    timer.start()
+    app.state.safety_timer = timer
     try:
         app.state.vision_provider = None
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -350,6 +354,8 @@ async def test_health_distinguishes_model_readiness(tmp_path):
         assert ready.json()["vision"] == "ready"
         assert ready.json()["database"] == "ready"
     finally:
+        timer.stop()
+        app.state.safety_timer = None
         app.dependency_overrides.clear()
         del app.state.vision_provider
 

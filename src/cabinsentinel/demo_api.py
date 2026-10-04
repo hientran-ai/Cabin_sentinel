@@ -6,7 +6,8 @@ from io import BytesIO
 from typing import Any, Literal
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi.security import HTTPBearer
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import open as open_image
 from pydantic import BaseModel, Field
@@ -15,11 +16,12 @@ from starlette.concurrency import run_in_threadpool
 from src.cabinsentinel.api import get_cabin_service
 from src.cabinsentinel.models import SensorPayload
 from src.cabinsentinel.service import CabinService
-from src.cabinsentinel.vision_adapter import to_vision_payload
+from src.cabinsentinel.vision_adapter import to_age_evidence, to_vision_payload
 from src.config import get_settings
 from src.vision.provider import VisionProvider
 
-router = APIRouter(prefix="/api/v1/demo", tags=["CabinSentinel Demo"])
+session_bearer = HTTPBearer(auto_error=False)
+router = APIRouter(prefix="/api/v1/demo", tags=["CabinSentinel Demo"], dependencies=[Depends(session_bearer)])
 logger = logging.getLogger(__name__)
 IMAGE_TYPES = {"image/jpeg": "JPEG", "image/png": "PNG"}
 SCENARIOS = {
@@ -42,14 +44,32 @@ SCENARIOS = {
 
 
 class DemoDetection(BaseModel):
+    """``class`` is the detector label; ``age_group`` is a separate per-person field.
+
+    ``age_group`` is null for non-person detections. ``unknown`` means no usable age
+    evidence (classifier disabled, failed or unsure), never ``adult``.
+    """
+
     class_name: str = Field(alias="class")
     confidence: float
+    bbox: list[float] | None = None
+    age_group: Literal["adult", "child", "unknown"] | None = None
+    age_scores: dict[str, float] | None = None
+    age_crop: list[int] | None = None
+
+
+class DemoAgeClassifier(BaseModel):
+    status: Literal["ok", "disabled", "load_failed", "error"]
+    checkpoint_sha256: str | None = None
+    model_classes: list[str] | None = None
+    thresholds: dict[str, float] | None = None
 
 
 class DemoVision(BaseModel):
     source: Literal["MODEL_INFERENCE"]
     detections: list[DemoDetection]
     latency_ms: float | None
+    age_classifier: DemoAgeClassifier | None = None
 
 
 class DemoVehicleState(SensorPayload):
@@ -68,11 +88,19 @@ class DemoReasoning(BaseModel):
 
 
 class DemoResponse(BaseModel):
+    session_token: str | None = None
     session_id: str
     vision: DemoVision
     vehicle_state: DemoVehicleState
     reasoning: DemoReasoning
     actions: list[dict[str, Any]]
+
+
+def age_classifier_status(frame: dict) -> dict:
+    info = frame.get("age_classifier")
+    if not isinstance(info, dict) or info.get("status") not in {"ok", "disabled", "load_failed", "error"}:
+        return {"status": "disabled"}
+    return {k: info[k] for k in ("status", "checkpoint_sha256", "model_classes", "thresholds") if k in info}
 
 
 def get_vision_provider(request: Request) -> VisionProvider:
@@ -87,6 +115,7 @@ async def analyze_image(
     request: Request,
     image: UploadFile = File(...), scenario: str = Form(...),
     service: CabinService = Depends(get_cabin_service),
+    session_id: str | None = Form(default=None),
 ) -> dict:
     if scenario not in SCENARIOS:
         raise HTTPException(status_code=422, detail="Unsupported demo scenario")
@@ -107,24 +136,28 @@ async def analyze_image(
             decoded.verify()
     except (Image.DecompressionBombError, UnidentifiedImageError, OSError, ValueError) as exc:
         raise HTTPException(status_code=422, detail="Image cannot be decoded") from exc
-    session_id = uuid4().hex
-    vehicle_id = f"DEMO_{session_id}"
+    session_token = None
+    try:
+        if session_id:
+            vehicle_id = authorize_session(request, service, session_id)
+        else:
+            session_id, session_token = service.create_demo_session()
+            vehicle_id = f"DEMO_{session_id}"
+    except sqlite3.Error as exc:
+        logger.exception("Demo session database unavailable")
+        raise HTTPException(status_code=503, detail="CabinService unavailable") from exc
     provider = get_vision_provider(request)
     try:
         frame = await run_in_threadpool(provider.infer, image_data)
         vision = to_vision_payload(
-            frame, vehicle_id=vehicle_id, source_id=session_id, camera_status="OK",
+            frame, vehicle_id=vehicle_id, source_id=f"{session_id}-{uuid4().hex}", camera_status="OK",
         )
     except Exception as exc:
         logger.exception("Vision inference or contract failed")
         raise HTTPException(status_code=503, detail="Vision inference unavailable") from exc
     try:
-        sensor = SensorPayload(
-            vehicle_id=vehicle_id, timestamp=service.clock(), sequence=1,
-            radar_presence=False, **SCENARIOS[scenario],
-        )
-        service.ingest_sensor(sensor)
-        state = service.ingest_vision(vision)
+        state = service.ingest_demo(SCENARIOS[scenario], vision)
+        sensor = SensorPayload.model_validate(state["sensor_snapshot"])
         current = service.get_state_with_freshness(vehicle_id)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -135,13 +168,15 @@ async def analyze_image(
         raise HTTPException(status_code=503, detail="CabinService state unavailable")
     return {
         "session_id": session_id,
+        "session_token": session_token,
         "vision": {
             "source": "MODEL_INFERENCE",
             "detections": [
-                {"class": item.class_name, "confidence": item.confidence}
-                for item in vision.detected_objects
+                {"class": item.class_name, "confidence": item.confidence, **age}
+                for item, age in zip(vision.detected_objects, to_age_evidence(frame), strict=True)
             ],
             "latency_ms": vision.vision_latency_ms,
+            "age_classifier": age_classifier_status(frame),
         },
         "vehicle_state": {**sensor.model_dump(mode="json"), "source": "SIMULATED", "scenario": scenario},
         "reasoning": {
@@ -153,3 +188,55 @@ async def analyze_image(
         },
         "actions": state["action_results"],
     }
+
+
+class AcknowledgeInput(BaseModel):
+    incident_id: str = Field(min_length=1, max_length=128)
+
+
+class ResolveInput(AcknowledgeInput):
+    revision: int = Field(ge=1)
+    cabin_checked: Literal[True]
+
+
+def authorize_session(request: Request, service: CabinService, session_id: str) -> str:
+    authorization = request.headers.get("Authorization", "")
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not token:
+        raise HTTPException(status_code=401, detail="Demo session token required")
+    try:
+        return service.authorize_demo_session(session_id, token)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@router.get("/sessions/{session_id}")
+def read_session(session_id: str, request: Request, service: CabinService = Depends(get_cabin_service)):
+    vehicle_id = authorize_session(request, service, session_id)
+    state = service.get_state_with_freshness(vehicle_id)
+    if state is None:
+        raise HTTPException(status_code=404, detail="Session has no evaluated state")
+    return {**state, "simulation": {"vehicle_source": "SIMULATED", "action_mode": "SIMULATED", "vision_source": "MODEL_INFERENCE"}}
+
+
+@router.get("/sessions/{session_id}/events")
+def session_events(session_id: str, request: Request, limit: int = Query(default=50, ge=1, le=500), service: CabinService = Depends(get_cabin_service)):
+    return service.events(authorize_session(request, service, session_id), limit=limit)
+
+
+@router.post("/sessions/{session_id}/acknowledge")
+def acknowledge_session(session_id: str, payload: AcknowledgeInput, request: Request, service: CabinService = Depends(get_cabin_service)):
+    vehicle_id = authorize_session(request, service, session_id)
+    try:
+        return service.acknowledge(vehicle_id, payload.incident_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/sessions/{session_id}/resolve")
+def resolve_session(session_id: str, payload: ResolveInput, request: Request, service: CabinService = Depends(get_cabin_service)):
+    vehicle_id = authorize_session(request, service, session_id)
+    try:
+        return service.resolve(vehicle_id, payload.incident_id, payload.revision)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc

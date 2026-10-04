@@ -1,6 +1,9 @@
 """Per-vehicle fusion, durable decisions, and mock action results."""
 
+import hashlib
+import hmac
 import json
+import secrets
 import sqlite3
 import threading
 import time
@@ -9,6 +12,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from src.cabinsentinel.actions import MockActions
+from src.cabinsentinel.alerts import data_quality, evolve_incident
 from src.cabinsentinel.graph import safety_graph
 from src.cabinsentinel.models import SensorPayload, VisionPayload
 from src.cabinsentinel.rules import confidence_regression, has_baby_seat_evidence
@@ -46,6 +50,16 @@ class CabinService:
                 )"""
             )
             self._db.execute("CREATE INDEX IF NOT EXISTS events_vehicle ON events(vehicle_id, id)")
+            self._db.execute("""CREATE TABLE IF NOT EXISTS action_ledger (
+                action_key TEXT PRIMARY KEY, vehicle_id TEXT NOT NULL, incident_id TEXT,
+                revision INTEGER NOT NULL, tool TEXT NOT NULL,
+                status TEXT NOT NULL, outcome TEXT NOT NULL, result_json TEXT
+            )""")
+            self._db.execute("CREATE INDEX IF NOT EXISTS ledger_vehicle ON action_ledger(vehicle_id, revision)")
+            self._db.execute("""CREATE TABLE IF NOT EXISTS demo_sessions (
+                session_id TEXT PRIMARY KEY, vehicle_id TEXT NOT NULL UNIQUE,
+                token_hash TEXT NOT NULL, created_at TEXT NOT NULL
+            )""")
 
     def ingest_sensor(self, payload: SensorPayload) -> dict:
         return self._ingest(payload.vehicle_id, sensor=payload)
@@ -61,6 +75,26 @@ class CabinService:
     def ingest_vision(self, payload: VisionPayload) -> dict:
         return self._ingest(payload.vehicle_id, vision=payload)
 
+    def create_demo_session(self) -> tuple[str, str]:
+        session_id = uuid4().hex
+        token = secrets.token_urlsafe(32)
+        with self._lock, self._db:
+            self._db.execute("INSERT INTO demo_sessions VALUES (?,?,?,?)", (
+                session_id, f"DEMO_{session_id}", hashlib.sha256(token.encode()).hexdigest(), self.clock().isoformat(),
+            ))
+        return session_id, token
+
+    def authorize_demo_session(self, session_id: str, token: str) -> str:
+        with self._lock:
+            row = self._db.execute("SELECT vehicle_id, token_hash FROM demo_sessions WHERE session_id=?", (session_id,)).fetchone()
+            digest = hashlib.sha256(token.encode()).hexdigest()
+            if row is None or not hmac.compare_digest(row["token_hash"], digest):
+                raise PermissionError("Invalid demo session credentials")
+            return row["vehicle_id"]
+
+    def ingest_demo(self, sensor_values: dict, vision: VisionPayload) -> dict:
+        return self._ingest(vision.vehicle_id, vision=vision, simulated_sensor=sensor_values)
+
     def tick(self, vehicle_id: str) -> dict | None:
         """Reassess freshness when sources stop publishing."""
         return self._ingest(vehicle_id, timer=True)
@@ -75,7 +109,7 @@ class CabinService:
 
     def _ingest(
         self, vehicle_id: str, *, sensor: SensorPayload | None = None,
-        vision: VisionPayload | None = None, timer: bool = False,
+        vision: VisionPayload | None = None, timer: bool = False, simulated_sensor: dict | None = None,
     ) -> dict | None:
         # Acquire SQLite's writer reservation before reading the prior revision.
         # RLock alone only serializes callers sharing this service instance.
@@ -88,8 +122,24 @@ class CabinService:
                 return None
             old_state = json.loads(row["state_json"]) if row and row["state_json"] else None
             now = self.clock()
+            if simulated_sensor is not None:
+                prior_sensor = json.loads(row["sensor_json"]) if row and row["sensor_json"] else {}
+                lock = {}
+                if simulated_sensor["doors_locked"]:
+                    lock = {
+                        "locked_at": prior_sensor.get("locked_at") if prior_sensor.get("doors_locked") and prior_sensor.get("locked_at") else now,
+                        "lock_event_id": prior_sensor.get("lock_event_id") if prior_sensor.get("doors_locked") and prior_sensor.get("lock_event_id") else uuid4().hex,
+                        "lock_event_source": "SIMULATED",
+                    }
+                sensor = SensorPayload(
+                    vehicle_id=vehicle_id, timestamp=now,
+                    sequence=(row["sensor_seq"] or 0) + 1 if row else 1,
+                    radar_presence=False, **simulated_sensor, **lock,
+                )
             incoming_time = sensor.timestamp if sensor is not None else vision.timestamp if vision is not None else None
             if incoming_time is not None and (incoming_time - now).total_seconds() > 2:
+                raise ValueError("source timestamp is too far in the future")
+            if vision is not None and (vision.timestamp - now).total_seconds() > 2:
                 raise ValueError("source timestamp is too far in the future")
             if vision is not None and any(
                 (seat.observed_at - now).total_seconds() > 2
@@ -122,15 +172,31 @@ class CabinService:
                 for seat in vision_data["seat_evidence"]:
                     seat["received_at"] = now.isoformat()
             started = time.perf_counter()
-            decision = safety_graph.invoke({"sensor": sensor_data, "vision": vision_data, "now": now})
+            prior_incident = old_state.get("incident") if old_state else None
+            unresolved = bool(
+                prior_incident and prior_incident["status"] == "OPEN"
+                or old_state and prior_incident is None and old_state.get("incident_id")
+                and old_state["risk_level"] in {"WARNING", "CRITICAL"}
+                and old_state.get("occupancy_state") in {"PRESENT", "SUSPECTED"}
+                and old_state.get("rule_id") != "HOT_ATTENDED_DRIVING"
+            )
+            decision = safety_graph.invoke({
+                "sensor": sensor_data, "vision": vision_data, "now": now,
+                "unresolved_incident": unresolved,
+            })
             if vision is not None and row and row["vision_json"]:
                 regression = confidence_regression(json.loads(row["vision_json"]), vision_data, now)
                 if regression:
                     decision["evidence_conflicts"] = [*decision["evidence_conflicts"], regression]
             previous = old_state["risk_level"] if old_state else None
+            quality = data_quality(sensor_data, vision_data, now)
+            incident, alert, scheduled_tools, alert_event, opened = evolve_incident(
+                old_state, decision, sensor_data, vision_data, now,
+            )
             new_risk = decision["risk_level"]
             incident_id = (
-                old_state.get("incident_id") if old_state and previous == new_risk
+                incident["incident_id"] if incident and incident["status"] == "OPEN"
+                else old_state.get("incident_id") if old_state and previous == new_risk
                 else str(uuid4()) if new_risk in {"WARNING", "CRITICAL", "ERROR"} else None
             )
             prior_unlock = old_state.get("unlock_request") if old_state else None
@@ -152,6 +218,9 @@ class CabinService:
                 timer and old_state and new_risk == previous
                 and decision["rule_id"] == old_state["rule_id"]
                 and unlock_request == prior_unlock
+                and incident == old_state.get("incident")
+                and alert == old_state.get("alert")
+                and quality == old_state.get("data_quality")
             ):
                 return old_state
             state = {
@@ -168,7 +237,13 @@ class CabinService:
                 "actions": decision["actions"],
                 "action_results": [],
                 "incident_id": incident_id,
+                "incident": incident,
+                "alert": alert,
+                "data_quality": quality,
+                "ruleset_version": "demo-alerts-2026-09-30",
+                "risk_route": decision["route"],
                 "unlock_request": unlock_request,
+                "sensor_snapshot": sensor_data,
                 "temperature": sensor_data["temperature"] if sensor_data else None,
                 "engine_status": sensor_data["engine_status"] if sensor_data else None,
                 "doors_locked": sensor_data["doors_locked"] if sensor_data else None,
@@ -192,6 +267,9 @@ class CabinService:
             new_intents = decision["actions"] if (
                 new_risk != previous or deadline_escalation or baby_seat_first_notice
             ) else []
+            if opened and not new_intents:
+                new_intents = ["send_notification"]
+            new_intents = list(dict.fromkeys([*new_intents, *scheduled_tools]))
             committed_state_json = json.dumps(state)
             # This commit releases the writer before any external action executes.
             with self._db:
@@ -217,13 +295,24 @@ class CabinService:
                     ),
                 )
                 self._event(vehicle_id, "evaluation", state)
+                if alert_event:
+                    self._event(vehicle_id, "alert", {
+                        "revision": state["revision"], "incident_id": incident_id,
+                        "stage": alert_event, "sequence": alert["sequence"],
+                        "sent_at": now.isoformat(), "delivery_mode": "SIMULATED",
+                    })
                 if unlock_request != prior_unlock and unlock_request is not None:
                     self._event(vehicle_id, "unlock_request", {
                         "revision": state["revision"], **unlock_request,
                     })
                 for tool in new_intents:
+                    self._db.execute("INSERT INTO action_ledger VALUES (?,?,?,?,?,?,?,?)", (
+                        f"{vehicle_id}:{state['revision']}:{tool}", vehicle_id, incident_id,
+                        state["revision"], tool, "planned", "not_attempted", None,
+                    ))
                     self._event(vehicle_id, "action_intent", {
                         "revision": state["revision"], "incident_id": incident_id, "tool": tool,
+                        "action_key": f"{vehicle_id}:{state['revision']}:{tool}",
                     })
 
             for tool in new_intents:
@@ -235,12 +324,22 @@ class CabinService:
                         "expires_at": unlock_request["expires_at"],
                     }
                 else:
+                    with self._db:
+                        self._db.execute("UPDATE action_ledger SET status='attempted', outcome='unknown' WHERE action_key=?", (f"{vehicle_id}:{state['revision']}:{tool}",))
+                        self._event(vehicle_id, "action_attempt", {
+                            "revision": state["revision"], "incident_id": incident_id,
+                            "tool": tool, "attempted_at": now.isoformat(),
+                        })
                     try:
                         result = self.actions.execute(tool, vehicle_id)
                     except Exception as exc:
                         result = {"tool": tool, "vehicle_id": vehicle_id, "status": "failed", "error": type(exc).__name__}
+                result.update(incident_id=incident_id, revision=state["revision"], action_key=f"{vehicle_id}:{state['revision']}:{tool}")
                 state["action_results"].append(result)
                 with self._db:
+                    self._db.execute("UPDATE action_ledger SET status=?, outcome=?, result_json=? WHERE action_key=?", (
+                        result["status"], result["status"], json.dumps(result), result["action_key"],
+                    ))
                     self._event(vehicle_id, "action_result", {"revision": state["revision"], **result})
             if state["action_results"]:
                 with self._db:
@@ -248,6 +347,64 @@ class CabinService:
                         "UPDATE vehicles SET state_json = ? WHERE vehicle_id = ? AND state_json = ?",
                         (json.dumps(state), vehicle_id, committed_state_json),
                     )
+            return state
+
+    def acknowledge(self, vehicle_id: str, incident_id: str) -> dict:
+        """Mark a notification read; never resolve or authorize an actuator."""
+        with self._lock, self._db:
+            self._db.execute("BEGIN IMMEDIATE")
+            state = self.get_state(vehicle_id)
+            incident = state.get("incident") if state else None
+            if not incident or incident["incident_id"] != incident_id or incident["status"] != "OPEN":
+                raise ValueError("Incident is not current and open")
+            if incident["acknowledged_at"] is None:
+                incident["acknowledged_at"] = self.clock().isoformat()
+                state["revision"] += 1
+                self._db.execute("UPDATE vehicles SET state_json=? WHERE vehicle_id=?", (json.dumps(state), vehicle_id))
+                self._event(vehicle_id, "acknowledgment", {"revision": state["revision"], **incident})
+            return state
+
+    def resolve(self, vehicle_id: str, incident_id: str, revision: int) -> dict:
+        """Record a separate cabin check against the exact committed revision.
+
+        Endpoint authorization belongs to the API; this never calls an actuator.
+        """
+        with self._lock, self._db:
+            self._db.execute("BEGIN IMMEDIATE")
+            row = self._db.execute("SELECT * FROM vehicles WHERE vehicle_id=?", (vehicle_id,)).fetchone()
+            state = json.loads(row["state_json"]) if row and row["state_json"] else None
+            incident = state.get("incident") if state else None
+            if not incident or incident["incident_id"] != incident_id:
+                raise ValueError("Incident is not current")
+            if incident["status"] == "RESOLVED" and incident.get("resolution_revision") == revision:
+                return state
+            if incident["status"] != "OPEN" or state["revision"] != revision:
+                raise ValueError("State changed; inspect the current revision")
+            now = self.clock()
+            sensor = json.loads(row["sensor_json"]) if row["sensor_json"] else None
+            vision = json.loads(row["vision_json"]) if row["vision_json"] else None
+            decision = safety_graph.invoke({"sensor": sensor, "vision": vision, "now": now})
+            if (
+                data_quality(sensor, vision, now)["status"] != "CURRENT"
+                or decision["occupancy_state"] != "ABSENT"
+                or decision["evidence_conflicts"]
+                or state.get("alert", {}).get("temporal_status") == "UNKNOWN_CLOCK_REGRESSION"
+            ):
+                raise ValueError("Fresh, consistent empty-cabin evidence is required")
+            incident.update(status="RESOLVED", resolved_at=now.isoformat(), resolution_revision=revision,
+                            resolution="OPERATOR_CABIN_CHECK")
+            prior_risk = state["risk_level"]
+            state.update({key: decision[key] for key in (
+                "risk_level", "rule_id", "reason", "actions", "occupancy_state", "occupancy_reason_code", "evidence_conflicts",
+            )})
+            state.update(previous_risk_level=prior_risk, risk_route=decision["route"], revision=revision + 1,
+                         incident_id=None, action_results=[], evaluated_at=now.isoformat())
+            if state.get("alert"):
+                state["alert"]["stage"] = "RESOLVED"
+            if state.get("unlock_request") and state["unlock_request"]["status"] == "pending":
+                state["unlock_request"]["status"] = "canceled"
+            self._db.execute("UPDATE vehicles SET state_json=? WHERE vehicle_id=?", (json.dumps(state), vehicle_id))
+            self._event(vehicle_id, "incident_resolution", {"revision": state["revision"], **incident})
             return state
 
     def _event(self, vehicle_id: str, event_type: str, payload: dict) -> None:
@@ -296,6 +453,13 @@ class CabinService:
                     "evidence": seats,
                 },
             }
+            state["action_ledger"] = [dict(item) for item in self._db.execute(
+                """SELECT action_key, incident_id, revision, tool, status, outcome FROM action_ledger
+                WHERE vehicle_id=? ORDER BY (status IN ('planned','attempted')) DESC, revision DESC LIMIT 100""", (vehicle_id,),
+            )]
+            for field in ("incident", "alert", "data_quality"):
+                state.setdefault(field, None)
+            state.setdefault("ruleset_version", "legacy")
             state["decision_current"] = (
                 sensor["status"] == "FRESH"
                 and vision["status"] == "FRESH"

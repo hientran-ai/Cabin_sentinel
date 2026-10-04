@@ -40,7 +40,8 @@ def read_risk(vehicle_id: str, service: CabinService = Depends(get_cabin_service
         for key in (
             "vehicle_id", "revision", "previous_risk_level", "risk_level",
             "rule_id", "reason", "actions", "action_results", "evaluated_at",
-            "freshness", "decision_current",
+            "freshness", "decision_current", "incident_id", "incident",
+            "alert", "data_quality", "ruleset_version",
         )
     }
 

@@ -12,9 +12,14 @@ Tâm's source is currently at the BaoTam branch, commit `3b78fd1`,
 `src/vision/provider.py` uses those settings for one uploaded image and returns
 the same detector frame fields: `timestamp`, `frame_id`, `detections` and
 `latency_ms`. `src/cabinsentinel/vision_adapter.py` converts that frame to the
-canonical `VisionPayload`. The optional age classifier from Tâm's experiment is
-not in V1; `child`/`adult` labels are rejected until their safety contract is
-approved. A child may be detected as `person`; no age claim is made.
+canonical `VisionPayload`. The optional age classifier (`src/vision/age.py`, ported from Tâm's) is enabled by
+`AGE_CLASSIFIER_PATH`. It runs on the original decoded image, one padded crop per
+`person` box. The detector `class` stays `person`; the result is a separate
+`age_group` (`adult`/`child`/`unknown`) with `age_scores`, `bbox` and `age_crop`, and
+`vision.age_classifier.status` (`ok`/`disabled`/`load_failed`/`error`). No checkpoint, a
+load failure, a crop failure or low confidence give `unknown`, never `adult`. Age
+does not enter `VisionPayload`, occupancy or risk rules; a frame whose detector class
+is itself `child`/`adult` is still rejected. Real-cabin accuracy is not validated.
 
 The inspected repositories have the Vision source but no tracked `.pt` weights.
 For local smoke testing, an official stock `yolov8n.pt` was downloaded from

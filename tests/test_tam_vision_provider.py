@@ -54,7 +54,12 @@ def test_provider_loads_once_and_returns_tam_frame(monkeypatch, tmp_path):
         {"classes": [0, 15, 16], "device": "cpu", "conf": 0.25, "imgsz": 640, "verbose": False},
     ] * 2
     assert first["frame_id"] == second["frame_id"] == 1
-    assert first["detections"] == [{"class": "person", "confidence": 0.92, "bbox": [1, 2, 20, 30]}]
+    # Without a classifier a person is never assumed adult: age_group stays unknown.
+    assert first["detections"] == [{
+        "class": "person", "confidence": 0.92, "bbox": [1, 2, 20, 30],
+        "age_group": "unknown", "age_scores": None,
+    }]
+    assert first["age_classifier"] == {"status": "disabled"}
     assert datetime.fromisoformat(first["timestamp"]).tzinfo is not None
     assert first["latency_ms"] >= 0
 

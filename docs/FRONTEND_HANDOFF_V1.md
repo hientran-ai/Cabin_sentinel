@@ -95,7 +95,8 @@ export async function analyzeCabin(apiBaseUrl, imageFile, scenario) {
 |---|---|
 | session_id | ID lần phân tích |
 | vision.source | MODEL_INFERENCE |
-| vision.detections | Danh sách `{class, confidence}`; API demo hiện chưa trả bbox |
+| vision.detections | Danh sách `{class, confidence, bbox, age_group, age_scores, age_crop}`. `class` là nhãn detector (`person`/`dog`/`cat`). `age_group` chỉ có với `person`: `adult`/`child`/`unknown` (`unknown` = chưa có bằng chứng tuổi, không phải người lớn); `null` với dog/cat. Các field tuổi/bbox là bổ sung tùy chọn |
+| vision.age_classifier | `{status: ok/disabled/load_failed/error, checkpoint_sha256, model_classes, thresholds}` |
 | vision.latency_ms | Thời gian inference, có thể null |
 | vehicle_state | Input xe, có source SIMULATED và scenario |
 | reasoning.risk_level | Hiển thị verdict Backend trả về |
@@ -106,7 +107,7 @@ export async function analyzeCabin(apiBaseUrl, imageFile, scenario) {
 
 Lấy schema đầy đủ từ OpenAPI, không thay đổi field names theo UI. Backend hiện có SAFE, WARNING, CRITICAL, NOTICE và ERROR; UI cần hiển thị được ERROR/NOTICE và có trạng thái rõ ràng cho giá trị chưa hỗ trợ hoặc thiếu kết quả. UI sử dụng verdict Backend, không tự suy CRITICAL từ person hoặc SAFE từ danh sách detection rỗng.
 
-Horn/SMS/notification là `simulated`; request_unlock là `pending_human_confirmation`. Label trên UI ghi rõ mô phỏng/chờ xác nhận. Response này không chứng minh đã mở cửa hay gửi SMS thật. Luồng này hỗ trợ person/dog/cat; không dùng nhãn person để kết luận tuổi trẻ em/người lớn.
+Horn/SMS/notification là `simulated`; request_unlock là `pending_human_confirmation`. Label trên UI ghi rõ mô phỏng/chờ xác nhận. Response này không chứng minh đã mở cửa hay gửi SMS thật. Luồng này hỗ trợ person/dog/cat; không dùng nhãn person để kết luận tuổi. `age_group` là gợi ý riêng, không đổi risk/cảnh báo; `adult`/`unknown` không có nghĩa là xe an toàn.
 
 ## 6. Lỗi và trải nghiệm người dùng
 
@@ -133,3 +134,7 @@ Có thể disable nút gửi khi đang phân tích để tránh gửi lặp. Bac
 - [ ] Ghi lỗi và xác nhận của người nhận; sau đó chốt bàn giao bản V1 online.
 
 Frontend có thể làm UI/tích hợp local song song với việc cấp URL online. Backend chịu trách nhiệm giải quyết lỗi tích hợp đến khi người nhận chạy được luồng demo đã thống nhất.
+
+## Backend alert profile cập nhật 30/09/2026
+
+Backend bổ sung phiên analyze liên tục với Bearer token, incident bền vững, lịch notification độc lập risk, ACK riêng với cabin check và action ledger. Xem [hướng dẫn kiểm backend/API](BACKEND_ALERTS_TEST_GUIDE.md). Chưa triển khai frontend trong task này. Client cũ analyze một lần vẫn dùng được; mỗi phiên mới nhận thêm session_token. API/source/risk mới và migration được mô tả trong hướng dẫn; không dùng bảng V1 cũ như policy mới.
