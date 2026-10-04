@@ -270,13 +270,16 @@ class PlatformStore:
 
     # -- accounts ----------------------------------------------------------
     def create_user(self, email: str, password: str, *, role: str, full_name: str = "", phone: str | None = None,
-                    language: str = "vi", tenant_id: str | None = None) -> dict:
+                    language: str = "vi", tenant_id: str | None = None, user_id: str | None = None) -> dict:
+        """``user_id`` is only for provisioned accounts that must match a fixed fleet owner (see bootstrap_accounts)."""
         if role not in DEFAULT_ROLES:
             raise ValueError("Unsupported role")
         email = email.strip().lower()
         if self._one("SELECT 1 FROM users WHERE email=?", (email,)):
             raise ConflictError("Email already registered")
-        user_id = uuid4().hex
+        if user_id is not None and self._one("SELECT 1 FROM users WHERE user_id=?", (user_id,)):
+            raise ConflictError("User id already in use")
+        user_id = user_id or uuid4().hex
         self._run(
             "INSERT INTO users(user_id, tenant_id, email, password_hash, full_name, phone, language, role, created_at)"
             " VALUES (?,?,?,?,?,?,?,?,?)",

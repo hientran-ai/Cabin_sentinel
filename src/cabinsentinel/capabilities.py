@@ -50,12 +50,20 @@ def privacy_model() -> dict:
     }
 
 
-def age_classifier() -> dict:
-    """No approved age checkpoint or safety mapping exists; never fabricate one."""
-    path = os.environ.get("AGE_MODEL_PATH", "")
+def age_classifier(status: str | None = None) -> dict:
+    """Age is evidence only (never an input to risk or actions); never fabricate a checkpoint.
+
+    ``status`` is the vision provider's own view (ok / load_failed / disabled). Without a provider the checkpoint
+    path from AGE_CLASSIFIER_PATH (or the older AGE_MODEL_PATH) is only reported, not claimed usable.
+    """
+    if status == "ok":
+        return {"available": True, "reason": None, "role": "EVIDENCE_ONLY"}
+    if status == "load_failed":
+        return {"available": False, "reason": "load_failed"}
+    path = os.environ.get("AGE_CLASSIFIER_PATH") or os.environ.get("AGE_MODEL_PATH", "")
     if not path or not Path(path).is_file():
         return {"available": False, "reason": "checkpoint_unavailable"}
     return {
-        "available": False, "reason": "not_integrated_pending_safety_validation",
+        "available": False, "reason": "not_loaded",
         "sha256": file_sha256(path),
     }

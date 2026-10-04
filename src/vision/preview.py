@@ -41,5 +41,8 @@ class FacePreview:
             'width': frame.shape[1], 'height': frame.shape[0],
             'detected_faces': metadata['detected_faces'],
             'masked_regions': len(metadata['masked_boxes']),
+            # Pixel boxes (x1, y1, x2, y2) of the masked regions in this frame, so a client can keep
+            # masking faces on its own full-rate video between backend previews.
+            'masked_boxes': [[int(v) for v in box] for box in metadata['masked_boxes']],
             'latency_ms': (perf_counter() - started) * 1000,
         }

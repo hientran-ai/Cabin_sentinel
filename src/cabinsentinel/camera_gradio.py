@@ -27,6 +27,12 @@ def get_camera_sessions():
         return _sessions
 
 
+def camera_uses_gpu():
+    """Live frames run on CPU unless CAMERA_DEVICE=gpu: on ZeroGPU every GPU frame spends a quota run, and
+    anonymous visitors hit "exceeded your ZeroGPU runs limit" after a few frames (frame and preview then null)."""
+    return os.environ.get("CAMERA_DEVICE", "cpu").strip().lower() == "gpu"
+
+
 def configure_inference(inference):
     """Use the entrypoint's existing GPU detector under its ZeroGPU allocation."""
     global _configured_inference
@@ -37,9 +43,11 @@ def infer_frame(image_bytes):
     global _provider
     with _runtime_lock:
         if _provider is None:
-            # Called inside spaces.GPU: CUDA is available only after allocation.
-            import torch
-            device = "0" if torch.cuda.is_available() else "cpu"
+            device = "cpu"
+            if camera_uses_gpu():
+                # Called inside spaces.GPU: CUDA is available only after allocation.
+                import torch
+                device = "0" if torch.cuda.is_available() else "cpu"
             from ultralytics import YOLO
             model = YOLO(os.environ["MODEL_PATH"])
             _provider = (model, device)
@@ -96,9 +104,18 @@ def camera_report(session_id, session_token, device_status):
     return _run("report", session_id, session_token, device_status)
 
 
-@spaces.GPU(duration=60)
+def _frame(session_id, session_token, image, sequence, captured_at):
+    # The entrypoint's configured detector lives on the GPU; CPU mode always uses this module's own model.
+    inference = (_configured_inference or infer_frame) if camera_uses_gpu() else infer_frame
+    return _run("frame", session_id, session_token, image, sequence, captured_at, inference)
+
+
+_frame_on_gpu = spaces.GPU(duration=60)(_frame)
+
+
 def camera_frame(session_id, session_token, image, sequence, captured_at):
-    return _run("frame", session_id, session_token, image, sequence, captured_at, _configured_inference or infer_frame)
+    run = _frame_on_gpu if camera_uses_gpu() else _frame
+    return run(session_id, session_token, image, sequence, captured_at)
 
 
 def register_camera_api():

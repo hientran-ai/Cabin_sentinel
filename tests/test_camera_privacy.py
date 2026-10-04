@@ -49,6 +49,9 @@ def test_privacy_preserves_original_and_returns_only_processed_jpeg():
     decoded = np.array(Image.open(BytesIO(base64.b64decode(output['data_url'].split(',')[1]))))
     assert decoded[25:55, 25:55].var() < original[25:55, 25:55].var() / 10
     assert output['width'] == output['height'] == 80
+    # Clients keep masking faces on their own full-rate video with these boxes.
+    assert output['masked_regions'] == 1
+    assert output['masked_boxes'] == [[0, 0, 80, 80]]
 
 
 @pytest.fixture

@@ -14,6 +14,7 @@ from src.cabinsentinel import capabilities, fleet_api
 from src.cabinsentinel.admin_api import router as admin_router
 from src.cabinsentinel.api import get_cabin_service
 from src.cabinsentinel.api import router as cabin_router
+from src.cabinsentinel.bootstrap_accounts import ensure_bootstrap_accounts
 from src.cabinsentinel.demo_api import router as demo_router
 from src.cabinsentinel.fleet_api import router as fleet_router
 from src.cabinsentinel.monitoring import metrics
@@ -34,24 +35,30 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     app.state.vision_provider = None
     if settings.model_path:
+        age_path = getattr(settings, "age_classifier_path", "")
+        age_options = {}
+        if age_path:
+            try:
+                from src.vision.age import AgeClassifier
+
+                age_options["age_classifier"] = AgeClassifier(
+                    age_path, settings.age_child_threshold, settings.age_adult_threshold,
+                )
+            except Exception as exc:
+                # Occupancy detection must keep working; people are reported age_group=unknown.
+                age_options["age_load_error"] = f"{type(exc).__name__}: {exc}"[:200]
+                logger.exception("Age classifier initialization failed; age_group will be unknown")
         try:
             app.state.vision_provider = TamVisionProvider(
                 settings.model_path, confidence=settings.model_confidence,
+                **age_options,
             )
         except Exception:
             logger.exception("Vision model initialization failed; demo endpoint unavailable")
     else:
         logger.warning("MODEL_PATH is unset; Vision demo endpoint unavailable")
-    admin_email = getattr(settings, "bootstrap_admin_email", "")
-    admin_password = getattr(settings, "bootstrap_admin_password", "")
-    if admin_email and admin_password:
-        store = get_store()
-        try:
-            store.create_user(admin_email, admin_password, role="admin",
-                              full_name="Bootstrap admin")
-            logger.info("Bootstrap admin created")
-        except ValueError:
-            pass  # already exists
+    if any(getattr(settings, name, "") for name in ("bootstrap_admin_email", "bootstrap_owner_email")):
+        ensure_bootstrap_accounts(get_store(), settings)
     timer = SafetyTimer(get_cabin_service())
     timer.start()
     app.state.safety_timer = timer
@@ -133,6 +140,7 @@ async def health(service: CabinService = Depends(get_cabin_service)):
     subscriber = getattr(app.state, "sensor_subscriber", None)
     mqtt = "connected" if subscriber and subscriber.connected else "disconnected" if subscriber else "disabled"
     vision = "ready" if getattr(app.state, "vision_provider", None) is not None else "unavailable"
+    age_status = getattr(getattr(app.state, "vision_provider", None), "age_status", "disabled")
     database = "ready" if service.database_ready() else "unavailable"
     timer = getattr(app.state, "safety_timer", None)
     timer_ready = bool(timer and timer.running and timer.last_error is None and timer.last_tick_at
@@ -144,13 +152,13 @@ async def health(service: CabinService = Depends(get_cabin_service)):
         content={
             "status": "ok" if ready else "degraded", "env": settings.app_env,
             "backend": "ready" if database == "ready" else "unavailable",
-            "vision": vision, "database": database, "mqtt": mqtt, "safety_timer": timer_status,
+            "vision": vision, "age_classifier": age_status, "database": database, "mqtt": mqtt, "safety_timer": timer_status,
             # Additive and informational: privacy/age never gate readiness, and the
             # preview is withheld (never raw) when privacy is unavailable.
             "capabilities": {
                 "vision_model": capabilities.vision_model(),
                 "privacy_model": capabilities.privacy_model(),
-                "age_classifier": capabilities.age_classifier(),
+                "age_classifier": capabilities.age_classifier(age_status),
                 "camera_api": bool(getattr(app.state, "camera_api", False)),
                 "mqtt": mqtt,
                 "fleet": {

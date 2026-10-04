@@ -109,6 +109,7 @@ def test_camera_yolo_reuses_model_and_selects_allocated_gpu(monkeypatch, tmp_pat
             return [SimpleNamespace(names={0: "person"}, boxes=[box])]
 
     monkeypatch.setenv("MODEL_PATH", str(path))
+    monkeypatch.setenv("CAMERA_DEVICE", "gpu")
     monkeypatch.setattr(module, "_provider", None)
     monkeypatch.setitem(sys.modules, "torch", SimpleNamespace(cuda=SimpleNamespace(is_available=lambda: True)))
     monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(YOLO=Model))
@@ -117,3 +118,46 @@ def test_camera_yolo_reuses_model_and_selects_allocated_gpu(monkeypatch, tmp_pat
     second = module.infer_frame(b"image-2")
     assert first["detections"] == second["detections"] == [{"class": "person", "confidence": 0.9, "bbox": [1, 2, 20, 30]}]
     assert calls["loads"] == 1
+
+
+def test_camera_frames_default_to_cpu_even_when_cuda_looks_available(monkeypatch, tmp_path):
+    """ZeroGPU reports CUDA at module level, but each GPU frame spends a quota run; live frames stay on CPU."""
+    import sys
+    from types import SimpleNamespace
+
+    from src.cabinsentinel import camera_gradio as module
+
+    path = tmp_path / "existing-model.pt"
+    path.write_bytes(b"fixture")
+    devices = []
+
+    class Model:
+        def __init__(self, model_path):
+            pass
+        def predict(self, image, **options):
+            devices.append(options["device"])
+            return [SimpleNamespace(names={0: "person"}, boxes=[])]
+
+    monkeypatch.setenv("MODEL_PATH", str(path))
+    monkeypatch.delenv("CAMERA_DEVICE", raising=False)
+    monkeypatch.setattr(module, "_provider", None)
+    monkeypatch.setitem(sys.modules, "torch", SimpleNamespace(cuda=SimpleNamespace(is_available=lambda: True)))
+    monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(YOLO=Model))
+    monkeypatch.setitem(sys.modules, "cv2", SimpleNamespace(IMREAD_COLOR=1, imdecode=lambda *args: "frame"))
+    module.infer_frame(b"image")
+    assert devices == ["cpu"]
+
+
+def test_cpu_mode_ignores_the_entrypoint_gpu_detector(monkeypatch):
+    from src.cabinsentinel import camera_gradio as module
+
+    seen = []
+    monkeypatch.delenv("CAMERA_DEVICE", raising=False)
+    monkeypatch.setattr(module, "_configured_inference", lambda image: seen.append("gpu"))
+    monkeypatch.setattr(module, "infer_frame", lambda image: seen.append("cpu"))
+    monkeypatch.setattr(module, "_run", lambda op, *args: args[-1](b"x"))
+    module.camera_frame("sid", "token", None, 1, "now")
+    monkeypatch.setenv("CAMERA_DEVICE", "gpu")
+    monkeypatch.setattr(module, "_frame_on_gpu", module._frame)  # spaces.GPU needs a real ZeroGPU runtime
+    module.camera_frame("sid", "token", None, 2, "now")
+    assert seen == ["cpu", "gpu"]

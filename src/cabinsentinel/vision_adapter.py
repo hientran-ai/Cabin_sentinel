@@ -49,3 +49,37 @@ def to_vision_payload(
         "detected_objects": objects,
         "vision_latency_ms": frame.get("latency_ms"),
     })
+
+
+AGE_GROUPS = {"adult", "child", "unknown"}
+
+
+def to_age_evidence(frame: Mapping) -> list[dict]:
+    """Per-detection geometry and age evidence, in the order of ``frame["detections"]``.
+
+    Kept out of ``VisionPayload`` on purpose: age never enters occupancy or risk rules.
+    Only ``person`` detections carry an age; anything malformed degrades to ``unknown``
+    (never to ``adult``), and the detector label is untouched.
+    """
+    evidence = []
+    for detection in frame["detections"]:
+        item = {"bbox": None, "age_group": None, "age_scores": None, "age_crop": None}
+        bbox = detection.get("bbox")
+        if isinstance(bbox, (list, tuple)) and len(bbox) == 4 and all(
+            isinstance(v, (int, float)) and not isinstance(v, bool) for v in bbox
+        ):
+            item["bbox"] = [float(v) for v in bbox]
+        if detection.get("class") == "person":
+            group = detection.get("age_group")
+            item["age_group"] = group if group in AGE_GROUPS else "unknown"
+            scores = detection.get("age_scores")
+            if item["age_group"] != "unknown" and isinstance(scores, Mapping):
+                item["age_scores"] = {
+                    k: float(scores[k]) for k in ("adult", "child")
+                    if isinstance(scores.get(k), (int, float)) and not isinstance(scores.get(k), bool)
+                }
+            crop = detection.get("age_crop")
+            if isinstance(crop, (list, tuple)) and len(crop) == 4:
+                item["age_crop"] = [int(v) for v in crop]
+        evidence.append(item)
+    return evidence

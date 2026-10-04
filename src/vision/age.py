@@ -1,6 +1,7 @@
 """Small, offline person-crop classifier. Scores are not calibrated probabilities."""
 
 import copy
+import hashlib
 import math
 from pathlib import Path
 
@@ -63,14 +64,20 @@ def image_transform(training=False):
 
 def merge_age_scores(scores):
     """Merge historical infant probability into child before making a decision."""
-    return {"adult": scores.get("adult", 0.0),
-            "child": scores.get("child", 0.0) + scores.get("infant", 0.0)}
+    # Float32 softmax parts can sum to a hair above 1 (e.g. 1.0000000152), which the range
+    # check would turn into "unknown" for the most confident child/infant crops. Only
+    # rounding-sized overshoot is clamped; NaN and real out-of-range values stay "unknown".
+    def settle(value):
+        return 1.0 if 1.0 < value <= 1.0 + 1e-6 else value
+
+    return {"adult": settle(scores.get("adult", 0.0)),
+            "child": settle(scores.get("child", 0.0) + scores.get("infant", 0.0))}
 
 
 def choose_age(scores, child_threshold=0.5, adult_threshold=0.9):
     choose_group(0.5, child_threshold, adult_threshold)
-    if not scores or any(not math.isfinite(value) or not 0 <= value <= 1 for value in scores.values()):
-        return "unknown"
+    if not scores or any(not math.isfinite(value) or not 0 <= value <= 1 + 1e-6 for value in scores.values()):
+        return "unknown"  # tolerance covers float32 rounding only
     merged = merge_age_scores(scores)
     return choose_group(merged["child"], child_threshold, adult_threshold)
 
@@ -81,6 +88,14 @@ def build_model(backbone=None, classes=None):
         model.load_state_dict(torch.load(backbone, map_location="cpu", weights_only=True))
     model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, len(CLASSES if classes is None else classes))
     return model
+
+
+def file_sha256(path):
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 class AgeClassifier:
@@ -98,6 +113,7 @@ class AgeClassifier:
             raise ValueError("Incompatible or untrained age classifier checkpoint")
         self.classes = list(CLASSES)
         self.model_classes = saved["classes"]
+        self.sha256 = file_sha256(checkpoint)
         if self.model_classes == CLASSES:
             choose_group(0.5, child_threshold, adult_threshold)
         self.model = build_model(classes=self.model_classes)
@@ -127,6 +143,12 @@ class AgeClassifier:
         self.transform = image_transform()
         self.child_threshold = child_threshold
         self.adult_threshold = adult_threshold
+
+    def describe(self):
+        return {
+            "checkpoint_sha256": self.sha256, "model_classes": list(self.model_classes),
+            "thresholds": {"child": self.child_threshold, "adult": self.adult_threshold},
+        }
 
     @torch.inference_mode()
     def classify(self, bgr_frame, boxes):

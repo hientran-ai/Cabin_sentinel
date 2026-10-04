@@ -16,7 +16,7 @@ from src.cabinsentinel.api import get_cabin_service
 from src.cabinsentinel.auth import authorize_session, session_bearer
 from src.cabinsentinel.models import SensorPayload
 from src.cabinsentinel.service import CabinService
-from src.cabinsentinel.vision_adapter import to_vision_payload
+from src.cabinsentinel.vision_adapter import to_age_evidence, to_vision_payload
 from src.config import get_settings
 from src.vision.provider import VisionProvider
 
@@ -62,14 +62,32 @@ SCENARIOS = {
 
 
 class DemoDetection(BaseModel):
+    """``class`` is the detector label; ``age_group`` is a separate per-person field.
+
+    ``age_group`` is null for non-person detections. ``unknown`` means no usable age
+    evidence (classifier disabled, failed or unsure), never ``adult``.
+    """
+
     class_name: str = Field(alias="class")
     confidence: float
+    bbox: list[float] | None = None
+    age_group: Literal["adult", "child", "unknown"] | None = None
+    age_scores: dict[str, float] | None = None
+    age_crop: list[int] | None = None
+
+
+class DemoAgeClassifier(BaseModel):
+    status: Literal["ok", "disabled", "load_failed", "error"]
+    checkpoint_sha256: str | None = None
+    model_classes: list[str] | None = None
+    thresholds: dict[str, float] | None = None
 
 
 class DemoVision(BaseModel):
     source: Literal["MODEL_INFERENCE"]
     detections: list[DemoDetection]
     latency_ms: float | None
+    age_classifier: DemoAgeClassifier | None = None
 
 
 class DemoVehicleState(SensorPayload):
@@ -94,6 +112,13 @@ class DemoResponse(BaseModel):
     vehicle_state: DemoVehicleState
     reasoning: DemoReasoning
     actions: list[dict[str, Any]]
+
+
+def age_classifier_status(frame: dict) -> dict:
+    info = frame.get("age_classifier")
+    if not isinstance(info, dict) or info.get("status") not in {"ok", "disabled", "load_failed", "error"}:
+        return {"status": "disabled"}
+    return {k: info[k] for k in ("status", "checkpoint_sha256", "model_classes", "thresholds") if k in info}
 
 
 def get_vision_provider(request: Request) -> VisionProvider:
@@ -170,10 +195,11 @@ async def analyze_image(
         "vision": {
             "source": "MODEL_INFERENCE",
             "detections": [
-                {"class": item.class_name, "confidence": item.confidence}
-                for item in vision.detected_objects
+                {"class": item.class_name, "confidence": item.confidence, **age}
+                for item, age in zip(vision.detected_objects, to_age_evidence(frame), strict=True)
             ],
             "latency_ms": vision.vision_latency_ms,
+            "age_classifier": age_classifier_status(frame),
         },
         "vehicle_state": {**sensor.model_dump(mode="json"), "source": "SIMULATED", "scenario": scenario},
         "reasoning": {

@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     max_concurrent_demo_requests: int = Field(default=1, ge=1)
     model_path: str = ""
     model_confidence: float = Field(default=0.25, gt=0, le=1)
+    age_classifier_path: str = ""
+    age_child_threshold: float = Field(default=0.5, gt=0, le=1)
+    age_adult_threshold: float = Field(default=0.9, gt=0, le=1)
     cabinsentinel_mqtt_enabled: bool = False
     mqtt_broker_host: str = "localhost"
     mqtt_broker_port: int = Field(default=1883, ge=1, le=65535)
@@ -33,6 +36,11 @@ class Settings(BaseSettings):
     platform_signing_key: str = ""
     bootstrap_admin_email: str = ""
     bootstrap_admin_password: str = ""
+    # Provisioned demo owner, recreated at every start (Spaces without persistent storage lose all accounts on
+    # restart). The password belongs in a secret, never in Git. user_id matches the demo fleet's vehicle owner.
+    bootstrap_owner_email: str = ""
+    bootstrap_owner_password: str = ""
+    bootstrap_owner_user_id: str = "demo-owner"
     allow_signup: bool | None = None  # None: open outside production, closed in production
     remote_commands_enabled: bool | None = None  # None: on outside production, off in production
     cookie_samesite: Literal["strict", "lax", "none"] = "lax"  # use none only for a cross-site SPA (needs HTTPS)
