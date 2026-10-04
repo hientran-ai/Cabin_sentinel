@@ -40,7 +40,7 @@ body{background:radial-gradient(circle at 80% 0,#efe6d8 0,transparent 28rem),var
 .detection-box,.detection-box b{transform:none}
 .camera-capture-hidden{display:none!important}.privacy-camera-preview{display:block;width:100%;height:100%;object-fit:fill}.privacy-preview-ready{background:rgba(22,92,67,.92);color:#fff}.privacy-unavailable{padding:9px;border-radius:10px;background:var(--amber);color:var(--amber-ink)!important;font-weight:750}
 
-.face-mask{position:absolute;z-index:2;border-radius:50%;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);background:rgba(32,29,27,.25);pointer-events:none}.face-mask{transition:left .2s ease-out,top .2s ease-out,width .2s ease-out,height .2s ease-out;will-change:left,top,width,height}
+.privacy-mask-canvas{position:absolute;inset:0;z-index:2;width:100%;height:100%;transform:scaleX(-1);pointer-events:none;background:transparent}
 
 /* Boxes glide between ~7 Hz updates instead of jumping. Face masks never animate: a lagging mask could expose a face. */
 .detection-box{transition:left .14s linear,top .14s linear,width .14s linear,height .14s linear}

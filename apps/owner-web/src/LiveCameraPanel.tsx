@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { CameraApi, CameraApiError, detectionText, holdDetections, holdFaceMasks, getPrivacyPreview, trackFaceMasks, type FaceTrack, validateCameraSnapshot, type CameraSnapshot, type PrivacyPreview } from './cameraApi'
 import type { Locale } from './model'
+import { paintPrivacyMasks } from './privacyOverlay'
 
 type Phase = 'IDLE' | 'STARTING' | 'RUNNING' | 'STOPPING' | 'STOPPED' | 'ERROR'
 type Credentials = { id: string; token: string }
 
 function delay(ms: number) { return new Promise(resolve => setTimeout(resolve, ms)) }
 
-// Face boxes come from a backend frame that is already a little old; widen each mask so a moving head stays covered.
-const MASK_MARGIN = 0.35
 type ShownDetections = { at: number; frame: NonNullable<CameraSnapshot['frame']>; detections: CameraSnapshot['vision_detections'] }
 // Each frame needs three sequential round trips to the backend (upload, call, result): about 1.2 s from Vietnam to
 // the Hugging Face Space, while inference itself is ~50 ms. Keeping several frames in flight brings box updates
@@ -39,6 +38,8 @@ async function capture(video: HTMLVideoElement) {
 export function LiveCameraPanel({ locale }: { locale: Locale }) {
   const apiRef = useRef(new CameraApi())
   const videoRef = useRef<HTMLVideoElement>(null)
+  const privacyCanvasRef = useRef<HTMLCanvasElement>(null)
+  const privacyScratchRef = useRef<HTMLCanvasElement | undefined>(undefined)
   const streamRef = useRef<MediaStream | undefined>(undefined)
   const credentialsRef = useRef<Credentials | undefined>(undefined)
   const generationRef = useRef(0)
@@ -222,6 +223,26 @@ export function LiveCameraPanel({ locale }: { locale: Locale }) {
   const latestDetections = frame && snapshot?.vision_detections.some(detection => detection.bbox)
     ? { at: now, frame, detections: snapshot.vision_detections } : undefined
   const shownDetections = active ? holdDetections(latestDetections, lastDetectionsRef.current, now) : undefined
+  useEffect(() => {
+    if (!active) return
+    let animationFrame = 0
+    const paint = () => {
+      const canvas = privacyCanvasRef.current
+      const video = videoRef.current
+      if (canvas && video) {
+        const scratch = privacyScratchRef.current ?? document.createElement('canvas')
+        privacyScratchRef.current = scratch
+        paintPrivacyMasks(
+          canvas, scratch, video, maskTracksRef.current.map(track => track.box),
+          maskSize?.width ?? 0, maskSize?.height ?? 0,
+        )
+      }
+      animationFrame = requestAnimationFrame(paint)
+    }
+    animationFrame = requestAnimationFrame(paint)
+    return () => cancelAnimationFrame(animationFrame)
+  }, [active, maskSize?.height, maskSize?.width])
+
   const mirrored = (box: [number, number, number, number], width: number, height: number, margin = 0) => {
     const padX = (box[2] - box[0]) * margin, padY = (box[3] - box[1]) * margin
     const x1 = Math.max(0, box[0] - padX), x2 = Math.min(width, box[2] + padX)
@@ -234,7 +255,7 @@ export function LiveCameraPanel({ locale }: { locale: Locale }) {
     <div className="live-camera-layout">
       <div className="raw-camera-stage">
         <video ref={videoRef} muted playsInline className="camera-raw-preview" aria-label={vi ? 'Camera trực tiếp' : 'Live camera'} />
-        {maskSize && maskTracksRef.current.map(track => <span className="face-mask" key={`face-${track.id}`} style={mirrored(track.box, maskSize.width, maskSize.height, MASK_MARGIN)} />)}
+        {active && <canvas ref={privacyCanvasRef} className="privacy-mask-canvas" aria-hidden="true" />}
         {!active && <div className="camera-empty"><strong>{vi ? 'Camera chưa bật' : 'Camera is off'}</strong><span>{vi ? 'Cho phép camera rồi nhấn Bật camera.' : 'Grant camera access, then start detection.'}</span></div>}
         <span className={`raw-camera-warning ${maskTracksRef.current.length || faceMasks ? 'privacy-preview-ready' : ''}`}>{maskTracksRef.current.length || faceMasks ? (vi ? 'VIDEO TRỰC TIẾP · MẶT ĐÃ CHE' : 'LIVE VIDEO · FACES MASKED') : active ? (vi ? 'CHƯA CÓ DỮ LIỆU CHE MẶT · MẶT CHƯA ĐƯỢC CHE' : 'NO FACE DATA YET · FACES NOT MASKED') : (vi ? 'CAMERA ĐANG TẮT' : 'CAMERA OFF')}</span>
         {phase === 'RUNNING' && <span className="detect-live"><i />LIVE DETECT</span>}
