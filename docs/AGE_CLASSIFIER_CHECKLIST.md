@@ -29,7 +29,8 @@ Cập nhật: 2026-10-04. Ký hiệu: ✅ xong và đã kiểm chứng · 🟡 x
 ## D. FPS ≥ 30 trên demo web
 - ✅ Đo thực tế (Mac, 8 luồng, YOLOv8n CPU, ảnh `cayenne-0.png`): trung bình 80 ms, p50 58 ms → trần ~12–17 fps, chưa tính upload/mạng/classifier.
 - ✅ Kết luận: 30 fps suy luận qua HTTP từng frame trên backend CPU **không đạt được** (cần ≤33 ms/frame). Trên Space CPU yếu hơn sẽ thấp hơn.
-- ⛔ Chưa tối ưu: nguyên nhân giật chưa được xác định (frontend nằm repo `hientran-ai/Cabin`, chưa đo trên trình duyệt).
+- ✅ iOS: classifier chạy nền (queue riêng, 1 job/lần, không chặn vòng phát hiện); build Simulator OK. Chưa đo fps trên thiết bị thật.
+- ⛔ Web realtime: chưa tối ưu; nguyên nhân giật chưa được xác định (frontend nằm repo `hientran-ai/Cabin`, chưa đo trên trình duyệt).
 - ⛔ Hướng khả thi (cần duyệt): tách hiển thị video (RAF, 30 fps cục bộ) khỏi suy luận (5–10 fps, bỏ frame cũ, chỉ 1 request đang bay); hạ `imgsz`; đo lại.
 
 ## E. Pull request
