@@ -1,4 +1,4 @@
-import type { ApiErrorEnvelope, Incident, Page, RealtimeEvent, User, Vehicle, VehicleStatus } from '@cabinsentinel/contracts'
+import type { ApiErrorEnvelope, Incident, Page, RealtimeEvent, User, V1CabinState, V1DemoLoginResponse, V1DemoRole, V1FleetVehicleState, V1Health, V1Me, V1SessionResponse, V1VehicleEvents, V1VehicleList, Vehicle, VehicleStatus } from '@cabinsentinel/contracts'
 import { acceptNewerRevision } from '@cabinsentinel/domain'
 
 export class ApiError extends Error {
@@ -26,6 +26,7 @@ export interface RequestOptions extends RequestInit {
   timeoutMs?: number
   idempotencyKey?: string
   retry?: boolean
+  auth?: boolean
 }
 
 function joinUrl(base: string, path: string): string {
@@ -49,18 +50,19 @@ export class CabinSentinelClient {
   }
 
   async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+    const { timeoutMs, idempotencyKey, retry, auth = true, ...requestOptions } = options
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(new DOMException('Request timed out', 'TimeoutError')), options.timeoutMs ?? this.timeoutMs)
+    const timeout = setTimeout(() => controller.abort(new DOMException('Request timed out', 'TimeoutError')), timeoutMs ?? this.timeoutMs)
     const forwardAbort = () => controller.abort(options.signal?.reason)
     options.signal?.addEventListener('abort', forwardAbort, { once: true })
     try {
-      const token = await this.options.getAccessToken?.()
+      const token = auth ? await this.options.getAccessToken?.() : undefined
       const headers = new Headers(options.headers)
       if (token) headers.set('Authorization', `Bearer ${token}`)
-      if (options.idempotencyKey) headers.set('Idempotency-Key', options.idempotencyKey)
+      if (idempotencyKey) headers.set('Idempotency-Key', idempotencyKey)
       if (options.body && !(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
-      const init: RequestInit = { ...options, headers, signal: controller.signal, credentials: this.options.credentials ?? 'include' }
-      const maxAttempts = options.retry !== false && (!options.method || options.method === 'GET') ? 2 : 1
+      const init: RequestInit = { ...requestOptions, headers, signal: controller.signal, credentials: options.credentials ?? this.options.credentials ?? 'include' }
+      const maxAttempts = retry !== false && (!options.method || options.method === 'GET') ? 2 : 1
       let response: Response | undefined
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         response = await this.fetcher(joinUrl(this.options.baseUrl, path), init)
@@ -86,6 +88,51 @@ export class CabinSentinelClient {
     })
   }
   operationsIncidents(signal?: AbortSignal) { return this.request<Page<Incident>>('/api/v2/operations/incidents', { signal }) }
+
+  /** Development-only V1 authentication. The backend disables this endpoint in production. */
+  v1DemoLogin(role: V1DemoRole, subject?: string, signal?: AbortSignal) {
+    return this.request<V1DemoLoginResponse>('/api/v1/auth/demo-login', {
+      method: 'POST', retry: false, signal,
+      body: JSON.stringify({ role, ...(subject ? { subject } : {}) }),
+    })
+  }
+  v1Me(signal?: AbortSignal) { return this.request<V1Me>('/api/v1/auth/me', { signal }) }
+  v1PlatformLogin(email: string, password: string, signal?: AbortSignal) {
+    return this.request<V1SessionResponse>('/api/v1/auth/login', {
+      method: 'POST', retry: false, auth: false, signal,
+      body: JSON.stringify({ email, password, use_cookie: true }),
+    })
+  }
+  v1PlatformRefresh(csrfToken: string, signal?: AbortSignal) {
+    return this.request<V1SessionResponse>('/api/v1/auth/refresh', {
+      method: 'POST', retry: false, auth: false, signal,
+      headers: { 'X-CSRF-Token': csrfToken }, body: JSON.stringify({}),
+    })
+  }
+  v1PlatformLogout(csrfToken: string, signal?: AbortSignal) {
+    return this.request<void>('/api/v1/auth/logout', {
+      method: 'POST', retry: false, signal,
+      headers: { 'X-CSRF-Token': csrfToken },
+    })
+  }
+  v1Vehicles(signal?: AbortSignal) { return this.request<V1VehicleList>('/api/v1/vehicles', { signal }) }
+  v1VehicleState(vehicleId: string, signal?: AbortSignal) {
+    return this.request<V1FleetVehicleState>(`/api/v1/vehicles/${encodeURIComponent(vehicleId)}/state`, { signal })
+  }
+  v1VehicleEvents(vehicleId: string, limit = 50, signal?: AbortSignal) {
+    return this.request<V1VehicleEvents>(`/api/v1/vehicles/${encodeURIComponent(vehicleId)}/events?limit=${Math.max(1, Math.min(limit, 500))}`, { signal })
+  }
+
+  /** Confirmed endpoints from the repository's current V1 FastAPI service. */
+  v1State(vehicleId: string, signal?: AbortSignal) {
+    return this.request<V1CabinState>(`/api/v1/state/${encodeURIComponent(vehicleId)}`, { signal, credentials: 'omit' })
+  }
+  v1Events(vehicleId: string, limit = 50, signal?: AbortSignal) {
+    return this.request<V1CabinState[]>(`/api/v1/events/${encodeURIComponent(vehicleId)}?limit=${Math.max(1, Math.min(limit, 100))}`, { signal, credentials: 'omit' })
+  }
+  health(signal?: AbortSignal) {
+    return this.request<V1Health>('/health', { signal, credentials: 'omit' })
+  }
 }
 
 export interface RevisionCache<T> { revision?: number; value?: T }

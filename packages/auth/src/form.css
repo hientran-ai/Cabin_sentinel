@@ -1,0 +1,42 @@
+.auth-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.auth-form label {
+  display: grid;
+  gap: 7px;
+}
+
+.auth-form label > span {
+  color: #5d493a;
+  font-size: 0.7rem;
+  font-weight: 850;
+}
+
+.auth-form input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid #e6daca;
+  border-radius: 14px;
+  outline: none;
+  background: #fbf7f0;
+  color: #3b2a1e;
+  font: inherit;
+}
+
+.auth-form input:focus {
+  border-color: #8a6446;
+  box-shadow: 0 0 0 3px rgba(138, 100, 70, 0.12);
+}
+
+.auth-form .auth-primary {
+  margin-top: 4px;
+}
+
+.auth-primary:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}

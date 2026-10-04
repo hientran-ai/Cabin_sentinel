@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "CabinSentinel", "slug": "cabinsentinel", "version": "0.1.0", "scheme": "cabinsentinel", "orientation": "portrait", "userInterfaceStyle": "automatic",
-    "ios": { "supportsTablet": true }, "android": { "adaptiveIcon": { "backgroundColor": "#102c37" } }
+    "name": "CabinSentinel", "slug": "cabinsentinel", "version": "0.1.0", "scheme": "cabinsentinel", "orientation": "portrait", "userInterfaceStyle": "automatic", "jsEngine": "jsc",
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.cabinsentinel.mobile" }, "android": { "package": "com.cabinsentinel.mobile", "adaptiveIcon": { "backgroundColor": "#fff8fa" } }
   }
 }
