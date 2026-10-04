@@ -1,3 +1,6 @@
+
+
+
 #!/usr/bin/env python3
 """
 Shared AI hook logger — works with Claude Code, Gemini CLI, Codex, Cursor, Copilot.

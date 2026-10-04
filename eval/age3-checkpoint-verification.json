@@ -1,0 +1,27 @@
+{
+  "classes": [
+    "adult",
+    "child",
+    "infant"
+  ],
+  "test_samples": 443,
+  "confusion_matrix_actual_rows": [
+    [
+      234,
+      0,
+      0
+    ],
+    [
+      40,
+      59,
+      1
+    ],
+    [
+      6,
+      39,
+      64
+    ]
+  ],
+  "checkpoint_sha256": "259a2bbb8d360502fb77f07e42ef4194c6d25a8a48605889839118065bc75704",
+  "report_matches": true
+}

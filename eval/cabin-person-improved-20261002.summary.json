@@ -1,0 +1,52 @@
+{
+  "source": "data\\videos\\cabin_test.mp4",
+  "model": "yolov8s.pt",
+  "age_classifier": "runs\\age-three-class\\best.pt",
+  "age_thresholds": {
+    "child": 0.5,
+    "adult": 0.9,
+    "infant": 0.5
+  },
+  "device": "cpu",
+  "torch_threads": 4,
+  "ultralytics_version": "8.4.159",
+  "imgsz": 640,
+  "confidence_threshold": 0.4,
+  "nms_iou_threshold": 0.5,
+  "video_fps": 25.0,
+  "expected_frames": 266,
+  "processed_frames": 266,
+  "complete": true,
+  "frames_with_detections": 266,
+  "detections_by_class": {
+    "person": 278,
+    "cat": 0,
+    "dog": 0,
+    "adult": 217,
+    "child": 66,
+    "infant": 6
+  },
+  "latency_mean_ms": 671.0131635322215,
+  "latency_p95_ms": 979.1887999745086,
+  "latency_definition": "Detector plus optional age/motion stages and detection assembly; excludes decoding, serialization and writing",
+  "warmup_predictions_excluded": 1,
+  "processing_elapsed_seconds": 336.8669006000273,
+  "processing_fps": 0.7896293744686724,
+  "privacy": {
+    "method": "YuNet plus smooth feathered oval blur",
+    "face_model": "data\\models\\face_detection_yunet_2023mar.onnx",
+    "face_threshold": 0.3,
+    "video_output": "data\\videos\\cabin-person-improved-20261002.mp4",
+    "video_codec": "h264",
+    "overlay": "infant/child/adult; ? marks below-threshold argmax; motion status",
+    "exported_frames": 266,
+    "export_size": [
+      1280,
+      720
+    ],
+    "detected_faces_across_frames": 547,
+    "latency_mean_ms": 524.3028417307116,
+    "latency_p95_ms": 893.5545250278665,
+    "audio_preserved": false
+  }
+}

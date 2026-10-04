@@ -1,0 +1,63 @@
+{
+  "source": "data\\videos\\cabin_test.mp4",
+  "model": "yolov8n.pt",
+  "age_classifier": "runs\\age-three-class\\best.pt",
+  "age_thresholds": {
+    "child": 0.5,
+    "adult": 0.9,
+    "infant": 0.5
+  },
+  "device": "cpu",
+  "ultralytics_version": "8.4.159",
+  "imgsz": 640,
+  "confidence_threshold": 0.25,
+  "video_fps": 25.0,
+  "expected_frames": 266,
+  "processed_frames": 266,
+  "complete": true,
+  "frames_with_detections": 266,
+  "detections_by_class": {
+    "person": 319,
+    "cat": 0,
+    "dog": 0,
+    "adult": 254,
+    "child": 83,
+    "infant": 1
+  },
+  "latency_mean_ms": 249.81486729409238,
+  "latency_p95_ms": 325.6770750012947,
+  "latency_definition": "CPU detector plus optional age/motion stages and detection assembly; excludes decoding, serialization and writing",
+  "warmup_predictions_excluded": 1,
+  "processing_elapsed_seconds": 99.89283800002886,
+  "processing_fps": 2.662853567138849,
+  "motion": {
+    "algorithm": "MOG2",
+    "max_processing_width": 640,
+    "warmup_frames": 30,
+    "min_area_ratio": 0.001,
+    "moving_threshold": 0.02,
+    "ready_frames": 236,
+    "warming_up_frames": 30,
+    "global_change_frames": 0,
+    "frames_with_motion": 236,
+    "latency_mean_ms": 36.04526503521011,
+    "latency_p95_ms": 44.424124964280054
+  },
+  "privacy": {
+    "method": "YuNet plus fitted square mosaic",
+    "face_model": "data\\models\\face_detection_yunet_2023mar.onnx",
+    "face_threshold": 0.3,
+    "video_output": "runs\\privacy\\cabin-mosaic-fitted.mp4",
+    "video_codec": "h264",
+    "overlay": "infant/child/adult; ? marks below-threshold argmax; motion status",
+    "exported_frames": 266,
+    "export_size": [
+      1280,
+      720
+    ],
+    "detected_faces_across_frames": 547,
+    "latency_mean_ms": 74.33854925307915,
+    "latency_p95_ms": 92.10489995894022,
+    "audio_preserved": false
+  }
+}

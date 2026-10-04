@@ -1,0 +1,46 @@
+{
+  "source": "data\\videos\\cabin_test.mp4",
+  "model": "yolov8n.pt",
+  "age_classifier": "runs\\age-three-class\\best.pt",
+  "age_thresholds": {
+    "child": 0.5,
+    "adult": 0.9,
+    "infant": 0.5
+  },
+  "device": "cpu",
+  "ultralytics_version": "8.4.159",
+  "imgsz": 640,
+  "confidence_threshold": 0.25,
+  "video_fps": 25.0,
+  "expected_frames": 266,
+  "processed_frames": 266,
+  "complete": true,
+  "frames_with_detections": 266,
+  "detections_by_class": {
+    "person": 319,
+    "cat": 0,
+    "dog": 0,
+    "adult": 254,
+    "child": 83,
+    "infant": 1
+  },
+  "latency_mean_ms": 682.7658157917335,
+  "latency_p95_ms": 986.9687250320567,
+  "latency_definition": "CPU detector plus optional age/motion stages and detection assembly; excludes decoding, serialization and writing",
+  "warmup_predictions_excluded": 1,
+  "processing_elapsed_seconds": 194.986882600002,
+  "processing_fps": 1.364194331706277,
+  "motion": {
+    "algorithm": "MOG2",
+    "max_processing_width": 640,
+    "warmup_frames": 30,
+    "min_area_ratio": 0.001,
+    "moving_threshold": 0.02,
+    "ready_frames": 236,
+    "warming_up_frames": 30,
+    "global_change_frames": 0,
+    "frames_with_motion": 236,
+    "latency_mean_ms": 70.98665526198027,
+    "latency_p95_ms": 95.22872502566315
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "sample_seconds": 5,
+  "sample_fps": 10,
+  "maximum_sample_size": [
+    640,
+    640
+  ],
+  "classes": [
+    "adult",
+    "child",
+    "infant"
+  ],
+  "results": [
+    {
+      "video": "instagram",
+      "exit_code": 0,
+      "output": "data\\videos\\test-batch-20261002\\instagram-preview.mp4",
+      "summary": "eval\\test-batch-20261002\\instagram-preview.summary.json"
+    },
+    {
+      "video": "funny-funny",
+      "exit_code": 0,
+      "output": "data\\videos\\test-batch-20261002\\funny-funny-preview.mp4",
+      "summary": "eval\\test-batch-20261002\\funny-funny-preview.summary.json"
+    },
+    {
+      "video": "people-original",
+      "exit_code": 0,
+      "output": "data\\videos\\test-batch-20261002\\people-original-preview.mp4",
+      "summary": "eval\\test-batch-20261002\\people-original-preview.summary.json"
+    },
+    {
+      "video": "family-vacation",
+      "exit_code": 0,
+      "output": "data\\videos\\test-batch-20261002\\family-vacation-preview.mp4",
+      "summary": "eval\\test-batch-20261002\\family-vacation-preview.summary.json"
+    },
+    {
+      "video": "you-would-swear",
+      "exit_code": 0,
+      "output": "data\\videos\\test-batch-20261002\\you-would-swear-preview.mp4",
+      "summary": "eval\\test-batch-20261002\\you-would-swear-preview.summary.json"
+    }
+  ]
+}
