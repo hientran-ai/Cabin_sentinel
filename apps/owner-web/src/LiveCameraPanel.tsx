@@ -1,11 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
-import { CameraApi, CameraApiError, getPrivacyPreview, validateCameraSnapshot, type CameraSnapshot } from './cameraApi'
+import { CameraApi, CameraApiError, getFaceMasks, getPrivacyPreview, validateCameraSnapshot, type CameraSnapshot } from './cameraApi'
 import type { Locale } from './model'
 
 type Phase = 'IDLE' | 'STARTING' | 'RUNNING' | 'STOPPING' | 'STOPPED' | 'ERROR'
 type Credentials = { id: string; token: string }
 
 function delay(ms: number) { return new Promise(resolve => setTimeout(resolve, ms)) }
+
+// Face boxes come from a backend frame that is already a little old; widen each mask so a moving head stays covered.
+const MASK_MARGIN = 0.35
+// Each frame needs three sequential round trips to the backend (upload, call, result): about 1.2 s from Vietnam to
+// the Hugging Face Space, while inference itself is ~50 ms. Keeping several frames in flight brings box updates
+// close to the capture rate instead of ~1 per second. The video itself always plays at the camera's own rate.
+const CAPTURE_INTERVAL_MS = 140 // ~7 box updates per second
+const MAX_IN_FLIGHT = 8
 
 async function capture(video: HTMLVideoElement) {
   if (!video.videoWidth || !video.videoHeight) throw new CameraApiError('Camera chưa có hình ảnh.', 'NO_FRAME')
@@ -34,8 +42,16 @@ export function LiveCameraPanel({ locale }: { locale: Locale }) {
   const [snapshot, setSnapshot] = useState<CameraSnapshot>()
   const [error, setError] = useState<string>()
   const [apiReady, setApiReady] = useState<boolean>()
+  const [now, setNow] = useState(() => Date.now())
   const vi = locale === 'vi'
   const active = phase === 'STARTING' || phase === 'RUNNING' || phase === 'STOPPING'
+
+  // Re-evaluate mask freshness between backend results so stale face boxes fall back to a full blur.
+  useEffect(() => {
+    if (!active) return
+    const timer = setInterval(() => setNow(Date.now()), 250)
+    return () => clearInterval(timer)
+  }, [active])
 
   const releaseLocalCamera = () => {
     streamRef.current?.getTracks().forEach(track => track.stop())
@@ -65,32 +81,49 @@ export function LiveCameraPanel({ locale }: { locale: Locale }) {
 
   const runFrames = async (generation: number) => {
     let sequence = 0
-    while (generation === generationRef.current && credentialsRef.current && videoRef.current) {
+    let applied = 0
+    let inFlight = 0
+    let fatal = false
+    let pausedUntil = 0
+    const alive = () => !fatal && generation === generationRef.current && Boolean(credentialsRef.current) && Boolean(videoRef.current)
+    const sendFrame = async (seq: number, capturedAt: string) => {
       try {
-        const capturedAt = new Date().toISOString()
-        const blob = await capture(videoRef.current)
+        const video = videoRef.current
+        if (!video) return
+        const blob = await capture(video)
         const image = await apiRef.current.upload(blob)
-        if (generation !== generationRef.current || !credentialsRef.current) return
-        const next = await apiRef.current.call('camera_frame', [
-          credentialsRef.current.id, credentialsRef.current.token, image, ++sequence, capturedAt,
-        ])
+        const credentials = credentialsRef.current
+        if (!alive() || !credentials) return
+        const next = await apiRef.current.call('camera_frame', [credentials.id, credentials.token, image, seq, capturedAt])
         validateCameraSnapshot(next)
-        if (generation !== generationRef.current) return
+        if (!alive() || seq <= applied) return // a newer frame already landed
+        applied = seq
         if (mountedRef.current) { setSnapshot(next); setError(undefined) }
       } catch (reason) {
-        if (generation !== generationRef.current) return
+        if (!alive()) return
+        // With several frames in flight, one can reach the backend after a newer one; that frame is just dropped.
+        if (reason instanceof CameraApiError && reason.code === 'OUT_OF_ORDER') return
         const message = reason instanceof Error ? reason.message : 'Không detect được frame camera.'
+        pausedUntil = Date.now() + 800
         if (mountedRef.current) {
           setError(message)
           setSnapshot(current => current ? { ...current, preview: undefined } : current)
         }
         if (reason instanceof CameraApiError && ['STOPPED', 'SESSION_NOT_FOUND', 'UNAUTHORIZED', 'INVALID_RESPONSE'].includes(reason.code)) {
+          fatal = true
           if (mountedRef.current) setPhase('ERROR')
           releaseLocalCamera()
-          return
         }
+      } finally {
+        inFlight -= 1
       }
-      await delay(800)
+    }
+    while (alive()) {
+      if (inFlight < MAX_IN_FLIGHT && Date.now() >= pausedUntil) {
+        inFlight += 1
+        void sendFrame(++sequence, new Date().toISOString())
+      }
+      await delay(CAPTURE_INTERVAL_MS)
     }
   }
 
@@ -152,16 +185,26 @@ export function LiveCameraPanel({ locale }: { locale: Locale }) {
   const frame = snapshot?.frame
   const privacyPreview = snapshot ? getPrivacyPreview(snapshot) : undefined
   const previewUnavailable = snapshot?.preview?.status === 'UNAVAILABLE' ? snapshot.preview : undefined
+  const faceMasks = active ? getFaceMasks(privacyPreview, now) : undefined
+  const mirrored = (box: [number, number, number, number], width: number, height: number, margin = 0) => {
+    const padX = (box[2] - box[0]) * margin, padY = (box[3] - box[1]) * margin
+    const x1 = Math.max(0, box[0] - padX), x2 = Math.min(width, box[2] + padX)
+    const y1 = Math.max(0, box[1] - padY), y2 = Math.min(height, box[3] + padY)
+    // The local video is mirrored (selfie view), so x is flipped against the frame the backend saw.
+    return { left: `${(width - x2) / width * 100}%`, top: `${y1 / height * 100}%`, width: `${(x2 - x1) / width * 100}%`, height: `${(y2 - y1) / height * 100}%` }
+  }
   return <section className="surface live-camera-card">
     <div className="live-camera-heading"><div><span className="eyebrow">Live camera · YOLO</span><h2>{vi ? 'Bật camera để detect' : 'Turn on camera detection'}</h2></div><span className={`camera-phase phase-${phase.toLowerCase()}`}><i />{phase}</span></div>
     <div className="live-camera-layout">
       <div className="raw-camera-stage">
-        <video ref={videoRef} muted playsInline className={privacyPreview ? 'camera-capture-hidden' : 'camera-raw-preview'} aria-label={vi ? 'Camera trực tiếp chưa che mặt' : 'Live unmasked camera'} />
-        {privacyPreview && <img className="privacy-camera-preview" src={privacyPreview.data_url} alt={vi ? 'Preview camera đã che mặt' : 'Face-masked camera preview'} />}
+        <video ref={videoRef} muted playsInline className="camera-raw-preview" aria-label={vi ? 'Camera trực tiếp' : 'Live camera'} />
+        {active && (faceMasks && privacyPreview
+          ? faceMasks.map((box, index) => <span className="face-mask" key={`mask-${privacyPreview.sequence}-${index}`} style={mirrored(box, privacyPreview.width, privacyPreview.height, MASK_MARGIN)} />)
+          : <span className="privacy-full-blur" />)}
         {!active && <div className="camera-empty"><strong>{vi ? 'Camera chưa bật' : 'Camera is off'}</strong><span>{vi ? 'Cho phép camera rồi nhấn Bật camera.' : 'Grant camera access, then start detection.'}</span></div>}
-        <span className={`raw-camera-warning ${privacyPreview ? 'privacy-preview-ready' : ''}`}>{privacyPreview ? (vi ? 'PREVIEW ĐÃ CHE MẶT' : 'FACE-MASKED PREVIEW') : active ? (vi ? 'CAMERA ĐANG BẬT · CHƯA CHE MẶT' : 'CAMERA ON · FACE NOT MASKED') : (vi ? 'CAMERA ĐANG TẮT' : 'CAMERA OFF')}</span>
+        <span className={`raw-camera-warning ${faceMasks ? 'privacy-preview-ready' : ''}`}>{faceMasks ? (vi ? 'VIDEO TRỰC TIẾP · MẶT ĐÃ CHE' : 'LIVE VIDEO · FACES MASKED') : active ? (vi ? 'ĐANG LÀM MỜ TOÀN KHUNG · CHỜ DỮ LIỆU CHE MẶT' : 'FULL-FRAME BLUR · WAITING FOR FACE DATA') : (vi ? 'CAMERA ĐANG TẮT' : 'CAMERA OFF')}</span>
         {phase === 'RUNNING' && <span className="detect-live"><i />LIVE DETECT</span>}
-        {active && frame && snapshot.vision_detections.map((detection, index) => detection.bbox && <span className="detection-box" key={`${frame.sequence}-${index}`} style={{ left: `${(privacyPreview ? detection.bbox[0] : frame.width - detection.bbox[2]) / frame.width * 100}%`, top: `${detection.bbox[1] / frame.height * 100}%`, width: `${(detection.bbox[2] - detection.bbox[0]) / frame.width * 100}%`, height: `${(detection.bbox[3] - detection.bbox[1]) / frame.height * 100}%` }}><b>{detection.class} {Math.round(detection.confidence * 100)}%</b></span>)}
+        {active && frame && snapshot.vision_detections.map((detection, index) => detection.bbox && <span className="detection-box" key={`${frame.sequence}-${index}`} style={mirrored(detection.bbox, frame.width, frame.height)}><b>{detection.class} {Math.round(detection.confidence * 100)}%</b></span>)}
       </div>
       <aside className="camera-result-panel">
         <div><small>Backend verdict</small><strong className={`camera-risk risk-text-${snapshot?.risk_level.toLowerCase() ?? 'error'}`}>{snapshot?.risk_level ?? 'NO DATA'}</strong></div>

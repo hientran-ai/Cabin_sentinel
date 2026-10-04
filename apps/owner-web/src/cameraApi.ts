@@ -15,6 +15,8 @@ export interface PrivacyPreview {
   height: number
   detected_faces: number
   masked_regions: number
+  /** Pixel boxes (x1, y1, x2, y2) of the masked regions, in frame coordinates. */
+  masked_boxes?: [number, number, number, number][]
   latency_ms: number
   sequence: number
   captured_at: string
@@ -88,6 +90,15 @@ export function getPrivacyPreview(snapshot: CameraSnapshot, now = Date.now()): P
   const capturedAt = Date.parse(preview.captured_at)
   const age = now - capturedAt
   return Number.isFinite(capturedAt) && age >= 0 && age <= 3_000 ? preview : undefined
+}
+
+/** Face regions to blur on the full-rate local video. Faces move between backend previews, so boxes are only
+ * trusted while recent; `undefined` means the caller must blur the whole frame instead of showing faces. */
+export function getFaceMasks(preview: PrivacyPreview | undefined, now = Date.now(), maxAgeMs = 1_500): [number, number, number, number][] | undefined {
+  if (!preview || !Array.isArray(preview.masked_boxes) || preview.masked_boxes.length !== preview.masked_regions) return undefined
+  if (!preview.masked_boxes.every(box => Array.isArray(box) && box.length === 4 && box.every(Number.isFinite) && box[2] > box[0] && box[3] > box[1])) return undefined
+  const age = now - Date.parse(preview.captured_at)
+  return Number.isFinite(age) && age >= 0 && age <= maxAgeMs ? preview.masked_boxes : undefined
 }
 
 function cameraBaseUrl() {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { CameraApi, CameraApiError, getPrivacyPreview, validateCameraSnapshot, type CameraSnapshot } from './cameraApi'
+import { CameraApi, CameraApiError, getFaceMasks, getPrivacyPreview, validateCameraSnapshot, type CameraSnapshot } from './cameraApi'
 
 const snapshot: CameraSnapshot = {
   session_id: 'session-1', session_token: 'token-1', revision: 1, risk_level: 'WARNING',
@@ -55,5 +55,26 @@ describe('CameraApi', () => {
     expect(getPrivacyPreview({ ...snapshot, preview: { status: 'UNAVAILABLE', reason: 'model_missing' } }, Date.parse('2026-10-03T10:00:01Z'))).toBeUndefined()
     expect(getPrivacyPreview({ ...snapshot, preview }, Date.parse('2026-10-03T10:00:04Z'))).toBeUndefined()
     expect(getPrivacyPreview({ ...snapshot, preview: { ...preview, sequence: 2 } }, Date.parse('2026-10-03T10:00:01Z'))).toBeUndefined()
+  })
+})
+
+describe('getFaceMasks', () => {
+  const at = Date.parse(preview.captured_at)
+  const withBoxes = { ...preview, masked_regions: 1, masked_boxes: [[10, 20, 60, 80]] as [number, number, number, number][] }
+
+  it('returns recent, consistent face boxes', () => {
+    expect(getFaceMasks(withBoxes, at + 500)).toEqual([[10, 20, 60, 80]])
+  })
+
+  it('falls back to a full blur when boxes are stale, missing, inconsistent or malformed', () => {
+    expect(getFaceMasks(withBoxes, at + 2_000)).toBeUndefined()
+    expect(getFaceMasks(preview, at)).toBeUndefined()
+    expect(getFaceMasks({ ...withBoxes, masked_regions: 2 }, at)).toBeUndefined()
+    expect(getFaceMasks({ ...withBoxes, masked_boxes: [[60, 20, 10, 80]] }, at)).toBeUndefined()
+    expect(getFaceMasks(undefined, at)).toBeUndefined()
+  })
+
+  it('allows an empty mask list only when no region was masked', () => {
+    expect(getFaceMasks({ ...preview, masked_regions: 0, masked_boxes: [] }, at)).toEqual([])
   })
 })

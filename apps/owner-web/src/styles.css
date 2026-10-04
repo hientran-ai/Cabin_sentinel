@@ -39,3 +39,5 @@ body{background:radial-gradient(circle at 80% 0,#efe6d8 0,transparent 28rem),var
 @media(max-width:600px){.live-camera-card{padding:14px}.live-camera-heading,.camera-controls-row{align-items:stretch;flex-direction:column}.camera-controls-row>div{display:grid;grid-template-columns:1fr 1fr}.camera-result-panel{display:flex}.raw-camera-warning{max-width:60%}}
 .detection-box,.detection-box b{transform:none}
 .camera-capture-hidden{display:none!important}.privacy-camera-preview{display:block;width:100%;height:100%;object-fit:fill}.privacy-preview-ready{background:rgba(22,92,67,.92);color:#fff}.privacy-unavailable{padding:9px;border-radius:10px;background:var(--amber);color:var(--amber-ink)!important;font-weight:750}
+
+.face-mask{position:absolute;z-index:2;border-radius:50%;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);background:rgba(32,29,27,.25);pointer-events:none}.privacy-full-blur{position:absolute;inset:0;z-index:2;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);background:rgba(32,29,27,.2);pointer-events:none}
