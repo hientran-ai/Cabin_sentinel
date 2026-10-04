@@ -16,10 +16,13 @@ export function Overview() {
   const { current, history, health, connection, error, simulate, analyze, analysisPending, capabilities, effectiveDataAgeMs } = useAgent()
   return <main className="content" id="overview">
     <header className="topbar">
-      <div><span className="eyebrow">Vehicle {current.vehicleId} · Main cabin</span><h1>Safety overview</h1></div>
-      <div className="connection-group">
-        <span className={health.edgeConnected ? 'connected' : 'disconnected'}><Radio /> Edge {health.edgeConnected ? 'connected' : 'offline'}</span>
-        <span className={current.internetAvailable ? 'connected' : 'disconnected'}>{current.internetAvailable ? <Wifi /> : <WifiOff />} Internet {current.internetAvailable ? 'online' : 'offline'}</span>
+      <div className="page-heading"><span className="eyebrow">Vehicle {current.vehicleId} · Main cabin</span><h1>Safety overview</h1><p>Live, backend-evaluated cabin status and incident response.</p></div>
+      <div className="topbar-status">
+        <span className="environment-chip">Live safety console</span>
+        <div className="connection-group">
+          <span className={health.edgeConnected ? 'connected' : 'disconnected'}><Radio /> Edge {health.edgeConnected ? 'connected' : 'offline'}</span>
+          <span className={current.internetAvailable ? 'connected' : 'disconnected'}>{current.internetAvailable ? <Wifi /> : <WifiOff />} Internet {current.internetAvailable ? 'online' : 'offline'}</span>
+        </div>
       </div>
     </header>
     <div className="live-announcer" aria-live="assertive" aria-atomic="true">Current risk state: {current.riskState}. {current.reason}</div>

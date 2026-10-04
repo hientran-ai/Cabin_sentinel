@@ -133,3 +133,7 @@ Có thể disable nút gửi khi đang phân tích để tránh gửi lặp. Bac
 - [ ] Ghi lỗi và xác nhận của người nhận; sau đó chốt bàn giao bản V1 online.
 
 Frontend có thể làm UI/tích hợp local song song với việc cấp URL online. Backend chịu trách nhiệm giải quyết lỗi tích hợp đến khi người nhận chạy được luồng demo đã thống nhất.
+
+## Backend alert profile cập nhật 30/09/2026
+
+Backend bổ sung phiên analyze liên tục với Bearer token, incident bền vững, lịch notification độc lập risk, ACK riêng với cabin check và action ledger. Xem [hướng dẫn kiểm backend/API](BACKEND_ALERTS_TEST_GUIDE.md). Chưa triển khai frontend trong task này. Client cũ analyze một lần vẫn dùng được; mỗi phiên mới nhận thêm session_token. API/source/risk mới và migration được mô tả trong hướng dẫn; không dùng bảng V1 cũ như policy mới.

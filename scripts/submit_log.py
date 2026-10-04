@@ -19,15 +19,41 @@ import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _load_env_fallback() -> None:
+    for env_path in (Path(".env"), REPO_ROOT / ".env"):
+        if not env_path.is_file():
+            continue
+        try:
+            with open(env_path, encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    v = v.strip().strip('"').strip("'")
+                    if k and k not in os.environ:
+                        os.environ[k] = v
+        except OSError:
+            pass
+
+
 try:
     from dotenv import load_dotenv
+    load_dotenv(REPO_ROOT / ".env")
     load_dotenv()
 except ImportError:
     pass
 
+_load_env_fallback()
+
 SERVER_URL = os.environ.get("AI_LOG_SERVER", "")
 API_KEY = os.environ.get("AI_LOG_API_KEY", "")
-LOG_DIR = Path(os.environ.get("AI_LOG_DIR", ".ai-log"))
+_log_dir_raw = Path(os.environ.get("AI_LOG_DIR", ".ai-log"))
+LOG_DIR = _log_dir_raw if _log_dir_raw.is_absolute() else (REPO_ROOT / _log_dir_raw)
 LOG_FILE = LOG_DIR / "session.jsonl"
 ARCHIVE_DIR = LOG_DIR / "archive"
 
