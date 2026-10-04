@@ -82,7 +82,7 @@ export function getPrivacyPreview(snapshot: CameraSnapshot, now = Date.now()): P
   const { frame, preview } = snapshot
   if (!frame || !preview || preview.status !== 'PROCESSED' || preview.method !== 'YUNET_SOFT_OVAL' ||
     preview.model_sha256 !== PRIVACY_MODEL_SHA256 || typeof preview.data_url !== 'string' ||
-    !preview.data_url.startsWith('data:image/jpeg;base64,') || preview.sequence !== frame.sequence ||
+    (preview.data_url !== '' && !preview.data_url.startsWith('data:image/jpeg;base64,')) || preview.sequence !== frame.sequence ||
     preview.captured_at !== frame.captured_at || preview.width !== frame.width || preview.height !== frame.height ||
     !Number.isInteger(preview.detected_faces) || preview.detected_faces < 0 ||
     !Number.isInteger(preview.masked_regions) || preview.masked_regions < 0 ||
@@ -101,6 +101,54 @@ export function getFaceMasks(preview: PrivacyPreview | undefined, now = Date.now
   return Number.isFinite(age) && age >= 0 && age <= maxAgeMs ? preview.masked_boxes : undefined
 }
 
+interface CpuResult {
+  session_id: string
+  reasoning: { revision: number; risk_level: CameraSnapshot['risk_level']; rule_id: string; reason: string; occupancy_state: CameraSnapshot['occupancy_state']; decision_current: boolean }
+  vision: { detections: CameraDetection[]; latency_ms?: number | null }
+  frame?: { width: number; height: number } | null
+  preview?: { status: string; method?: string; model_sha256?: string; width?: number; height?: number; detected_faces?: number; masked_regions?: number; masked_boxes?: unknown; latency_ms?: number; reason?: string } | null
+}
+
+function isCpuResult(value: unknown): value is CpuResult {
+  if (!isRecord(value) || typeof value.session_id !== 'string' || !isRecord(value.reasoning) ||
+    !isRecord(value.vision) || !Array.isArray(value.vision.detections)) return false
+  const r = value.reasoning
+  return Number.isInteger(r.revision) && typeof r.rule_id === 'string' && typeof r.reason === 'string' &&
+    typeof r.decision_current === 'boolean' &&
+    ['SAFE', 'NOTICE', 'WARNING', 'CRITICAL', 'ERROR'].includes(String(r.risk_level)) &&
+    ['PRESENT', 'SUSPECTED', 'ABSENT', 'UNKNOWN'].includes(String(r.occupancy_state))
+}
+
+/** Face detection misses single frames (turned head, motion blur), and drawing only the newest frame makes the mask
+ * blink off and expose the face. Every mask seen within `holdMs` before the newest preview stays applied (union).
+ * Only previews of the same frame size are combined. Freshness of the newest preview is still enforced by getFaceMasks. */
+export function holdFaceMasks(history: PrivacyPreview[], latest: PrivacyPreview | undefined, now = Date.now(), holdMs = 700): [number, number, number, number][] | undefined {
+  const current = getFaceMasks(latest, now)
+  if (!latest || !current) return undefined
+  const latestAt = Date.parse(latest.captured_at)
+  const held = history.filter(item => item !== latest && item.width === latest.width && item.height === latest.height &&
+    latestAt - Date.parse(item.captured_at) >= 0 && latestAt - Date.parse(item.captured_at) <= holdMs)
+    .flatMap(item => getFaceMasks(item, latestAt, holdMs) ?? [])
+  // A face found in several recent frames must not stack several blurs: keep a held box only if it adds new area.
+  const merged = [...current]
+  for (const box of held) if (!merged.some(kept => overlap(kept, box) > 0.3)) merged.push(box)
+  return merged
+}
+
+function overlap(a: [number, number, number, number], b: [number, number, number, number]) {
+  const w = Math.min(a[2], b[2]) - Math.max(a[0], b[0])
+  const h = Math.min(a[3], b[3]) - Math.max(a[1], b[1])
+  if (w <= 0 || h <= 0) return 0
+  const smaller = Math.min((a[2] - a[0]) * (a[3] - a[1]), (b[2] - b[0]) * (b[3] - b[1]))
+  return w * h / smaller
+}
+
+/** Keep the last non-empty person boxes briefly so a single missed detection does not make the boxes blink. */
+export function holdDetections<T extends { at: number }>(latest: T | undefined, lastSeen: T | undefined, now = Date.now(), holdMs = 500): T | undefined {
+  if (latest) return latest
+  return lastSeen && now - lastSeen.at <= holdMs ? lastSeen : undefined
+}
+
 function cameraBaseUrl() {
   const configured = import.meta.env.VITE_CAMERA_API_BASE_URL || import.meta.env.VITE_API_BASE_URL
   return (configured || (import.meta.env.DEV ? 'http://localhost:7860' : 'https://khanh3636-backend-p068.hf.space')).replace(/\/$/, '')
@@ -110,14 +158,14 @@ export class CameraApi {
   private readonly baseUrl: string
   private readonly fetcher: typeof fetch
 
-  constructor(baseUrl = cameraBaseUrl(), fetcher: typeof fetch = globalThis.fetch) {
+  constructor(baseUrl = cameraBaseUrl(), fetcher: typeof fetch = (...args) => globalThis.fetch(...args)) {
     this.baseUrl = baseUrl.replace(/\/$/, '')
     this.fetcher = fetcher
   }
 
   async available() {
     const response = await this.fetcher(`${this.baseUrl}/gradio_api/info`, {
-      credentials: 'include', cache: 'no-store', signal: AbortSignal.timeout(15_000),
+      credentials: 'omit', cache: 'no-store', signal: AbortSignal.timeout(15_000),
     })
     if (!response.ok) throw new CameraApiError(`Không đọc được Camera API (${response.status}).`)
     const body: unknown = await response.json()
@@ -131,12 +179,51 @@ export class CameraApi {
     const body = new FormData()
     body.append('files', blob, 'camera-frame.jpg')
     const response = await this.fetcher(`${this.baseUrl}/gradio_api/upload`, {
-      method: 'POST', body, credentials: 'include', signal: AbortSignal.timeout(90_000),
+      method: 'POST', body, credentials: 'omit', signal: AbortSignal.timeout(90_000),
     })
     if (!response.ok) throw new CameraApiError(`Không tải được frame camera (${response.status}).`)
     const paths: unknown = await response.json()
     if (!Array.isArray(paths) || typeof paths[0] !== 'string' || !paths[0]) invalidResponse()
     return { path: paths[0], meta: { _type: 'gradio.FileData' } }
+  }
+
+  /** REST path: one request per frame. `privacy=boxes` returns face-mask pixel boxes (no image), which the panel
+   * applies to the local 30 fps video. The Worker proxies /api/*, so production calls the page origin. */
+  async analyzeCpu(blob: Blob, sessionId: string, token: string, sequence: number, capturedAt: string): Promise<CameraSnapshot> {
+    const body = new FormData()
+    body.append('image', blob, 'camera-frame.jpg')
+    body.append('scenario', 'hot_locked')
+    body.append('session_id', sessionId)
+    body.append('privacy', 'boxes')
+    const restBase = import.meta.env.DEV || typeof window === 'undefined' ? this.baseUrl : window.location.origin
+    const response = await this.fetcher(`${restBase}/api/v1/demo/analyze`, {
+      method: 'POST', body, credentials: 'omit',
+      headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(90_000),
+    })
+    if (!response.ok) throw new CameraApiError(`CPU Camera API lỗi (${response.status}).`, 'CPU_API_ERROR')
+    const result: unknown = await response.json()
+    if (!isCpuResult(result) || result.session_id !== sessionId) invalidResponse()
+    const size = result.frame
+    const frame = size && Number.isFinite(size.width) && Number.isFinite(size.height) && size.width > 0 && size.height > 0
+      ? { sequence, captured_at: capturedAt, width: size.width, height: size.height, latency_ms: result.vision.latency_ms ?? undefined }
+      : null
+    const p = result.preview
+    const boxes = p?.masked_boxes
+    const preview: CameraSnapshot['preview'] = frame && p?.status === 'PROCESSED' && Array.isArray(boxes) &&
+      p.method === 'YUNET_SOFT_OVAL' && typeof p.model_sha256 === 'string' && Number.isInteger(p.detected_faces) &&
+      Number.isInteger(p.masked_regions) && typeof p.latency_ms === 'number'
+      ? { status: 'PROCESSED', method: 'YUNET_SOFT_OVAL', model_sha256: p.model_sha256, data_url: '', width: frame.width,
+          height: frame.height, detected_faces: p.detected_faces as number, masked_regions: p.masked_regions as number,
+          masked_boxes: boxes as [number, number, number, number][], latency_ms: p.latency_ms, sequence, captured_at: capturedAt }
+      : { status: 'UNAVAILABLE', reason: p?.reason ?? 'Backend không trả về vùng che mặt.', sequence, captured_at: capturedAt }
+    const r = result.reasoning
+    const snapshot: CameraSnapshot = {
+      session_id: result.session_id, revision: r.revision, risk_level: r.risk_level, rule_id: r.rule_id, reason: r.reason,
+      occupancy_state: r.occupancy_state, decision_current: r.decision_current, camera_status: 'OK',
+      camera: { requested: 'RUNNING', device_reported: 'CAPTURING' }, frame, vision_detections: result.vision.detections, preview,
+    }
+    validateCameraSnapshot(snapshot)
+    return snapshot
   }
 
   async call(name: CameraOperation, data: unknown[]): Promise<CameraRecord> {
@@ -146,14 +233,14 @@ export class CameraApi {
     try {
       const url = `${this.baseUrl}/gradio_api/call/${name}`
       const started = await this.fetcher(url, {
-        method: 'POST', credentials: 'include', signal: controller.signal,
+        method: 'POST', credentials: 'omit', signal: controller.signal,
         headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data }),
       })
       if (!started.ok) throw new CameraApiError(`Camera API lỗi (${started.status}).`)
       const event: unknown = await started.json()
       if (!isRecord(event) || typeof event.event_id !== 'string' || !event.event_id) invalidResponse()
       const response = await this.fetcher(`${url}/${encodeURIComponent(event.event_id)}`, {
-        credentials: 'include', cache: 'no-store', signal: controller.signal,
+        credentials: 'omit', cache: 'no-store', signal: controller.signal,
       })
       if (!response.ok || !response.body) throw new CameraApiError(`Không đọc được kết quả detect (${response.status}).`)
       reader = response.body.getReader()

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { CameraApi, CameraApiError, getFaceMasks, getPrivacyPreview, validateCameraSnapshot, type CameraSnapshot } from './cameraApi'
+import { CameraApi, CameraApiError, getFaceMasks, holdDetections, holdFaceMasks, getPrivacyPreview, validateCameraSnapshot, type CameraSnapshot, type PrivacyPreview } from './cameraApi'
 
 const snapshot: CameraSnapshot = {
   session_id: 'session-1', session_token: 'token-1', revision: 1, risk_level: 'WARNING',
@@ -58,6 +58,44 @@ describe('CameraApi', () => {
   })
 })
 
+describe('CameraApi.analyzeCpu', () => {
+  const SHA = '8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4'
+  const reply = (extra: object) => ({
+    session_id: 's1', frame: { width: 480, height: 640 },
+    reasoning: { revision: 1, risk_level: 'SAFE', rule_id: 'R', reason: 'ok', occupancy_state: 'PRESENT', decision_current: true },
+    vision: { detections: [{ class: 'person', confidence: 0.9, bbox: [1, 2, 30, 40] }], latency_ms: 50 }, ...extra,
+  })
+  const run = (body: object) => {
+    const fetcher = vi.fn(async () => new Response(JSON.stringify(body), { status: 200 })) as unknown as typeof fetch
+    const api = new CameraApi('http://backend.test', fetcher)
+    return { fetcher, result: api.analyzeCpu(new Blob(['x']), 's1', 'tok', 3, new Date().toISOString()) }
+  }
+
+  it('sends privacy=boxes and returns frame size plus masked boxes', async () => {
+    const { fetcher, result } = run(reply({ preview: { status: 'PROCESSED', method: 'YUNET_SOFT_OVAL', model_sha256: SHA,
+      width: 480, height: 640, detected_faces: 1, masked_regions: 1, masked_boxes: [[10, 10, 50, 60]], latency_ms: 20 } }))
+    const snapshot = await result
+    const form = (fetcher as unknown as { mock: { calls: [string, RequestInit][] } }).mock.calls[0]![1].body as FormData
+    expect(form.get('privacy')).toBe('boxes')
+    expect(snapshot.frame).toMatchObject({ width: 480, height: 640, sequence: 3 })
+    expect(snapshot.vision_detections[0]?.bbox).toEqual([1, 2, 30, 40])
+    expect(getFaceMasks(getPrivacyPreview(snapshot))).toEqual([[10, 10, 50, 60]])
+  })
+
+  it('has no masks (full blur fallback) when the backend reports masking unavailable', async () => {
+    const snapshot = await run(reply({ preview: { status: 'UNAVAILABLE', reason: 'x' } })).result
+    expect(snapshot.preview?.status).toBe('UNAVAILABLE')
+    expect(getFaceMasks(getPrivacyPreview(snapshot))).toBeUndefined()
+  })
+
+  it('has no masks against an older backend that returns neither frame nor preview', async () => {
+    const { frame: _f, ...old } = reply({})
+    const snapshot = await run(old).result
+    expect(snapshot.frame).toBeNull()
+    expect(getFaceMasks(getPrivacyPreview(snapshot))).toBeUndefined()
+  })
+})
+
 describe('getFaceMasks', () => {
   const at = Date.parse(preview.captured_at)
   const withBoxes = { ...preview, masked_regions: 1, masked_boxes: [[10, 20, 60, 80]] as [number, number, number, number][] }
@@ -76,5 +114,53 @@ describe('getFaceMasks', () => {
 
   it('allows an empty mask list only when no region was masked', () => {
     expect(getFaceMasks({ ...preview, masked_regions: 0, masked_boxes: [] }, at)).toEqual([])
+  })
+})
+
+describe('overlay hold (anti-flicker)', () => {
+  const base = Date.parse('2026-10-04T12:00:00.000Z')
+  const preview = (offsetMs: number, boxes: [number, number, number, number][], width = 640): PrivacyPreview => ({
+    status: 'PROCESSED', method: 'YUNET_SOFT_OVAL', model_sha256: 'x', data_url: '', width, height: 480,
+    detected_faces: boxes.length, masked_regions: boxes.length, masked_boxes: boxes, latency_ms: 1, sequence: offsetMs,
+    captured_at: new Date(base + offsetMs).toISOString(),
+  })
+
+  it('keeps a face masked when the newest frame misses it', () => {
+    const seen = preview(0, [[10, 10, 50, 50]])
+    const missed = preview(300, [])
+    expect(holdFaceMasks([seen, missed], missed, base + 400)).toEqual([[10, 10, 50, 50]])
+  })
+
+  it('drops masks older than the hold window and from a different frame size', () => {
+    const old = preview(0, [[1, 1, 5, 5]])
+    const resized = preview(200, [[2, 2, 6, 6]], 320)
+    const latest = preview(1_000, [[10, 10, 50, 50]])
+    expect(holdFaceMasks([old, resized, latest], latest, base + 1_100)).toEqual([[10, 10, 50, 50]])
+  })
+
+  it('still requires a fresh newest preview (full-frame blur otherwise)', () => {
+    const latest = preview(0, [[10, 10, 50, 50]])
+    expect(holdFaceMasks([latest], latest, base + 2_000)).toBeUndefined()
+    expect(holdFaceMasks([], undefined, base)).toBeUndefined()
+  })
+
+  it('does not stack masks for the same face seen in several frames', () => {
+    const a = preview(0, [[10, 10, 50, 50]])
+    const b = preview(100, [[12, 11, 52, 51]])
+    const latest = preview(200, [[14, 12, 54, 52], [200, 200, 240, 240]])
+    expect(holdFaceMasks([a, b, latest], latest, base + 250)).toEqual([[14, 12, 54, 52], [200, 200, 240, 240]])
+  })
+
+  it('accepts a preview captured a moment after the render clock tick', () => {
+    const latest = preview(0, [[10, 10, 50, 50]])
+    expect(holdFaceMasks([latest], latest, base)).toEqual([[10, 10, 50, 50]])
+  })
+
+  it('holds the last person boxes briefly, then lets them go', () => {
+    const last = { at: 1_000 }
+    expect(holdDetections(undefined, last, 1_400)).toBe(last)
+    expect(holdDetections(undefined, last, 1_600)).toBeUndefined()
+    const fresh = { at: 1_500 }
+    expect(holdDetections(fresh, last, 1_500)).toBe(fresh)
   })
 })
