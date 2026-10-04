@@ -67,16 +67,17 @@ def merge_age_scores(scores):
     # Float32 softmax parts can sum to a hair above 1 (e.g. 1.0000000152), which the range
     # check would turn into "unknown" for the most confident child/infant crops. Only
     # rounding-sized overshoot is clamped; NaN and real out-of-range values stay "unknown".
-    child = scores.get("child", 0.0) + scores.get("infant", 0.0)
-    if 1.0 < child <= 1.0 + 1e-6:
-        child = 1.0
-    return {"adult": scores.get("adult", 0.0), "child": child}
+    def settle(value):
+        return 1.0 if 1.0 < value <= 1.0 + 1e-6 else value
+
+    return {"adult": settle(scores.get("adult", 0.0)),
+            "child": settle(scores.get("child", 0.0) + scores.get("infant", 0.0))}
 
 
 def choose_age(scores, child_threshold=0.5, adult_threshold=0.9):
     choose_group(0.5, child_threshold, adult_threshold)
-    if not scores or any(not math.isfinite(value) or not 0 <= value <= 1 for value in scores.values()):
-        return "unknown"
+    if not scores or any(not math.isfinite(value) or not 0 <= value <= 1 + 1e-6 for value in scores.values()):
+        return "unknown"  # tolerance covers float32 rounding only
     merged = merge_age_scores(scores)
     return choose_group(merged["child"], child_threshold, adult_threshold)
 

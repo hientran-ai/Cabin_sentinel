@@ -240,7 +240,16 @@ def test_float_rounding_does_not_turn_a_confident_child_into_unknown():
 def test_provider_records_the_padded_crop_rectangle(monkeypatch, tmp_path):
     import numpy as np
 
+    from src.vision.age import padded_box
     from src.vision.provider import TamVisionProvider
 
-    assert TamVisionProvider._crop_rect([8, 8, 40, 50], np.zeros((64, 64, 3), dtype=np.uint8)) == [4, 3, 44, 55]
-    assert TamVisionProvider._crop_rect([10, 10, 10, 20], np.zeros((64, 64, 3), dtype=np.uint8)) is None
+    frame = np.zeros((64, 64, 3), dtype=np.uint8)
+    assert TamVisionProvider._crop_rect(padded_box, [8, 8, 40, 50], frame) == [4, 3, 44, 55]
+    assert TamVisionProvider._crop_rect(padded_box, [10, 10, 10, 20], frame) is None
+
+
+def test_adult_rounding_overshoot_is_also_settled():
+    from src.vision.age import choose_age
+
+    assert choose_age({"adult": 1.0000000152, "child": 0.0}) == "adult"
+    assert choose_age({"adult": 1.5, "child": 0.0}) == "unknown"  # real out-of-range still rejected
