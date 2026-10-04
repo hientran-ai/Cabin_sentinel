@@ -1,9 +1,26 @@
 export type CameraOperation = 'camera_start' | 'camera_status' | 'camera_frame' | 'camera_stop' | 'camera_report'
 
+export type AgeGroup = 'adult' | 'child' | 'unknown'
+
+export function ageLabel(group: string | null | undefined, vi: boolean): string {
+  if (group === 'adult') return vi ? 'Người lớn' : 'Adult'
+  if (group === 'child') return vi ? 'Trẻ em' : 'Child'
+  if (group === 'unknown') return vi ? 'Chưa rõ tuổi' : 'Age unknown'
+  return ''
+}
+
+export function detectionText(item: { class: string; age_group?: string | null }, vi: boolean): string {
+  const age = ageLabel(item.age_group, vi)
+  return age ? `${item.class} (${age})` : item.class
+}
+
 export interface CameraDetection {
   class: string
   confidence: number
   bbox?: [number, number, number, number]
+  /** Only for `person`; `unknown` means no age evidence (never treat as adult). */
+  age_group?: AgeGroup | null
+  age_scores?: { adult?: number; child?: number } | null
 }
 
 export interface PrivacyPreview {
@@ -72,7 +89,8 @@ export function validateCameraSnapshot(value: unknown): asserts value is CameraS
     !Array.isArray(value.vision_detections)) invalidResponse()
   if (!value.vision_detections.every(item => isRecord(item) && typeof item.class === 'string' &&
     typeof item.confidence === 'number' && item.confidence >= 0 && item.confidence <= 1 &&
-    (item.bbox == null || (Array.isArray(item.bbox) && item.bbox.length === 4 && item.bbox.every(Number.isFinite))))) invalidResponse()
+    (item.bbox == null || (Array.isArray(item.bbox) && item.bbox.length === 4 && item.bbox.every(Number.isFinite))) &&
+    (item.age_group == null || ['adult', 'child', 'unknown'].includes(String(item.age_group))))) invalidResponse()
   if (value.preview != null && !isRecord(value.preview)) invalidResponse()
 }
 
@@ -133,6 +151,28 @@ export function holdFaceMasks(history: PrivacyPreview[], latest: PrivacyPreview 
   const merged = [...current]
   for (const box of held) if (!merged.some(kept => overlap(kept, box) > 0.3)) merged.push(box)
   return merged
+}
+
+export type FaceTrack = { id: number; box: [number, number, number, number]; seenAt: number }
+
+/** Give each face mask a stable id across backend updates so the overlay can glide to the new position instead of
+ * jumping, and keep a face that briefly disappears (missed detection, late frame) masked for `holdMs`. */
+export function trackFaceMasks(tracks: FaceTrack[], boxes: [number, number, number, number][], now = Date.now(), holdMs = 600): FaceTrack[] {
+  const free = [...tracks]
+  let nextId = tracks.reduce((max, track) => Math.max(max, track.id), 0) + 1
+  const matched = boxes.map(box => {
+    const [cx, cy] = [(box[0] + box[2]) / 2, (box[1] + box[3]) / 2]
+    const reach = Math.max(box[2] - box[0], box[3] - box[1])
+    let best = -1, bestDistance = Infinity
+    free.forEach((track, index) => {
+      const distance = Math.hypot((track.box[0] + track.box[2]) / 2 - cx, (track.box[1] + track.box[3]) / 2 - cy)
+      if (distance < reach && distance < bestDistance) { best = index; bestDistance = distance }
+    })
+    const reused = best >= 0 ? free.splice(best, 1)[0] : undefined
+    const id = reused ? reused.id : nextId++
+    return { id, box, seenAt: now }
+  })
+  return [...matched, ...free.filter(track => now - track.seenAt <= holdMs)]
 }
 
 function overlap(a: [number, number, number, number], b: [number, number, number, number]) {

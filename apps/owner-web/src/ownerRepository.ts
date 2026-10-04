@@ -96,7 +96,7 @@ const v1Repository: OwnerRepository = {
       occupantConfidence: Math.max(0, ...detections.map(item => item.confidence || 0)),
       facesBlurredAtEdge: true,
       transport: 'NONE',
-      detections: detections.map(item => `${item.class || item.class_name || 'OBJECT'} ${Math.round((item.confidence || 0) * 100)}%`),
+      detections: detections.map(item => `${item.class || item.class_name || 'OBJECT'}${item.age_group ? ` (${item.age_group})` : ''} ${Math.round((item.confidence || 0) * 100)}%`),
     }
   },
   getNotificationSettings: () => mockRepository.getNotificationSettings(),
