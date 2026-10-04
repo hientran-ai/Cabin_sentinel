@@ -58,14 +58,29 @@ docker-compose.override.yml
 
 # Node (frontend)
 node_modules/
+*.tsbuildinfo
+.expo/
 .next/
 out/
 .nuxt/
+
+# Local GitHub Actions runner (contains machine credentials)
+/actions-runner/
 
 # Build
 *.pyc
 *.pyo
 
+# Generated reports and local analysis artifacts
+/output/
+/tmp/
+
 # AI logs — tracked structure, ignored content
 .ai-log/*.jsonl
 .ai-log/archive/
+
+# Local Vision artifacts
+*.pt
+runs/
+Ultralytics/
+eval/sviro-age-audit/manifest.jsonl

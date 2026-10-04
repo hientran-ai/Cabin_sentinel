@@ -286,4 +286,9 @@ def test_committed_occupancy_is_read_only_and_survives_restart():
         assert evaluation["rule_id"] == "BABY_SEAT_UNVERIFIED"
         assert evaluation["occupancy_reason_code"] == "BABY_SEAT_ONLY"
         assert len(service.events("CAR_1")) == before
-        assert CabinService(path, clock=lambda: NOW).get_state("CAR_1") == state
+        restarted = CabinService(path, clock=lambda: NOW)
+        try:
+            assert restarted.get_state("CAR_1") == state
+        finally:
+            restarted._db.close()
+            service._db.close()

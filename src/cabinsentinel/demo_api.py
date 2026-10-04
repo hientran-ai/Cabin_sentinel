@@ -7,20 +7,19 @@ from typing import Any, Literal
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
-from fastapi.security import HTTPBearer
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import open as open_image
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
 from src.cabinsentinel.api import get_cabin_service
+from src.cabinsentinel.auth import authorize_session, session_bearer
 from src.cabinsentinel.models import SensorPayload
 from src.cabinsentinel.service import CabinService
 from src.cabinsentinel.vision_adapter import to_age_evidence, to_vision_payload
 from src.config import get_settings
 from src.vision.provider import VisionProvider
 
-session_bearer = HTTPBearer(auto_error=False)
 router = APIRouter(prefix="/api/v1/demo", tags=["CabinSentinel Demo"], dependencies=[Depends(session_bearer)])
 logger = logging.getLogger(__name__)
 IMAGE_TYPES = {"image/jpeg": "JPEG", "image/png": "PNG"}
@@ -28,17 +27,36 @@ SCENARIOS = {
     "normal": {
         "temperature": 25.0, "engine_status": "ON", "doors_locked": False,
         "driver_present": True, "gear": "D", "vehicle_speed_kph": 20.0,
-        "hvac_status": "ACTIVE",
+        "hvac_status": "ACTIVE", "window_status": "CLOSED",
     },
     "parked_locked": {
         "temperature": 25.0, "engine_status": "OFF", "doors_locked": True,
         "driver_present": False, "gear": "P", "vehicle_speed_kph": 0.0,
-        "hvac_status": "INACTIVE",
+        "hvac_status": "INACTIVE", "window_status": "CLOSED",
     },
     "hot_locked": {
         "temperature": 40.0, "engine_status": "OFF", "doors_locked": True,
         "driver_present": False, "gear": "P", "vehicle_speed_kph": 0.0,
-        "hvac_status": "INACTIVE",
+        "hvac_status": "INACTIVE", "window_status": "CLOSED",
+    },
+    # Scenarios below simulate a radar reporting presence; an empty image then
+    # yields RADAR_FALLBACK instead of SAFE.
+    "pet_mode": {
+        "temperature": 28.0, "engine_status": "OFF", "doors_locked": True,
+        "driver_present": False, "gear": "P", "vehicle_speed_kph": 0.0,
+        "hvac_status": "ACTIVE", "powertrain_type": "EV", "operation_mode": "PET",
+        "battery_soc_pct": 65.0, "radar_presence": True, "window_status": "CLOSED",
+    },
+    "camp_mode": {
+        "temperature": 24.0, "engine_status": "OFF", "doors_locked": True,
+        "driver_present": False, "gear": "P", "vehicle_speed_kph": 0.0,
+        "hvac_status": "ACTIVE", "powertrain_type": "EV", "operation_mode": "CAMP",
+        "battery_soc_pct": 52.0, "radar_presence": True, "window_status": "CLOSED",
+    },
+    "warm_parked": {
+        "temperature": 32.0, "engine_status": "OFF", "doors_locked": True,
+        "driver_present": False, "gear": "P", "vehicle_speed_kph": 0.0,
+        "hvac_status": "INACTIVE", "radar_presence": True, "window_status": "CLOSED",
     },
 }
 
@@ -74,7 +92,7 @@ class DemoVision(BaseModel):
 
 class DemoVehicleState(SensorPayload):
     source: Literal["SIMULATED"]
-    scenario: Literal["normal", "parked_locked", "hot_locked"]
+    scenario: Literal["normal", "parked_locked", "hot_locked", "pet_mode", "camp_mode", "warm_parked"]
 
 
 class DemoReasoning(BaseModel):
@@ -141,8 +159,9 @@ async def analyze_image(
         if session_id:
             vehicle_id = authorize_session(request, service, session_id)
         else:
-            session_id, session_token = service.create_demo_session()
-            vehicle_id = f"DEMO_{session_id}"
+            # Validate the model contract without writing unreachable credentials.
+            # This temporary ID is never ingested or persisted.
+            vehicle_id = "DEMO_PENDING"
     except sqlite3.Error as exc:
         logger.exception("Demo session database unavailable")
         raise HTTPException(status_code=503, detail="CabinService unavailable") from exc
@@ -150,12 +169,16 @@ async def analyze_image(
     try:
         frame = await run_in_threadpool(provider.infer, image_data)
         vision = to_vision_payload(
-            frame, vehicle_id=vehicle_id, source_id=f"{session_id}-{uuid4().hex}", camera_status="OK",
+            frame, vehicle_id=vehicle_id, source_id=uuid4().hex, camera_status="OK",
         )
     except Exception as exc:
         logger.exception("Vision inference or contract failed")
         raise HTTPException(status_code=503, detail="Vision inference unavailable") from exc
     try:
+        if not session_id:
+            session_id, session_token = service.create_demo_session()
+            vehicle_id = f"DEMO_{session_id}"
+            vision = vision.model_copy(update={"vehicle_id": vehicle_id})
         state = service.ingest_demo(SCENARIOS[scenario], vision)
         sensor = SensorPayload.model_validate(state["sensor_snapshot"])
         current = service.get_state_with_freshness(vehicle_id)
@@ -197,17 +220,6 @@ class AcknowledgeInput(BaseModel):
 class ResolveInput(AcknowledgeInput):
     revision: int = Field(ge=1)
     cabin_checked: Literal[True]
-
-
-def authorize_session(request: Request, service: CabinService, session_id: str) -> str:
-    authorization = request.headers.get("Authorization", "")
-    scheme, _, token = authorization.partition(" ")
-    if scheme.lower() != "bearer" or not token:
-        raise HTTPException(status_code=401, detail="Demo session token required")
-    try:
-        return service.authorize_demo_session(session_id, token)
-    except PermissionError as exc:
-        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @router.get("/sessions/{session_id}")

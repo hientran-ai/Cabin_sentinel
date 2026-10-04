@@ -155,7 +155,7 @@ pytest.importorskip("torchvision")
 def write_checkpoint(path, classes, favoured):
     from src.vision.age import CROP_PADDING, IMAGE_SIZE, build_model
 
-    model = build_model(classes)
+    model = build_model(classes=classes)
     with torch.no_grad():
         model.classifier[-1].weight.zero_()
         model.classifier[-1].bias.fill_(-9.0)
@@ -181,7 +181,6 @@ def test_class_mapping_comes_from_checkpoint_metadata(tmp_path, classes, favoure
     answer = classifier.classify(np.zeros((64, 64, 3), dtype=np.uint8), [[8, 8, 40, 50]])[0]
     assert answer["age_group"] == expected
     assert set(answer["age_scores"]) == {"adult", "child"}
-    assert answer["age_crop"] == [4, 3, 44, 55]  # 10% padding (floor/ceil), half-open
 
 
 def test_unapproved_class_order_is_rejected(tmp_path):
@@ -236,3 +235,12 @@ def test_float_rounding_does_not_turn_a_confident_child_into_unknown():
 
     assert choose_age({"adult": 1.5e-08, "child": 1.5e-08, "infant": 1.0}) == "child"
     assert choose_age({"adult": 0.0, "child": 1.0, "infant": 0.5}) == "unknown"  # real overshoot stays rejected
+
+
+def test_provider_records_the_padded_crop_rectangle(monkeypatch, tmp_path):
+    import numpy as np
+
+    from src.vision.provider import TamVisionProvider
+
+    assert TamVisionProvider._crop_rect([8, 8, 40, 50], np.zeros((64, 64, 3), dtype=np.uint8)) == [4, 3, 44, 55]
+    assert TamVisionProvider._crop_rect([10, 10, 10, 20], np.zeros((64, 64, 3), dtype=np.uint8)) is None

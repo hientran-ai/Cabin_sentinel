@@ -49,6 +49,17 @@ class TamVisionProvider:
             return "ok"
         return "load_failed" if self._age_load_error else "disabled"
 
+    @staticmethod
+    def _crop_rect(bbox, frame):
+        """The padded rectangle the classifier crops, recorded for tracing (None if unavailable)."""
+        try:
+            from src.vision.age import padded_box
+
+            rect = padded_box(bbox, frame.shape[1], frame.shape[0])
+            return list(rect) if rect else None
+        except Exception:
+            return None
+
     def infer(self, image: bytes) -> dict:
         import cv2
         import numpy as np
@@ -81,6 +92,7 @@ class TamVisionProvider:
                         raise ValueError("age classifier returned a different number of answers")
                     for detection, answer in zip(people, answers, strict=True):
                         detection.update(answer)
+                        detection.setdefault("age_crop", self._crop_rect(detection["bbox"], decoded))
                 except Exception:
                     logger.exception("Age classification failed; people stay age_group=unknown")
                     age_status = "error"

@@ -1,0 +1,29 @@
+{
+  "annotation_provenance": "Record assistant visual annotations of the 32 sampled cabin frames.\n\nCoordinates were selected from 640x360 contact sheets, independently of model\npredictions, then scaled back to source resolution. This is a preliminary audit,\nnot independently human-reviewed ground truth. Only the two visible occupants\nare labeled; indistinct foreground fragments are excluded.",
+  "matching_iou": 0.5,
+  "sample_frames": 32,
+  "runs": [
+    {
+      "log": "eval/cabin-age3-20261002.jsonl",
+      "metrics": {
+        "tp": 64,
+        "fp": 17,
+        "fn": 0,
+        "precision": 0.7901234567901234,
+        "recall": 1.0,
+        "f1": 0.8827586206896552
+      }
+    },
+    {
+      "log": "eval/cabin-person-improved-20261002.jsonl",
+      "metrics": {
+        "tp": 64,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9696969696969697,
+        "recall": 1.0,
+        "f1": 0.9846153846153847
+      }
+    }
+  ]
+}

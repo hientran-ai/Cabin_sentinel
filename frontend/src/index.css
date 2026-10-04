@@ -1,0 +1,31 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #172033;
+  background: #f4f6f8;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --brand: #194f63;
+  --brand-dark: #123f50;
+  --critical: #b91c1c;
+  --warning: #d69e1f;
+  --safe: #15803d;
+  --error: #52525b;
+  --ink: #172033;
+  --muted: #5e687b;
+  --border: #dce1e8;
+  --panel: #fff;
+  --canvas: #f4f6f8;
+  --focus: #2563eb;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--canvas); line-height: 1.5; }
+button, input, select { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid rgba(37, 99, 235, .35); outline-offset: 2px; }
+svg { width: 20px; height: 20px; stroke-width: 2; }
+h1, h2, h3, p { margin-top: 0; }
+h1, h2, h3, strong { color: var(--ink); }
+h1, h2, h3 { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+button { min-height: 44px; }

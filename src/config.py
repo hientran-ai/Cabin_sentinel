@@ -32,6 +32,16 @@ class Settings(BaseSettings):
     mqtt_broker_port: int = Field(default=1883, ge=1, le=65535)
     cabinsentinel_db_path: str = "data/cabinsentinel.db"
 
+    # Platform (accounts, commands, evidence)
+    platform_signing_key: str = ""
+    bootstrap_admin_email: str = ""
+    bootstrap_admin_password: str = ""
+    allow_signup: bool | None = None  # None: open outside production, closed in production
+    remote_commands_enabled: bool | None = None  # None: on outside production, off in production
+    cookie_samesite: Literal["strict", "lax", "none"] = "lax"  # use none only for a cross-site SPA (needs HTTPS)
+    evidence_retention_hours: int = Field(default=72, ge=1, le=24 * 90)
+    evidence_max_bytes: int = Field(default=2 * 1024 * 1024, ge=1)
+
     # LLM
     openai_api_key: str = ""
     model_name: str = "gpt-4o-mini"
@@ -49,6 +59,16 @@ class Settings(BaseSettings):
         if self.app_env == "production" and (not origins or "*" in origins):
             raise ValueError("CORS_ORIGINS must list explicit origins in production")
         return self
+
+    @property
+    def signup_enabled(self) -> bool:
+        return self.allow_signup if self.allow_signup is not None else self.app_env != "production"
+
+    @property
+    def commands_enabled(self) -> bool:
+        if self.remote_commands_enabled is not None:
+            return self.remote_commands_enabled
+        return self.app_env != "production"
 
 
 @lru_cache

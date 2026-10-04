@@ -1,0 +1,54 @@
+{
+  "base": "http://127.0.0.1:7863",
+  "checks": {
+    "health": {
+      "status": "ok",
+      "env": "development",
+      "backend": "ready",
+      "vision": "ready",
+      "database": "ready",
+      "mqtt": "disabled",
+      "safety_timer": "ready"
+    },
+    "cors": 200,
+    "missing_frame": "ERROR / not current",
+    "frame": {
+      "risk": "CRITICAL",
+      "current": true,
+      "sequence": 1,
+      "privacy": {
+        "status": "PROCESSED",
+        "method": "YUNET_SOFT_OVAL",
+        "model_sha256": "8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4",
+        "width": 360,
+        "height": 480,
+        "detected_faces": 2,
+        "masked_regions": 2,
+        "latency_ms": 15.673958987463266,
+        "sequence": 1,
+        "captured_at": "2026-10-03T03:24:53.564777+00:00"
+      },
+      "actions": [
+        {
+          "action": "trigger_horn",
+          "status": "simulated"
+        },
+        {
+          "action": "send_sms",
+          "status": "simulated"
+        },
+        {
+          "action": "request_unlock",
+          "status": "pending_human_confirmation"
+        }
+      ]
+    },
+    "duplicate": "same revision; no second ingest",
+    "read_no_image": true,
+    "auth": "UNAUTHORIZED",
+    "stale": "STALE_FRAME / not current",
+    "stop": "STOPPED / not current"
+  },
+  "hardware": "NOT_VERIFIED",
+  "verified_at": "2026-10-03T03:24:53.783354+00:00"
+}

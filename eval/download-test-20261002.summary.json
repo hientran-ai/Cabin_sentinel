@@ -1,0 +1,45 @@
+{
+  "source": "C:\\Users\\ADMIN\\Downloads\\1790950663757_65777578124380071_1090892326643188333.mp4",
+  "model": "yolov8s.pt",
+  "age_classifier": null,
+  "age_thresholds": null,
+  "device": "cpu",
+  "torch_threads": 4,
+  "ultralytics_version": "8.4.159",
+  "imgsz": 640,
+  "confidence_threshold": 0.4,
+  "nms_iou_threshold": 0.5,
+  "video_fps": 23.925233644859812,
+  "expected_frames": 320,
+  "processed_frames": 320,
+  "complete": true,
+  "frames_with_detections": 310,
+  "detections_by_class": {
+    "person": 489,
+    "cat": 0,
+    "dog": 0
+  },
+  "latency_mean_ms": 134.71340750056697,
+  "latency_p95_ms": 167.74120500776917,
+  "latency_definition": "Detector plus optional age/motion stages and detection assembly; excludes decoding, serialization and writing",
+  "warmup_predictions_excluded": 1,
+  "processing_elapsed_seconds": 51.70863929996267,
+  "processing_fps": 6.188520996340181,
+  "privacy": {
+    "method": "YuNet plus smooth feathered oval blur",
+    "face_model": "data\\models\\face_detection_yunet_2023mar.onnx",
+    "face_threshold": 0.3,
+    "video_output": "data\\videos\\download-test-20261002-blurred.mp4",
+    "video_codec": "h264",
+    "overlay": "infant/child/adult; ? marks below-threshold argmax; motion status",
+    "exported_frames": 320,
+    "export_size": [
+      576,
+      352
+    ],
+    "detected_faces_across_frames": 400,
+    "latency_mean_ms": 24.046181875201,
+    "latency_p95_ms": 29.887544960365634,
+    "audio_preserved": false
+  }
+}

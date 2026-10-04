@@ -17,6 +17,10 @@ from src.cabinsentinel.graph import safety_graph
 from src.cabinsentinel.models import SensorPayload, VisionPayload
 from src.cabinsentinel.rules import confidence_regression, has_baby_seat_evidence
 
+# Idle demo sessions stop being re-evaluated after this; it exceeds the escalation
+# and 20-minute minimum repeat window. Non-demo vehicles are always evaluated.
+DEMO_SESSION_IDLE_LIMIT = timedelta(hours=1)
+
 
 class CabinService:
     def __init__(self, db_path: str | Path, *, clock=None, actions=None):
@@ -100,12 +104,17 @@ class CabinService:
         return self._ingest(vehicle_id, timer=True)
 
     def tick_all(self) -> None:
+        # Abandoned demo sessions keep their last decision; ticking them forever
+        # would slow the timer for every live vehicle on a public demo host.
+        cutoff = self.clock() - DEMO_SESSION_IDLE_LIMIT
         with self._lock:
-            vehicle_ids = [
-                row["vehicle_id"] for row in self._db.execute("SELECT vehicle_id FROM vehicles")
-            ]
-        for vehicle_id in vehicle_ids:
-            self.tick(vehicle_id)
+            rows = self._db.execute("SELECT vehicle_id, sensor_time, vision_time FROM vehicles").fetchall()
+        for row in rows:
+            if row["vehicle_id"].startswith("DEMO_"):
+                seen = [datetime.fromisoformat(t) for t in (row["sensor_time"], row["vision_time"]) if t]
+                if seen and max(seen) < cutoff:
+                    continue
+            self.tick(row["vehicle_id"])
 
     def _ingest(
         self, vehicle_id: str, *, sensor: SensorPayload | None = None,
@@ -134,7 +143,7 @@ class CabinService:
                 sensor = SensorPayload(
                     vehicle_id=vehicle_id, timestamp=now,
                     sequence=(row["sensor_seq"] or 0) + 1 if row else 1,
-                    radar_presence=False, **simulated_sensor, **lock,
+                    **{"radar_presence": False, **simulated_sensor}, **lock,
                 )
             incoming_time = sensor.timestamp if sensor is not None else vision.timestamp if vision is not None else None
             if incoming_time is not None and (incoming_time - now).total_seconds() > 2:
@@ -406,6 +415,11 @@ class CabinService:
             self._db.execute("UPDATE vehicles SET state_json=? WHERE vehicle_id=?", (json.dumps(state), vehicle_id))
             self._event(vehicle_id, "incident_resolution", {"revision": state["revision"], **incident})
             return state
+
+    def record_event(self, vehicle_id: str, event_type: str, payload: dict) -> None:
+        """Append an audit event that is not a risk evaluation (e.g. trip check-in)."""
+        with self._lock, self._db:
+            self._event(vehicle_id, event_type, payload)
 
     def _event(self, vehicle_id: str, event_type: str, payload: dict) -> None:
         self._db.execute(

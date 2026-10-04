@@ -33,6 +33,13 @@ RUN useradd -m appuser
 # Copy only runtime application code; model weights are supplied separately.
 COPY src ./src
 
+# Opt-in stock weights for a technical image demo. Never enable this for a
+# child-safety accuracy claim; use an approved, evaluated model instead.
+ARG BUNDLE_STOCK_DEMO_MODEL=false
+RUN if [ "$BUNDLE_STOCK_DEMO_MODEL" = "true" ]; then \
+      python -c "from pathlib import Path; import hashlib, urllib.request; data = urllib.request.urlopen('https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8n.pt', timeout=120).read(); expected = 'f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36'; actual = hashlib.sha256(data).hexdigest(); assert actual == expected, f'Unexpected model SHA-256: {actual}'; target = Path('/app/models/yolov8n.pt'); target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)"; \
+    fi
+
 # Create data directory with correct ownership
 RUN mkdir -p /app/data /tmp/ultralytics && chown -R appuser:appuser /app /tmp/ultralytics
 

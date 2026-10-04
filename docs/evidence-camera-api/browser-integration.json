@@ -1,0 +1,17 @@
+{
+  "cameraFilter": "none",
+  "cameraLabel": "Camera: RUNNING · Contract camera phù hợp",
+  "cameraRunning": true,
+  "canvasDimensions": [
+    640,
+    480
+  ],
+  "criticalAlertInline": true,
+  "criticalDetailsCollapsed": true,
+  "cssFilter": "none",
+  "frameLabel": "YOLO · frame 37",
+  "modalCount": 0,
+  "objectsVisible": 4,
+  "rawPreviewLabel": "Preview camera nguyên bản",
+  "riskRendered": true
+}

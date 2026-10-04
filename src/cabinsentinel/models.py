@@ -30,6 +30,7 @@ class SensorPayload(BaseModel):
     driver_present: bool | None = None
     gear: Literal["P", "R", "N", "D", "UNKNOWN"] = "UNKNOWN"
     vehicle_speed_kph: float | None = Field(default=None, ge=0)
+    window_status: Literal["CLOSED", "VENTED", "OPEN", "UNKNOWN"] = "UNKNOWN"
 
     @field_validator("timestamp", "remote_start_expires_at", "locked_at")
     @classmethod

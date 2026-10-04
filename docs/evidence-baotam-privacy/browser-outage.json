@@ -1,0 +1,11 @@
+{
+  "feed": "CAMERA PREVIEW · MODEL EVIDENCE\nCabin feed\nChe mặt · YuNet\nCHỜ FRAME YOLO + YUNET\nXe mô phỏng\nHot & locked · 40°C\nParked & locked · 25°C\nNormal driving\nBật camera\nTắt camera\nKiểm tra lại API\nTôi đồng ý gửi frame gốc từ camera tới backend http://127.0.0.1:7863 để YOLO nhận diện liên tục.\n\nYuNet làm mờ các khuôn mặt phát hiện được trên preview; có thể bỏ sót mặt nhỏ hoặc bị che. Frame gốc được gửi tới backend để YOLO nhận diện. UI không lưu ảnh vào disk/storage; preview sẽ ẩn khi chưa xử lý, lỗi hoặc cũ.\n\nPrivacy: Preview chưa có hoặc không còn hiệu lực.\n\nCamera: RUNNING · Contract camera phù hợp\n\nFrame 86 · capture 2026-10-03T03:16:41.106000+00:00 · YOLO 44ms · Historical / unavailable · không cam kết FPS.\n\nCamera network or response error; result unavailable.",
+  "blankPreviewPixel": [
+    39,
+    59,
+    62,
+    255
+  ],
+  "risk": "Current decision unavailable",
+  "videoHidden": true
+}
