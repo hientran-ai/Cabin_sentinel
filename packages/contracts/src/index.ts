@@ -141,6 +141,7 @@ export interface V1Detection {
   class_name?: string
   confidence?: number
   bbox?: [number, number, number, number]
+  age_group?: 'adult' | 'child' | 'unknown' | null
 }
 
 export interface V1ActionResult {

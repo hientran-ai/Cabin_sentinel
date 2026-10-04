@@ -41,6 +41,13 @@ def configure_inference(inference):
 
 def infer_frame(image_bytes):
     global _provider
+    if not camera_uses_gpu():
+        # On CPU, reuse the API's vision provider so live frames get the same age_group evidence as REST.
+        from src.main import app
+
+        shared = getattr(app.state, "vision_provider", None)
+        if shared is not None:
+            return shared.infer(image_bytes)
     with _runtime_lock:
         if _provider is None:
             device = "cpu"

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { CameraApi, CameraApiError, holdDetections, holdFaceMasks, getPrivacyPreview, validateCameraSnapshot, type CameraSnapshot, type PrivacyPreview } from './cameraApi'
+import { CameraApi, CameraApiError, detectionText, holdDetections, holdFaceMasks, getPrivacyPreview, trackFaceMasks, type FaceTrack, validateCameraSnapshot, type CameraSnapshot, type PrivacyPreview } from './cameraApi'
 import type { Locale } from './model'
 
 type Phase = 'IDLE' | 'STARTING' | 'RUNNING' | 'STOPPING' | 'STOPPED' | 'ERROR'
@@ -17,7 +17,9 @@ const CAPTURE_INTERVAL_MS = 140 // ~7 box updates per second
 // 'rest' = one POST /api/v1/demo/analyze per frame (privacy=boxes); 'gradio' = upload + camera_frame SSE.
 const CAMERA_TRANSPORT = import.meta.env.VITE_CAMERA_TRANSPORT === 'gradio' ? 'gradio' : 'rest'
 
-const MAX_IN_FLIGHT = 8
+// Gradio runs camera_frame one at a time (~300-500 ms each on CPU). Queuing more frames only makes every result
+// older, so masks trail the face; keep one frame processing and one uploading.
+const MAX_IN_FLIGHT = CAMERA_TRANSPORT === 'gradio' ? 2 : 8
 
 async function capture(video: HTMLVideoElement) {
   if (!video.videoWidth || !video.videoHeight) throw new CameraApiError('Camera chưa có hình ảnh.', 'NO_FRAME')
@@ -47,6 +49,7 @@ export function LiveCameraPanel({ locale }: { locale: Locale }) {
   // Recent previews/boxes, so one frame where the detector misses a face or person does not make overlays blink.
   const maskHistoryRef = useRef<PrivacyPreview[]>([])
   const lastDetectionsRef = useRef<ShownDetections | undefined>(undefined)
+  const maskTracksRef = useRef<FaceTrack[]>([])
   const [error, setError] = useState<string>()
   const [apiReady, setApiReady] = useState<boolean>()
   // Re-renders the overlays as data ages. The tick itself is not used as the clock: a frame that arrives between
@@ -55,7 +58,7 @@ export function LiveCameraPanel({ locale }: { locale: Locale }) {
   const vi = locale === 'vi'
   const active = phase === 'STARTING' || phase === 'RUNNING' || phase === 'STOPPING'
 
-  // Re-evaluate mask freshness between backend results so stale face boxes fall back to a full blur.
+  // Re-evaluate mask freshness between backend results so stale face boxes are dropped.
   useEffect(() => {
     if (!active) return
     const timer = setInterval(() => setTick(value => value + 1), 250)
@@ -155,6 +158,7 @@ export function LiveCameraPanel({ locale }: { locale: Locale }) {
     setError(undefined)
     setSnapshot(undefined)
     maskHistoryRef.current = []
+    maskTracksRef.current = []
     lastDetectionsRef.current = undefined
     setPhase('STARTING')
     const generation = ++generationRef.current
@@ -212,6 +216,9 @@ export function LiveCameraPanel({ locale }: { locale: Locale }) {
   const previewUnavailable = snapshot?.preview?.status === 'UNAVAILABLE' ? snapshot.preview : undefined
   const now = Date.now()
   const faceMasks = active ? holdFaceMasks(maskHistoryRef.current, privacyPreview, now) : undefined
+  // Same input gives the same ids, so recomputing during render is stable.
+  maskTracksRef.current = active ? trackFaceMasks(maskTracksRef.current, faceMasks ?? [], now) : []
+  const maskSize = privacyPreview ?? maskHistoryRef.current.at(-1)
   const latestDetections = frame && snapshot?.vision_detections.some(detection => detection.bbox)
     ? { at: now, frame, detections: snapshot.vision_detections } : undefined
   const shownDetections = active ? holdDetections(latestDetections, lastDetectionsRef.current, now) : undefined
@@ -227,18 +234,16 @@ export function LiveCameraPanel({ locale }: { locale: Locale }) {
     <div className="live-camera-layout">
       <div className="raw-camera-stage">
         <video ref={videoRef} muted playsInline className="camera-raw-preview" aria-label={vi ? 'Camera trực tiếp' : 'Live camera'} />
-        {active && (faceMasks && privacyPreview
-          ? faceMasks.map((box, index) => <span className="face-mask" key={`mask-${index}`} style={mirrored(box, privacyPreview.width, privacyPreview.height, MASK_MARGIN)} />)
-          : <span className="privacy-full-blur" />)}
+        {maskSize && maskTracksRef.current.map(track => <span className="face-mask" key={`face-${track.id}`} style={mirrored(track.box, maskSize.width, maskSize.height, MASK_MARGIN)} />)}
         {!active && <div className="camera-empty"><strong>{vi ? 'Camera chưa bật' : 'Camera is off'}</strong><span>{vi ? 'Cho phép camera rồi nhấn Bật camera.' : 'Grant camera access, then start detection.'}</span></div>}
-        <span className={`raw-camera-warning ${faceMasks ? 'privacy-preview-ready' : ''}`}>{faceMasks ? (vi ? 'VIDEO TRỰC TIẾP · MẶT ĐÃ CHE' : 'LIVE VIDEO · FACES MASKED') : active ? (vi ? 'ĐANG LÀM MỜ TOÀN KHUNG · CHỜ DỮ LIỆU CHE MẶT' : 'FULL-FRAME BLUR · WAITING FOR FACE DATA') : (vi ? 'CAMERA ĐANG TẮT' : 'CAMERA OFF')}</span>
+        <span className={`raw-camera-warning ${maskTracksRef.current.length || faceMasks ? 'privacy-preview-ready' : ''}`}>{maskTracksRef.current.length || faceMasks ? (vi ? 'VIDEO TRỰC TIẾP · MẶT ĐÃ CHE' : 'LIVE VIDEO · FACES MASKED') : active ? (vi ? 'CHƯA CÓ DỮ LIỆU CHE MẶT · MẶT CHƯA ĐƯỢC CHE' : 'NO FACE DATA YET · FACES NOT MASKED') : (vi ? 'CAMERA ĐANG TẮT' : 'CAMERA OFF')}</span>
         {phase === 'RUNNING' && <span className="detect-live"><i />LIVE DETECT</span>}
-        {shownDetections?.detections.map((detection, index) => detection.bbox && <span className="detection-box" key={`box-${index}`} style={mirrored(detection.bbox, shownDetections.frame.width, shownDetections.frame.height)}><b>{detection.class} {Math.round(detection.confidence * 100)}%</b></span>)}
+        {shownDetections?.detections.map((detection, index) => detection.bbox && <span className="detection-box" key={`box-${index}`} style={mirrored(detection.bbox, shownDetections.frame.width, shownDetections.frame.height)}><b>{detectionText(detection, vi)} {Math.round(detection.confidence * 100)}%</b></span>)}
       </div>
       <aside className="camera-result-panel">
         <div><small>Backend verdict</small><strong className={`camera-risk risk-text-${snapshot?.risk_level.toLowerCase() ?? 'error'}`}>{snapshot?.risk_level ?? 'NO DATA'}</strong></div>
         <dl><div><dt>{vi ? 'Phát hiện' : 'Detections'}</dt><dd>{snapshot?.vision_detections.length ?? 0}</dd></div><div><dt>Occupancy</dt><dd>{snapshot?.occupancy_state ?? 'UNKNOWN'}</dd></div><div><dt>{vi ? 'Mặt đã che' : 'Masked faces'}</dt><dd>{privacyPreview?.masked_regions ?? '—'}</dd></div><div><dt>YOLO / Privacy</dt><dd>{frame?.latency_ms == null ? '—' : `${Math.round(frame.latency_ms)} ms`}{privacyPreview ? ` / ${Math.round(privacyPreview.latency_ms)} ms` : ''}</dd></div></dl>
-        <div className="camera-detections">{snapshot?.vision_detections.length ? snapshot.vision_detections.map((item, index) => <span key={`${item.class}-${index}`}>{item.class} · {Math.round(item.confidence * 100)}%</span>) : <span>NO DETECTION</span>}</div>
+        <div className="camera-detections">{snapshot?.vision_detections.length ? snapshot.vision_detections.map((item, index) => <span key={`${item.class}-${index}`}>{detectionText(item, vi)} · {Math.round(item.confidence * 100)}%</span>) : <span>NO DETECTION</span>}</div>
         {snapshot?.reason && <p>{snapshot.reason}</p>}
         {previewUnavailable && <p className="privacy-unavailable">{previewUnavailable.reason ?? (vi ? 'Backend chưa tạo được preview che mặt.' : 'The backend could not create a face-masked preview.')}</p>}
       </aside>

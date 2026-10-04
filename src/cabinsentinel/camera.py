@@ -12,7 +12,7 @@ from PIL import Image
 
 from src.cabinsentinel.demo_api import SCENARIOS
 from src.cabinsentinel.models import VisionPayload
-from src.cabinsentinel.vision_adapter import to_vision_payload
+from src.cabinsentinel.vision_adapter import to_age_evidence, to_vision_payload
 from src.config import get_settings
 
 
@@ -192,8 +192,13 @@ class CameraSessions:
                     frame, vehicle_id=f"DEMO_{session_id}", source_id=session_id, camera_status="OK",
                 )
                 detections = []
-                for item, raw in zip(vision.detected_objects, frame["detections"], strict=True):
+                for item, raw, age in zip(
+                    vision.detected_objects, frame["detections"], to_age_evidence(frame), strict=True,
+                ):
                     detection = {"class": item.class_name, "confidence": item.confidence}
+                    if age["age_group"] is not None:
+                        detection["age_group"] = age["age_group"]
+                        detection["age_scores"] = age["age_scores"]
                     bbox = raw.get("bbox")
                     if bbox is not None:
                         if not isinstance(bbox, list) or len(bbox) != 4 or any(

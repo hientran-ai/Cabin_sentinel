@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { CameraApi, CameraApiError, getFaceMasks, holdDetections, holdFaceMasks, getPrivacyPreview, validateCameraSnapshot, type CameraSnapshot, type PrivacyPreview } from './cameraApi'
+import { detectionText, CameraApi, CameraApiError, getFaceMasks, holdDetections, holdFaceMasks, getPrivacyPreview, trackFaceMasks, validateCameraSnapshot, type CameraSnapshot, type PrivacyPreview } from './cameraApi'
 
 const snapshot: CameraSnapshot = {
   session_id: 'session-1', session_token: 'token-1', revision: 1, risk_level: 'WARNING',
@@ -39,6 +39,26 @@ describe('CameraApi', () => {
 
     expect(result).toMatchObject({ session_id: 'session-1', risk_level: 'WARNING' })
     expect(fetcher.mock.calls[1]?.[0]).toBe('https://frontend.example/gradio_api/call/camera_start/event-1')
+  })
+
+  it('keeps a stable id for a moving face and holds a briefly missed one', () => {
+    const [a, b] = trackFaceMasks([], [[100, 100, 160, 160], [300, 100, 360, 160]], 1_000)
+    const moved = trackFaceMasks([a!, b!], [[110, 105, 170, 165]], 1_200)
+    expect(moved).toEqual([
+      { id: a!.id, box: [110, 105, 170, 165], seenAt: 1_200 },
+      { id: b!.id, box: [300, 100, 360, 160], seenAt: 1_000 },
+    ])
+    expect(trackFaceMasks(moved, [], 1_900)).toEqual([]) // missed for longer than the hold
+    expect(trackFaceMasks([a!, b!], [[500, 300, 560, 360]], 1_100)[0]!.id).toBe(3) // far away: a new face
+  })
+
+  it('accepts age_group and rejects unknown values', () => {
+    const detection = { class: 'person', confidence: 0.9, age_group: 'child' }
+    expect(() => validateCameraSnapshot({ ...snapshot, vision_detections: [detection] })).not.toThrow()
+    expect(() => validateCameraSnapshot({ ...snapshot, vision_detections: [{ ...detection, age_group: 'senior' }] }))
+      .toThrow(/không hợp lệ/)
+    expect(detectionText(detection, true)).toBe('person (Trẻ em)')
+    expect(detectionText({ class: 'dog' }, true)).toBe('dog')
   })
 
   it('rejects malformed detection confidence', () => {
