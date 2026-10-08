@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode, type SVGProps } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { PortalMenu, useAuth } from '@cabinsentinel/auth'
+import { canAccessPortal, useAuth } from '@cabinsentinel/auth'
 import type { RiskLevel, V1CabinState } from '@cabinsentinel/contracts'
 import { formatRelativeTime } from '@cabinsentinel/domain'
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useParams } from 'react-router-dom'
@@ -67,6 +67,19 @@ function AdminRoute({ children }: { children: ReactNode }) {
   return user?.roles.includes('ADMIN') ? <>{children}</> : <Navigate to="/admin/incidents" replace/>
 }
 
+function OperationsUserMenu() {
+  const { user, logout, portalUrl } = useAuth()
+  const { locale } = useLocale()
+  if (!user) return null
+  return <div className="portal-menu operations-user-menu">
+    <span aria-hidden="true">{user.displayName.slice(0, 2).toUpperCase()}</span>
+    <div><strong>{user.displayName}</strong><small>{user.roles.join(' · ')}</small></div>
+    {canAccessPortal(user, 'owner') && <a href={portalUrl('owner')}>{locale === 'vi' ? 'Người dùng' : 'User'}</a>}
+    {canAccessPortal(user, 'operations') && <a href={portalUrl('operations')}>{locale === 'vi' ? 'Quản trị' : 'Admin'}</a>}
+    <button onClick={() => void logout()}>{locale === 'vi' ? 'Đăng xuất' : 'Sign out'}</button>
+  </div>
+}
+
 function Severity({ item }: { item: V1CabinState }) { const level = riskOf(item); return <span className={`severity severity-${level.toLowerCase()}`}><i />{level === 'ERROR' ? 'Unverified' : level}</span> }
 function PageHeader({ eyebrow, title, subtitle, action }: { eyebrow: string; title: string; subtitle: string; action?: ReactNode }) { return <div className="page-header"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p>{subtitle}</p></div>{action}</div> }
 function Metric({ label, value, detail, icon, tone = '' }: { label: string; value: string; detail: string; icon: IconName; tone?: string }) { return <article className={`metric-card ${tone}`}><span className="metric-icon"><Icon name={icon}/></span><div><small>{label}</small><strong>{value}</strong><p>{detail}</p></div></article> }
@@ -110,7 +123,7 @@ function Row({ label, value }: { label: string; value: string }) { return <div><
 
 function Shell() {
   const [open, setOpen] = useState(false); const location = useLocation(); const current = nav.find(item => location.pathname === item.to || (item.to !== '/admin' && location.pathname.startsWith(item.to)))?.label || 'Overview'
-  return <div className="app-shell"><aside className={`sidebar ${open ? 'is-open' : ''}`}><div className="brand"><span><Icon name="shield"/></span><div><strong>CabinSentinel</strong><small>Operations</small></div><b>OPS</b></div><div className="workspace"><small>Workspace</small><strong>Safety operations</strong><span>Backend-connected console</span></div><nav aria-label="Operations navigation">{nav.map(item => <NavLink end={item.to === '/admin'} key={item.to} to={item.to} onClick={() => setOpen(false)}><Icon name={item.icon}/><span>{item.label}</span>{item.label === 'Incidents' && <i/>}</NavLink>)}</nav><div className="sidebar-foot"><span>CS</span><p><strong>Authorized operator</strong><small>Backend-verified session</small></p><button aria-label="Open operator menu">•••</button></div></aside>{open && <button className="scrim" aria-label="Close navigation" onClick={() => setOpen(false)}/>}<section className="stage"><header className="topbar"><button className="menu-button" onClick={() => setOpen(!open)} aria-label={open ? 'Close navigation' : 'Open navigation'}><Icon name={open ? 'close' : 'menu'}/></button><div className="breadcrumb"><span>Operations</span><Icon name="chevron"/><strong>{current}</strong></div><div className="top-actions"><ServiceState>Live V1</ServiceState><PortalMenu /></div></header><main><Routes><Route path="/admin" element={<Dashboard/>}/><Route path="/admin/evaluations" element={<Evaluations/>}/><Route path="/admin/evaluations/:revision" element={<EvaluationDetail/>}/>{(['incidents','commands','vehicles','devices','users','models','rules','audit','system'] as const).map(name => <Route key={name} path={`/admin/${name}`} element={<PlatformPage name={name}/>}/>) }<Route path="*" element={<Navigate to="/admin" replace/>}/></Routes></main><footer><span>CabinSentinel Operations · Backend-authoritative</span><span><i/> Control plane UI v1</span></footer></section></div>
+  return <div className="app-shell"><aside className={`sidebar ${open ? 'is-open' : ''}`}><div className="brand"><span><Icon name="shield"/></span><div><strong>CabinSentinel</strong><small>Operations</small></div><b>OPS</b></div><div className="workspace"><small>Workspace</small><strong>Safety operations</strong><span>Backend-connected console</span></div><nav aria-label="Operations navigation">{nav.map(item => <NavLink end={item.to === '/admin'} key={item.to} to={item.to} onClick={() => setOpen(false)}><Icon name={item.icon}/><span>{item.label}</span>{item.label === 'Incidents' && <i/>}</NavLink>)}</nav><div className="sidebar-foot"><span>CS</span><p><strong>Authorized operator</strong><small>Backend-verified session</small></p><button aria-label="Open operator menu">•••</button></div></aside>{open && <button className="scrim" aria-label="Close navigation" onClick={() => setOpen(false)}/>}<section className="stage"><header className="topbar"><button className="menu-button" onClick={() => setOpen(!open)} aria-label={open ? 'Close navigation' : 'Open navigation'}><Icon name={open ? 'close' : 'menu'}/></button><div className="breadcrumb"><span>Operations</span><Icon name="chevron"/><strong>{current}</strong></div><div className="top-actions"><ServiceState>Live V1</ServiceState><OperationsUserMenu /></div></header><main><Routes><Route path="/admin" element={<Dashboard/>}/><Route path="/admin/evaluations" element={<Evaluations/>}/><Route path="/admin/evaluations/:revision" element={<EvaluationDetail/>}/>{(['incidents','commands','vehicles','devices','users','models','rules','audit','system'] as const).map(name => <Route key={name} path={`/admin/${name}`} element={<PlatformPage name={name}/>}/>) }<Route path="*" element={<Navigate to="/admin" replace/>}/></Routes></main><footer><span>CabinSentinel Operations · Backend-authoritative</span><span><i/> Control plane UI v1</span></footer></section></div>
 }
 function AdminShell() {
   const [open, setOpen] = useState(false)
@@ -130,19 +143,19 @@ function AdminShell() {
   return <div className="app-shell">
     <aside className={`sidebar ${open ? 'is-open' : ''}`}>
       <div className="brand"><span><Icon name="shield"/></span><div><strong>CabinSentinel</strong><small>Operations</small></div><b>{isAdmin ? 'ADM' : 'OPS'}</b></div>
-      <div className="workspace"><small>Workspace</small><strong>{isAdmin ? t('platformControl') : t('safetyOperations')}</strong><span>{isAdmin ? t('administratorScope') : t('operatorScope')}</span></div>
+      <div className="workspace"><small>{locale === 'vi' ? 'Không gian làm việc' : 'Workspace'}</small><strong>{isAdmin ? t('platformControl') : t('safetyOperations')}</strong><span>{isAdmin ? t('administratorScope') : t('operatorScope')}</span></div>
       <nav aria-label="Operations navigation">
         {visibleGroups.map(group => <section className="nav-group" key={group.labelKey}>
           <small>{t(group.labelKey)}</small>
           {group.items.map(item => <NavLink end={item.to === '/admin'} key={item.to} to={item.to} onClick={() => setOpen(false)}><Icon name={item.icon}/><span>{t(item.labelKey)}</span>{item.labelKey === 'incidents' && <i/>}</NavLink>)}
         </section>)}
       </nav>
-      <div className="sidebar-foot"><span>{user?.displayName.slice(0, 2).toUpperCase() || 'CS'}</span><p><strong>{user?.displayName || 'Authorized operator'}</strong><small>{isAdmin ? 'Platform administrator' : 'Safety operator'}</small></p></div>
+      <div className="sidebar-foot"><span>{user?.displayName.slice(0, 2).toUpperCase() || 'CS'}</span><p><strong>{user?.displayName || (locale === 'vi' ? 'Điều phối viên' : 'Authorized operator')}</strong><small>{isAdmin ? (locale === 'vi' ? 'Quản trị viên nền tảng' : 'Platform administrator') : (locale === 'vi' ? 'Điều phối viên an toàn' : 'Safety operator')}</small></p></div>
     </aside>
     {open && <button className="scrim" aria-label="Close navigation" onClick={() => setOpen(false)}/>}
     <section className="stage">
-      <header className="topbar"><button className="menu-button" onClick={() => setOpen(!open)} aria-label={open ? 'Close navigation' : 'Open navigation'}><Icon name={open ? 'close' : 'menu'}/></button><div className="breadcrumb"><span>{isAdmin ? t('admin') : t('operations')}</span><Icon name="chevron"/><strong>{current}</strong></div><div className="top-actions"><ServiceState>{t('live')}</ServiceState><button className="locale-switch" onClick={() => setLocale(locale === 'vi' ? 'en' : 'vi')} aria-label="Change language"><strong>{locale.toUpperCase()}</strong><span>/ {locale === 'vi' ? 'EN' : 'VI'}</span></button><PortalMenu /></div></header>
-      <main>{demoMode && <section className="demo-mode-banner" role="status"><div><strong>DỮ LIỆU MÔ PHỎNG</strong><span>Mọi số liệu và thao tác bên dưới chỉ dùng để minh họa, không gửi đến backend thật.</span></div><button onClick={stopAdminDemo}>Thoát demo</button></section>}<Routes>
+      <header className="topbar"><button className="menu-button" onClick={() => setOpen(!open)} aria-label={open ? 'Close navigation' : 'Open navigation'}><Icon name={open ? 'close' : 'menu'}/></button><div className="breadcrumb"><span>{isAdmin ? t('admin') : t('operations')}</span><Icon name="chevron"/><strong>{current}</strong></div><div className="top-actions"><ServiceState>{t('live')}</ServiceState><button className="locale-switch" onClick={() => setLocale(locale === 'vi' ? 'en' : 'vi')} aria-label={locale === 'vi' ? 'Chuyển sang tiếng Anh' : 'Switch to Vietnamese'}><strong>{locale.toUpperCase()}</strong><span>/ {locale === 'vi' ? 'EN' : 'VI'}</span></button><OperationsUserMenu /></div></header>
+      <main>{demoMode && <section className="demo-mode-banner" role="status"><div><strong>{locale === 'vi' ? 'DỮ LIỆU MÔ PHỎNG' : 'SIMULATED DATA'}</strong><span>{locale === 'vi' ? 'Mọi số liệu và thao tác bên dưới chỉ dùng để minh họa, không gửi đến backend thật.' : 'All data and actions below are simulated and are never sent to the live backend.'}</span></div><button onClick={stopAdminDemo}>{locale === 'vi' ? 'Thoát demo' : 'Exit demo'}</button></section>}<Routes>
         <Route path="/admin" element={<AdminOverview/>}/>
         <Route path="/admin/evaluations" element={<EvaluationsWorkbench/>}/>
         <Route path="/admin/evaluations/:revision" element={<Navigate to="/admin/evaluations" replace/>}/>
@@ -150,7 +163,11 @@ function AdminShell() {
         {(['tenants','users','models','rules'] as const).map(name => <Route key={name} path={`/admin/${name}`} element={<AdminRoute><PlatformPage name={name}/></AdminRoute>}/>)}
         <Route path="*" element={<Navigate to={isAdmin ? '/admin' : '/admin/incidents'} replace/>}/>
       </Routes></main>
-      <footer><span>CabinSentinel Operations · Backend-authoritative</span><span><i/> Control plane UI v1</span></footer>
+      <footer><span>CabinSentinel Operations · {locale === 'vi' ? 'Backend quyết định cuối cùng' : 'Backend-authoritative'}</span><span><i/> {locale === 'vi' ? 'Giao diện điều khiển V1' : 'Control plane UI v1'}</span></footer>
+      <nav className="mobile-bottom-nav" aria-label="Mobile operations navigation">
+        {visibleItems.filter(item => ['/admin','/admin/incidents','/admin/evaluations','/admin/vehicles'].includes(item.to)).map(item => <NavLink end={item.to === '/admin'} key={item.to} to={item.to}><Icon name={item.icon}/><span>{t(item.labelKey)}</span></NavLink>)}
+        <button type="button" className={open ? 'active' : ''} onClick={() => setOpen(true)} aria-label={locale === 'vi' ? 'Mở thêm điều hướng' : 'Open more navigation'}><Icon name="menu"/><span>{locale === 'vi' ? 'Thêm' : 'More'}</span></button>
+      </nav>
     </section>
   </div>
 }
