@@ -29,6 +29,9 @@ export interface RequestOptions extends RequestInit {
   auth?: boolean
 }
 
+export type JsonRecord = Record<string, unknown>
+export interface JsonPage<T extends JsonRecord = JsonRecord> { items: T[]; total: number; page: number; page_size: number }
+
 function joinUrl(base: string, path: string): string {
   return `${base.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
 }
@@ -122,6 +125,100 @@ export class CabinSentinelClient {
   v1VehicleEvents(vehicleId: string, limit = 50, signal?: AbortSignal) {
     return this.request<V1VehicleEvents>(`/api/v1/vehicles/${encodeURIComponent(vehicleId)}/events?limit=${Math.max(1, Math.min(limit, 500))}`, { signal })
   }
+
+  // Authenticated platform resources. These mirror the current FastAPI V1
+  // control plane; richer generated types can replace JsonRecord once the
+  // backend OpenAPI response models are committed.
+  v1Profile(signal?: AbortSignal) { return this.request<JsonRecord>('/api/v1/me/profile', { signal }) }
+  v1UpdateProfile(payload: JsonRecord, signal?: AbortSignal) {
+    return this.request<JsonRecord>('/api/v1/me/profile', { method: 'PUT', retry: false, signal, body: JSON.stringify(payload) })
+  }
+  v1NotificationSettings(signal?: AbortSignal) { return this.request<JsonRecord>('/api/v1/me/notification-settings', { signal }) }
+  v1UpdateNotificationSettings(payload: JsonRecord, signal?: AbortSignal) {
+    return this.request<JsonRecord>('/api/v1/me/notification-settings', { method: 'PUT', retry: false, signal, body: JSON.stringify(payload) })
+  }
+  v1EmergencyContacts(signal?: AbortSignal) { return this.request<{ contacts: JsonRecord[] }>('/api/v1/me/emergency-contacts', { signal }) }
+  v1CreateEmergencyContact(payload: JsonRecord, signal?: AbortSignal) {
+    return this.request<JsonRecord>('/api/v1/me/emergency-contacts', { method: 'POST', retry: false, signal, body: JSON.stringify(payload) })
+  }
+  v1DeleteEmergencyContact(contactId: string, signal?: AbortSignal) {
+    return this.request<void>(`/api/v1/me/emergency-contacts/${encodeURIComponent(contactId)}`, { method: 'DELETE', retry: false, signal })
+  }
+  v1RequestContactVerification(contactId: string, signal?: AbortSignal) {
+    return this.request<JsonRecord>(`/api/v1/me/emergency-contacts/${encodeURIComponent(contactId)}/verification`, { method: 'POST', retry: false, signal })
+  }
+  v1ConfirmContactVerification(contactId: string, code: string, signal?: AbortSignal) { return this.request<JsonRecord>(`/api/v1/me/emergency-contacts/${encodeURIComponent(contactId)}/verification/confirm`, { method: 'POST', retry: false, signal, body: JSON.stringify({ code }) }) }
+  v1Caregivers(signal?: AbortSignal) { return this.request<{ caregivers: JsonRecord[] }>('/api/v1/me/caregivers', { signal }) }
+  v1CreateCaregiverInvite(payload: JsonRecord, signal?: AbortSignal) {
+    return this.request<JsonRecord>('/api/v1/me/caregivers/invites', { method: 'POST', retry: false, signal, body: JSON.stringify(payload) })
+  }
+  v1RevokeCaregiver(linkId: string, signal?: AbortSignal) {
+    return this.request<void>(`/api/v1/me/caregivers/${encodeURIComponent(linkId)}`, { method: 'DELETE', retry: false, signal })
+  }
+  v1AcceptCaregiverInvite(token: string, signal?: AbortSignal) { return this.request<JsonRecord>('/api/v1/caregiver-invites/accept', { method: 'POST', retry: false, signal, body: JSON.stringify({ token }) }) }
+  v1CreateVehicle(payload: JsonRecord, signal?: AbortSignal) {
+    return this.request<JsonRecord>('/api/v1/vehicles', { method: 'POST', retry: false, signal, body: JSON.stringify(payload) })
+  }
+  v1IssuePairingCode(vehicleId: string, signal?: AbortSignal) {
+    return this.request<JsonRecord>(`/api/v1/vehicles/${encodeURIComponent(vehicleId)}/pairing-code`, { method: 'POST', retry: false, signal })
+  }
+  v1Telemetry(vehicleId: string, minutes = 30, signal?: AbortSignal) {
+    return this.request<JsonRecord>(`/api/v1/vehicles/${encodeURIComponent(vehicleId)}/telemetry?minutes=${minutes}`, { signal })
+  }
+  v1Incidents(vehicleId: string, signal?: AbortSignal) {
+    return this.request<JsonRecord>(`/api/v1/vehicles/${encodeURIComponent(vehicleId)}/incidents`, { signal })
+  }
+  v1AcknowledgeIncident(vehicleId: string, incidentId: string, signal?: AbortSignal) {
+    return this.request<JsonRecord>(`/api/v1/vehicles/${encodeURIComponent(vehicleId)}/incidents/${encodeURIComponent(incidentId)}/acknowledge`, { method: 'POST', retry: false, signal })
+  }
+  v1HoldIncident(vehicleId: string, incidentId: string, version: number, keepActive: boolean, note?: string, signal?: AbortSignal) {
+    return this.request<JsonRecord>(`/api/v1/vehicles/${encodeURIComponent(vehicleId)}/incidents/${encodeURIComponent(incidentId)}/hold`, {
+      method: 'POST', retry: false, signal,
+      body: JSON.stringify({ version, keep_active: keepActive, note: note || null }),
+    })
+  }
+  v1ResolveIncident(vehicleId: string, incidentId: string, revision: number, signal?: AbortSignal) {
+    return this.request<JsonRecord>(`/api/v1/vehicles/${encodeURIComponent(vehicleId)}/incidents/${encodeURIComponent(incidentId)}/resolve`, { method: 'POST', retry: false, signal, body: JSON.stringify({ revision, cabin_checked: true }) })
+  }
+  v1VehicleCommands(vehicleId: string, signal?: AbortSignal) {
+    return this.request<{ commands: JsonRecord[] }>(`/api/v1/vehicles/${encodeURIComponent(vehicleId)}/commands`, { signal })
+  }
+  v1RequestCommand(vehicleId: string, type: 'horn' | 'sms' | 'unlock', incidentId?: string, signal?: AbortSignal) {
+    return this.request<JsonRecord>(`/api/v1/vehicles/${encodeURIComponent(vehicleId)}/commands`, { method: 'POST', retry: false, signal, body: JSON.stringify({ type, incident_id: incidentId }) })
+  }
+  v1ConfirmCommand(commandId: string, signal?: AbortSignal) {
+    return this.request<JsonRecord>(`/api/v1/commands/${encodeURIComponent(commandId)}/confirm`, { method: 'POST', retry: false, signal })
+  }
+  v1CancelCommand(commandId: string, signal?: AbortSignal) { return this.request<JsonRecord>(`/api/v1/commands/${encodeURIComponent(commandId)}/cancel`, { method: 'POST', retry: false, signal }) }
+
+  v1AdminVehicles(signal?: AbortSignal) { return this.request<JsonPage>('/api/v1/admin/vehicles?page=1&page_size=100', { signal }) }
+  v1AdminTenants(signal?: AbortSignal) { return this.request<{ tenants: JsonRecord[] }>('/api/v1/admin/tenants', { signal }) }
+  v1AdminCreateTenant(name: string, signal?: AbortSignal) { return this.request<JsonRecord>('/api/v1/admin/tenants', { method: 'POST', retry: false, signal, body: JSON.stringify({ name }) }) }
+  v1AdminDevices(signal?: AbortSignal) { return this.request<{ devices: JsonRecord[]; summary: JsonRecord }>('/api/v1/admin/devices', { signal }) }
+  v1AdminDeviceHeartbeats(deviceId: string, signal?: AbortSignal) { return this.request<JsonRecord>(`/api/v1/admin/devices/${encodeURIComponent(deviceId)}/heartbeats?limit=20`, { signal }) }
+  v1AdminSetFirmware(deviceId: string, targetFirmware: string | null, signal?: AbortSignal) { return this.request<JsonRecord>(`/api/v1/admin/devices/${encodeURIComponent(deviceId)}/firmware`, { method: 'PUT', retry: false, signal, body: JSON.stringify({ target_firmware: targetFirmware }) }) }
+  v1AdminRevokeDevice(deviceId: string, signal?: AbortSignal) { return this.request<JsonRecord>(`/api/v1/admin/devices/${encodeURIComponent(deviceId)}/revoke`, { method: 'POST', retry: false, signal }) }
+  v1AdminUsers(signal?: AbortSignal) { return this.request<{ users: JsonRecord[] }>('/api/v1/admin/users', { signal }) }
+  v1AdminCreateUser(payload: JsonRecord, signal?: AbortSignal) { return this.request<JsonRecord>('/api/v1/admin/users', { method: 'POST', retry: false, signal, body: JSON.stringify(payload) }) }
+  v1AdminUpdateUser(userId: string, payload: JsonRecord, signal?: AbortSignal) { return this.request<JsonRecord>(`/api/v1/admin/users/${encodeURIComponent(userId)}`, { method: 'PATCH', retry: false, signal, body: JSON.stringify(payload) }) }
+  v1AdminRevokeUserSessions(userId: string, signal?: AbortSignal) { return this.request<JsonRecord>(`/api/v1/admin/users/${encodeURIComponent(userId)}/revoke-sessions`, { method: 'POST', retry: false, signal }) }
+  v1AdminRoles(signal?: AbortSignal) { return this.request<JsonRecord>('/api/v1/admin/roles', { signal }) }
+  v1AdminSetRolePermissions(role: string, permissions: string[], signal?: AbortSignal) { return this.request<JsonRecord>(`/api/v1/admin/roles/${encodeURIComponent(role)}`, { method: 'PUT', retry: false, signal, body: JSON.stringify({ permissions }) }) }
+  v1AdminAccessReview(signal?: AbortSignal) { return this.request<{ users: JsonRecord[]; summary: JsonRecord; as_of: string }>('/api/v1/admin/access-review', { signal }) }
+  v1AdminModels(signal?: AbortSignal) { return this.request<{ models: JsonRecord[] }>('/api/v1/admin/models', { signal }) }
+  v1AdminRegisterModel(payload: JsonRecord, signal?: AbortSignal) { return this.request<JsonRecord>('/api/v1/admin/models', { method: 'POST', retry: false, signal, body: JSON.stringify(payload) }) }
+  v1AdminRolloutModel(modelId: string, rolloutPct: number, signal?: AbortSignal) { return this.request<JsonRecord>(`/api/v1/admin/models/${encodeURIComponent(modelId)}/rollout`, { method: 'POST', retry: false, signal, body: JSON.stringify({ rollout_pct: rolloutPct }) }) }
+  v1AdminRollbackModel(modelId: string, signal?: AbortSignal) { return this.request<JsonRecord>(`/api/v1/admin/models/${encodeURIComponent(modelId)}/rollback`, { method: 'POST', retry: false, signal }) }
+  v1AdminRulesets(signal?: AbortSignal) { return this.request<{ rulesets: JsonRecord[]; note?: string }>('/api/v1/admin/rulesets', { signal }) }
+  v1AdminCreateRuleset(payload: JsonRecord, signal?: AbortSignal) { return this.request<JsonRecord>('/api/v1/admin/rulesets', { method: 'POST', retry: false, signal, body: JSON.stringify(payload) }) }
+  v1AdminActivateRuleset(version: string, signal?: AbortSignal) { return this.request<JsonRecord>(`/api/v1/admin/rulesets/${encodeURIComponent(version)}/activate`, { method: 'POST', retry: false, signal }) }
+  v1AdminAudit(signal?: AbortSignal) { return this.request<{ entries: JsonRecord[] }>('/api/v1/admin/audit?limit=100', { signal }) }
+  v1AdminSystem(signal?: AbortSignal) { return this.request<JsonRecord>('/api/v1/admin/system', { signal }) }
+  v1AdminVision(signal?: AbortSignal) { return this.request<JsonRecord>('/api/v1/admin/system/vision', { signal }) }
+  v1OpsIncidents(signal?: AbortSignal) { return this.request<JsonPage>('/api/v1/ops/incidents?page=1&page_size=100', { signal }) }
+  v1OpsIncidentAction(incidentId: string, action: 'assign' | 'escalate' | 'note', payload: JsonRecord, signal?: AbortSignal) { return this.request<JsonRecord>(`/api/v1/ops/incidents/${encodeURIComponent(incidentId)}/${action}`, { method: 'POST', retry: false, signal, body: JSON.stringify(payload) }) }
+  v1OpsCommands(signal?: AbortSignal) { return this.request<{ enabled: boolean; commands: JsonRecord[] }>('/api/v1/ops/commands?limit=100', { signal }) }
+  v1OpsRejectCommand(commandId: string, reason?: string, signal?: AbortSignal) { return this.request<JsonRecord>(`/api/v1/ops/commands/${encodeURIComponent(commandId)}/reject`, { method: 'POST', retry: false, signal, body: JSON.stringify({ reason }) }) }
 
   /** Confirmed endpoints from the repository's current V1 FastAPI service. */
   v1State(vehicleId: string, signal?: AbortSignal) {

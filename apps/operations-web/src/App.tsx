@@ -1,10 +1,13 @@
 import { useMemo, useState, type ReactNode, type SVGProps } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { PortalMenu } from '@cabinsentinel/auth'
+import { PortalMenu, useAuth } from '@cabinsentinel/auth'
 import type { RiskLevel, V1CabinState } from '@cabinsentinel/contracts'
 import { formatRelativeTime } from '@cabinsentinel/domain'
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { client, vehicleId } from './data'
+import { AdminOverview, EvaluationsWorkbench, PlatformPage } from './PlatformPages'
+import { useLocale } from './i18n'
+import { adminDemoEnabled, stopAdminDemo } from './adminDemo'
 
 type IconName = 'grid' | 'pulse' | 'car' | 'cpu' | 'users' | 'layers' | 'rules' | 'audit' | 'system' | 'search' | 'bell' | 'menu' | 'close' | 'arrow' | 'refresh' | 'shield' | 'camera' | 'radar' | 'clock' | 'lock' | 'check' | 'warning' | 'chevron'
 const paths: Record<IconName, ReactNode> = {
@@ -28,11 +31,41 @@ const riskOf = (item: V1CabinState): RiskLevel => { const risk = item.risk_level
 const timeOf = (item: V1CabinState) => item.evaluated_at || item.freshness?.as_of || ''
 const nav = [
   { to: '/admin', label: 'Overview', icon: 'grid' as IconName }, { to: '/admin/evaluations', label: 'Evaluations', icon: 'pulse' as IconName },
+  { to: '/admin/incidents', label: 'Incidents', icon: 'warning' as IconName }, { to: '/admin/commands', label: 'Commands', icon: 'lock' as IconName },
   { to: '/admin/vehicles', label: 'Vehicles', icon: 'car' as IconName }, { to: '/admin/devices', label: 'Devices', icon: 'cpu' as IconName },
   { to: '/admin/users', label: 'Users & access', icon: 'users' as IconName }, { to: '/admin/models', label: 'Models', icon: 'layers' as IconName },
   { to: '/admin/rules', label: 'Safety rules', icon: 'rules' as IconName }, { to: '/admin/audit', label: 'Audit log', icon: 'audit' as IconName },
   { to: '/admin/system', label: 'System health', icon: 'system' as IconName },
 ]
+
+type AdminNavItem = { to: string; labelKey: string; icon: IconName; adminOnly?: boolean }
+const adminNavGroups: Array<{ labelKey: string; items: AdminNavItem[] }> = [
+  { labelKey: 'safetyOperations', items: [
+    { to: '/admin', labelKey: 'overview', icon: 'grid' },
+    { to: '/admin/incidents', labelKey: 'incidents', icon: 'warning' },
+    { to: '/admin/evaluations', labelKey: 'evaluations', icon: 'pulse' },
+    { to: '/admin/commands', labelKey: 'commands', icon: 'lock' },
+  ] },
+  { labelKey: 'fleetManagement', items: [
+    { to: '/admin/vehicles', labelKey: 'vehicles', icon: 'car' },
+    { to: '/admin/devices', labelKey: 'devices', icon: 'cpu' },
+  ] },
+  { labelKey: 'platformAdministration', items: [
+    { to: '/admin/tenants', labelKey: 'tenants', icon: 'layers', adminOnly: true },
+    { to: '/admin/users', labelKey: 'users', icon: 'users', adminOnly: true },
+    { to: '/admin/models', labelKey: 'models', icon: 'layers', adminOnly: true },
+    { to: '/admin/rules', labelKey: 'rules', icon: 'rules', adminOnly: true },
+  ] },
+  { labelKey: 'assurance', items: [
+    { to: '/admin/audit', labelKey: 'audit', icon: 'audit' },
+    { to: '/admin/system', labelKey: 'system', icon: 'system' },
+  ] },
+]
+
+function AdminRoute({ children }: { children: ReactNode }) {
+  const { user } = useAuth()
+  return user?.roles.includes('ADMIN') ? <>{children}</> : <Navigate to="/admin/incidents" replace/>
+}
 
 function Severity({ item }: { item: V1CabinState }) { const level = riskOf(item); return <span className={`severity severity-${level.toLowerCase()}`}><i />{level === 'ERROR' ? 'Unverified' : level}</span> }
 function PageHeader({ eyebrow, title, subtitle, action }: { eyebrow: string; title: string; subtitle: string; action?: ReactNode }) { return <div className="page-header"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p>{subtitle}</p></div>{action}</div> }
@@ -75,19 +108,51 @@ function EvaluationDetail() {
 }
 function Row({ label, value }: { label: string; value: string }) { return <div><dt>{label}</dt><dd>{value}</dd></div> }
 
-const capabilityCopy = {
-  vehicles: { title: 'Fleet vehicles', eyebrow: 'Fleet management', body: 'A tenant-scoped vehicle inventory API is required before the console can expose fleet-wide state.', bullets: ['Paginated vehicle inventory', 'Tenant and owner relationships', 'Aggregated safety status'], icon: 'car' as IconName },
-  devices: { title: 'Device fleet', eyebrow: 'Edge operations', body: 'Device health and heartbeat read models are not available from the current backend.', bullets: ['Heartbeat and connectivity', 'Camera and sensor diagnostics', 'Firmware and model versions'], icon: 'cpu' as IconName },
-  users: { title: 'Users & access', eyebrow: 'Identity administration', body: 'Authenticated users, role relationships and permission mutations require production RBAC APIs.', bullets: ['Operator role assignments', 'Least-privilege permissions', 'Access review history'], icon: 'users' as IconName },
-  models: { title: 'Model registry', eyebrow: 'AI operations', body: 'Model registry, validation and rollout status APIs are required to safely manage edge inference.', bullets: ['Version registry', 'Staged rollout controls', 'Quality and drift signals'], icon: 'layers' as IconName },
-  rules: { title: 'Safety rules', eyebrow: 'Decision governance', body: 'Versioned rule configuration needs approval workflows and immutable release records.', bullets: ['Draft and active versions', 'Four-eyes approval', 'Vehicle rollout targeting'], icon: 'rules' as IconName },
-  audit: { title: 'Audit log', eyebrow: 'Compliance', body: 'A filterable, immutable audit event API is required for operational accountability.', bullets: ['Actor and action history', 'Correlation IDs', 'Export and retention policy'], icon: 'audit' as IconName },
-  system: { title: 'System health', eyebrow: 'Platform reliability', body: 'An authenticated aggregate service-health model is required beyond the public V1 health endpoint.', bullets: ['Service dependency map', 'SLO and latency tracking', 'Incident escalation state'], icon: 'system' as IconName },
-}
-function Capability({ name }: { name: keyof typeof capabilityCopy }) { const item = capabilityCopy[name]; return <><PageHeader eyebrow={item.eyebrow} title={item.title} subtitle="Production control-plane capability"/><section className="capability-layout"><article className="surface capability-card"><span className="capability-icon"><Icon name={item.icon}/></span><span className="locked-label"><Icon name="lock"/>Backend capability required</span><h2>The interface is ready for a verified data source</h2><p>{item.body}</p><div className="capability-list">{item.bullets.map((bullet, index) => <div key={bullet}><span>{index + 1}</span><p><strong>{bullet}</strong><small>Contract and authorization pending</small></p></div>)}</div></article><aside className="surface integration-card"><span className="section-kicker">Integration status</span><h2>Not connected</h2><div className="integration-line"><span>UI route</span><ServiceState ok>Ready</ServiceState></div><div className="integration-line"><span>API contract</span><ServiceState>Pending</ServiceState></div><div className="integration-line"><span>Authorization</span><ServiceState>Pending</ServiceState></div><div className="integration-note"><Icon name="shield"/><p>No fixture data or inferred-safe status is shown in this operations surface.</p></div></aside></section></> }
-
 function Shell() {
   const [open, setOpen] = useState(false); const location = useLocation(); const current = nav.find(item => location.pathname === item.to || (item.to !== '/admin' && location.pathname.startsWith(item.to)))?.label || 'Overview'
-  return <div className="app-shell"><aside className={`sidebar ${open ? 'is-open' : ''}`}><div className="brand"><span><Icon name="shield"/></span><div><strong>CabinSentinel</strong><small>Operations</small></div><b>OPS</b></div><div className="workspace"><small>Workspace</small><strong>Safety operations</strong><span>Production console</span></div><nav aria-label="Operations navigation">{nav.map(item => <NavLink end={item.to === '/admin'} key={item.to} to={item.to} onClick={() => setOpen(false)}><Icon name={item.icon}/><span>{item.label}</span>{item.label === 'Evaluations' && <i/>}</NavLink>)}</nav><div className="sidebar-foot"><span>CS</span><p><strong>Control operator</strong><small>operations@cabin.local</small></p><button aria-label="Open operator menu">•••</button></div></aside>{open && <button className="scrim" aria-label="Close navigation" onClick={() => setOpen(false)}/>}<section className="stage"><header className="topbar"><button className="menu-button" onClick={() => setOpen(!open)} aria-label={open ? 'Close navigation' : 'Open navigation'}><Icon name={open ? 'close' : 'menu'}/></button><div className="breadcrumb"><span>Operations</span><Icon name="chevron"/><strong>{current}</strong></div><div className="top-actions"><ServiceState>V1 scope</ServiceState><button aria-label="Search"><Icon name="search"/></button><button aria-label="Notifications" className="notification"><Icon name="bell"/><i/></button><PortalMenu /></div></header><main><Routes><Route path="/admin" element={<Dashboard/>}/><Route path="/admin/evaluations" element={<Evaluations/>}/><Route path="/admin/evaluations/:revision" element={<EvaluationDetail/>}/>{(['vehicles','devices','users','models','rules','audit','system'] as const).map(name => <Route key={name} path={`/admin/${name}`} element={<Capability name={name}/>}/>) }<Route path="*" element={<Navigate to="/admin" replace/>}/></Routes></main><footer><span>CabinSentinel Operations · Fail-safe by design</span><span><i/> Control plane UI v0.2</span></footer></section></div>
+  return <div className="app-shell"><aside className={`sidebar ${open ? 'is-open' : ''}`}><div className="brand"><span><Icon name="shield"/></span><div><strong>CabinSentinel</strong><small>Operations</small></div><b>OPS</b></div><div className="workspace"><small>Workspace</small><strong>Safety operations</strong><span>Backend-connected console</span></div><nav aria-label="Operations navigation">{nav.map(item => <NavLink end={item.to === '/admin'} key={item.to} to={item.to} onClick={() => setOpen(false)}><Icon name={item.icon}/><span>{item.label}</span>{item.label === 'Incidents' && <i/>}</NavLink>)}</nav><div className="sidebar-foot"><span>CS</span><p><strong>Authorized operator</strong><small>Backend-verified session</small></p><button aria-label="Open operator menu">•••</button></div></aside>{open && <button className="scrim" aria-label="Close navigation" onClick={() => setOpen(false)}/>}<section className="stage"><header className="topbar"><button className="menu-button" onClick={() => setOpen(!open)} aria-label={open ? 'Close navigation' : 'Open navigation'}><Icon name={open ? 'close' : 'menu'}/></button><div className="breadcrumb"><span>Operations</span><Icon name="chevron"/><strong>{current}</strong></div><div className="top-actions"><ServiceState>Live V1</ServiceState><PortalMenu /></div></header><main><Routes><Route path="/admin" element={<Dashboard/>}/><Route path="/admin/evaluations" element={<Evaluations/>}/><Route path="/admin/evaluations/:revision" element={<EvaluationDetail/>}/>{(['incidents','commands','vehicles','devices','users','models','rules','audit','system'] as const).map(name => <Route key={name} path={`/admin/${name}`} element={<PlatformPage name={name}/>}/>) }<Route path="*" element={<Navigate to="/admin" replace/>}/></Routes></main><footer><span>CabinSentinel Operations · Backend-authoritative</span><span><i/> Control plane UI v1</span></footer></section></div>
 }
-export function App() { return <Shell/> }
+function AdminShell() {
+  const [open, setOpen] = useState(false)
+  const location = useLocation()
+  const { user } = useAuth()
+  const { locale, setLocale, t } = useLocale()
+  const demoMode = adminDemoEnabled()
+  const isAdmin = user?.roles.includes('ADMIN') === true
+  const visibleGroups = adminNavGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => !item.adminOnly || isAdmin),
+  })).filter(group => group.items.length > 0)
+  const visibleItems = visibleGroups.flatMap(group => group.items)
+  const currentItem = visibleItems.find(item => location.pathname === item.to || (item.to !== '/admin' && location.pathname.startsWith(item.to)))
+  const current = t(currentItem?.labelKey || 'overview')
+
+  return <div className="app-shell">
+    <aside className={`sidebar ${open ? 'is-open' : ''}`}>
+      <div className="brand"><span><Icon name="shield"/></span><div><strong>CabinSentinel</strong><small>Operations</small></div><b>{isAdmin ? 'ADM' : 'OPS'}</b></div>
+      <div className="workspace"><small>Workspace</small><strong>{isAdmin ? t('platformControl') : t('safetyOperations')}</strong><span>{isAdmin ? t('administratorScope') : t('operatorScope')}</span></div>
+      <nav aria-label="Operations navigation">
+        {visibleGroups.map(group => <section className="nav-group" key={group.labelKey}>
+          <small>{t(group.labelKey)}</small>
+          {group.items.map(item => <NavLink end={item.to === '/admin'} key={item.to} to={item.to} onClick={() => setOpen(false)}><Icon name={item.icon}/><span>{t(item.labelKey)}</span>{item.labelKey === 'incidents' && <i/>}</NavLink>)}
+        </section>)}
+      </nav>
+      <div className="sidebar-foot"><span>{user?.displayName.slice(0, 2).toUpperCase() || 'CS'}</span><p><strong>{user?.displayName || 'Authorized operator'}</strong><small>{isAdmin ? 'Platform administrator' : 'Safety operator'}</small></p></div>
+    </aside>
+    {open && <button className="scrim" aria-label="Close navigation" onClick={() => setOpen(false)}/>}
+    <section className="stage">
+      <header className="topbar"><button className="menu-button" onClick={() => setOpen(!open)} aria-label={open ? 'Close navigation' : 'Open navigation'}><Icon name={open ? 'close' : 'menu'}/></button><div className="breadcrumb"><span>{isAdmin ? t('admin') : t('operations')}</span><Icon name="chevron"/><strong>{current}</strong></div><div className="top-actions"><ServiceState>{t('live')}</ServiceState><button className="locale-switch" onClick={() => setLocale(locale === 'vi' ? 'en' : 'vi')} aria-label="Change language"><strong>{locale.toUpperCase()}</strong><span>/ {locale === 'vi' ? 'EN' : 'VI'}</span></button><PortalMenu /></div></header>
+      <main>{demoMode && <section className="demo-mode-banner" role="status"><div><strong>DỮ LIỆU MÔ PHỎNG</strong><span>Mọi số liệu và thao tác bên dưới chỉ dùng để minh họa, không gửi đến backend thật.</span></div><button onClick={stopAdminDemo}>Thoát demo</button></section>}<Routes>
+        <Route path="/admin" element={<AdminOverview/>}/>
+        <Route path="/admin/evaluations" element={<EvaluationsWorkbench/>}/>
+        <Route path="/admin/evaluations/:revision" element={<Navigate to="/admin/evaluations" replace/>}/>
+        {(['incidents','commands','vehicles','devices','audit','system'] as const).map(name => <Route key={name} path={`/admin/${name}`} element={<PlatformPage name={name}/>}/>)}
+        {(['tenants','users','models','rules'] as const).map(name => <Route key={name} path={`/admin/${name}`} element={<AdminRoute><PlatformPage name={name}/></AdminRoute>}/>)}
+        <Route path="*" element={<Navigate to={isAdmin ? '/admin' : '/admin/incidents'} replace/>}/>
+      </Routes></main>
+      <footer><span>CabinSentinel Operations · Backend-authoritative</span><span><i/> Control plane UI v1</span></footer>
+    </section>
+  </div>
+}
+
+export function App() { return <AdminShell/> }

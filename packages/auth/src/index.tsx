@@ -28,7 +28,7 @@ let refreshPromise: Promise<string | undefined> | undefined
 
 const mockUsers: Record<Portal, User> = {
   owner: { id: 'owner-demo', displayName: 'Thu Hiền', email: 'owner@demo.cabinsentinel.vn', roles: ['OWNER'], permissions: ['vehicle:view', 'incident:acknowledge'], vehicleIds: ['CAR_1', 'CAR_2'] },
-  operations: { id: 'operator-demo', displayName: 'Control Operator', email: 'ops@demo.cabinsentinel.vn', roles: ['OPERATOR', 'AUDITOR'], permissions: ['operations:view', 'audit:view', 'vehicle:view'], vehicleIds: [] },
+  operations: { id: 'admin-demo', displayName: 'Thu Hiền · Demo Admin', email: 'admin@demo.cabinsentinel.vn', roles: ['ADMIN'], permissions: ['operations:view', 'audit:view', 'users:manage', 'models:manage', 'vehicle:view'], vehicleIds: ['VF8-HN-0188', 'VF9-HCM-2205', 'VF6-DN-7712', 'VF7-HN-9090'] },
 }
 
 export function getV1DemoAccessToken() { return sessionStorage.getItem(V1_TOKEN_KEY) || undefined }
@@ -212,6 +212,7 @@ export function AuthProvider({ config, children }: { config: AuthConfig; childre
   }, [client, config.mode])
 
   const logout = useCallback(async () => {
+    const loginTarget = portalUrl(defaultPortal(user))
     try {
       if (config.mode === 'mock') sessionStorage.removeItem(MOCK_KEY)
       else if (config.mode === 'v1-demo') sessionStorage.removeItem(V1_TOKEN_KEY)
@@ -221,9 +222,11 @@ export function AuthProvider({ config, children }: { config: AuthConfig; childre
     } finally {
       clearSession()
       setUser(undefined)
-      location.assign('/login')
+      // Each portal may be hosted under a different base path (Operations uses /admin/).
+      // Returning to its configured entry point lets RequirePortal resolve the correct login route.
+      location.assign(loginTarget)
     }
-  }, [client, config.mode])
+  }, [client, config.mode, portalUrl, user])
 
   return <AuthContext.Provider value={{ user, loading, error, config, login, logout, refresh, portalUrl }}>{children}</AuthContext.Provider>
 }
@@ -267,8 +270,55 @@ export function LoginPage({ portal }: { portal: Portal }) {
     return <Navigate to={target} replace/>
   }
 
-  const demoLabel = config.mode === 'v1-demo' ? 'Backend V1 demo — chọn vai trò để đăng nhập:' : 'Demo frontend — chọn luồng để xem giao diện:'
-  return <main className="auth-page"><section className="auth-card"><div className="auth-brand"><span><Shield/></span><div><strong>CabinSentinel</strong><small>Connected safety platform</small></div></div><div className="auth-copy"><span className="auth-eyebrow">Đăng nhập an toàn</span><h1>{portal === 'owner' ? 'Theo dõi người thân trên mọi hành trình' : 'Điều hành hệ thống từ một control room'}</h1><p>Một tài khoản, hai không gian làm việc. Quyền truy cập được backend xác minh theo vai trò và quan hệ với phương tiện.</p></div>{error && <div className="auth-error" role="alert">{error}</div>}{config.mode === 'session' ? <form className="auth-form" onSubmit={submit}><label><span>Email</span><input type="email" autoComplete="username" required value={email} onChange={event => setEmail(event.target.value)} placeholder="name@example.com"/></label><label><span>Mật khẩu</span><input type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} placeholder="••••••••••••"/></label><button className="auth-primary" type="submit" disabled={submitting}>{submitting ? 'Đang đăng nhập…' : 'Đăng nhập'}</button></form> : <div className="auth-personas"><p>{demoLabel}</p><button onClick={() => void choose('owner')}><span>Chủ xe / Người chăm sóc</span><small>OWNER</small></button><button onClick={() => void choose('operations')}><span>Nhân viên vận hành</span><small>ADMIN</small></button></div>}<div className="auth-trust"><span><Shield/></span><p><strong>{config.mode === 'v1-demo' ? 'Token demo chỉ lưu trong sessionStorage.' : 'Phiên production dùng refresh cookie HttpOnly.'}</strong><small>{config.mode === 'v1-demo' ? 'Backend tự tắt endpoint này trong production.' : 'Access token ngắn hạn không được lưu trong localStorage.'}</small></p></div></section><aside className="auth-visual"><span>CabinSentinel</span><h2>Phát hiện sớm.<br/>Phản ứng đúng.<br/>Bảo vệ riêng tư.</h2><div><b>01</b><p><strong>Edge-first</strong><small>Dữ liệu nhạy cảm được xử lý gần phương tiện.</small></p></div><div><b>02</b><p><strong>Role-aware</strong><small>Mỗi người chỉ thấy đúng tài nguyên được phép.</small></p></div><div><b>03</b><p><strong>Fail-safe</strong><small>Không bao giờ suy diễn trạng thái chưa xác minh là an toàn.</small></p></div></aside></main>
+  const selectRole = (persona: Portal) => {
+    if (config.mode === 'session') {
+      if (persona !== portal) location.assign(portalUrl(persona))
+      return
+    }
+    void choose(persona)
+  }
+
+  return <main className="auth-page">
+    <section className="auth-card">
+      <div className="auth-brand"><span><Shield/></span><div><strong>CabinSentinel</strong><small>Hệ thống an toàn kết nối</small></div></div>
+      <div className="auth-copy">
+        <span className="auth-eyebrow">Chào mừng trở lại</span>
+        <h1>Đăng nhập vào hệ thống</h1>
+        <p>Chọn đúng loại tài khoản để truy cập không gian làm việc dành riêng cho bạn.</p>
+      </div>
+
+      <div className="auth-role-picker" aria-label="Chọn loại tài khoản">
+        <p>Bạn đăng nhập với vai trò</p>
+        <div>
+          <button type="button" className={portal === 'operations' ? 'is-active' : ''} aria-pressed={portal === 'operations'} onClick={() => selectRole('operations')}>
+            <span className="auth-role-icon"><Shield/></span>
+            <span><strong>Admin</strong><small>Quản trị và vận hành hệ thống</small></span>
+            <b>ADMIN</b>
+          </button>
+          <button type="button" className={portal === 'owner' ? 'is-active' : ''} aria-pressed={portal === 'owner'} onClick={() => selectRole('owner')}>
+            <span className="auth-role-icon auth-role-user">U</span>
+            <span><strong>User</strong><small>Theo dõi phương tiện và cảnh báo</small></span>
+            <b>USER</b>
+          </button>
+        </div>
+      </div>
+
+      {error && <div className="auth-error" role="alert">{error}</div>}
+      {config.mode === 'session' ? <form className="auth-form" onSubmit={submit}>
+        <label><span>Email</span><input type="email" autoComplete="username" required value={email} onChange={event => setEmail(event.target.value)} placeholder="name@example.com"/></label>
+        <label><span>Mật khẩu</span><input type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} placeholder="••••••••••••"/></label>
+        <button className="auth-primary" type="submit" disabled={submitting}>{submitting ? 'Đang đăng nhập…' : `Đăng nhập với vai trò ${portal === 'operations' ? 'Admin' : 'User'}`}</button>
+      </form> : <p className="auth-demo-hint">Chế độ demo: chọn Admin hoặc User phía trên để vào hệ thống.</p>}
+
+      <div className="auth-trust"><span><Shield/></span><p><strong>{config.mode === 'v1-demo' ? 'Token demo chỉ lưu trong sessionStorage.' : 'Phiên đăng nhập được bảo vệ an toàn.'}</strong><small>{config.mode === 'v1-demo' ? 'Backend tự tắt endpoint demo trong môi trường production.' : 'Vai trò thật được backend xác minh sau khi đăng nhập.'}</small></p></div>
+    </section>
+    <aside className="auth-visual">
+      <span>CabinSentinel</span><h2>Một cổng đăng nhập.<br/>Hai vai trò.<br/>Đúng quyền truy cập.</h2>
+      <div><b>01</b><p><strong>Admin</strong><small>Quản trị người dùng, phương tiện và toàn bộ hệ thống.</small></p></div>
+      <div><b>02</b><p><strong>User</strong><small>Theo dõi phương tiện, trạng thái cabin và các cảnh báo.</small></p></div>
+      <div><b>03</b><p><strong>Bảo mật theo vai trò</strong><small>Mỗi tài khoản chỉ thấy dữ liệu và chức năng được cấp phép.</small></p></div>
+    </aside>
+  </main>
 }
 
 export function AuthCallback({ portal }: { portal: Portal }) {
@@ -283,11 +333,11 @@ export function AuthCallback({ portal }: { portal: Portal }) {
   return failed ? <main className="auth-message"><h1>Không thể hoàn tất đăng nhập</h1><p>Phiên chưa được backend xác minh.</p><a href="/login">Thử lại</a></main> : <AuthLoading/>
 }
 
-export function RequirePortal({ portal, children }: { portal: Portal; children: ReactNode }) {
+export function RequirePortal({ portal, children, loginPath = '/login' }: { portal: Portal; children: ReactNode; loginPath?: string }) {
   const { user, loading, portalUrl } = useAuth()
   const location = useLocation()
   if (loading) return <AuthLoading/>
-  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }}/>
+  if (!user) return <Navigate to={loginPath} replace state={{ from: location.pathname + location.search }}/>
   if (!canAccessPortal(user, portal)) return <main className="auth-message"><h1>Bạn không có quyền vào portal này</h1><p>Vai trò hiện tại không được backend cấp quyền truy cập.</p><a href={portalUrl(defaultPortal(user))}>Đi tới không gian được phép</a></main>
   return <>{children}</>
 }
@@ -295,7 +345,7 @@ export function RequirePortal({ portal, children }: { portal: Portal; children: 
 export function PortalMenu() {
   const { user, logout, portalUrl } = useAuth()
   if (!user) return null
-  return <div className="portal-menu"><span>{user.displayName.slice(0, 2).toUpperCase()}</span><div><strong>{user.displayName}</strong><small>{user.roles.join(' · ')}</small></div>{canAccessPortal(user, 'owner') && <a href={portalUrl('owner')}>Owner</a>}{canAccessPortal(user, 'operations') && <a href={portalUrl('operations')}>Operations</a>}<button onClick={() => void logout()}>Đăng xuất</button></div>
+  return <div className="portal-menu"><span>{user.displayName.slice(0, 2).toUpperCase()}</span><div><strong>{user.displayName}</strong><small>{user.roles.join(' · ')}</small></div>{canAccessPortal(user, 'owner') && <a href={portalUrl('owner')}>User</a>}{canAccessPortal(user, 'operations') && <a href={portalUrl('operations')}>Admin</a>}<button onClick={() => void logout()}>Đăng xuất</button></div>
 }
 
 export function AuthLoading() {

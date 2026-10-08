@@ -1,6 +1,7 @@
 import { CabinSentinelClient } from '@cabinsentinel/api-client'
 import { getPortalAccessToken, type AuthMode } from '@cabinsentinel/auth'
 import type { V1CabinState } from '@cabinsentinel/contracts'
+import { adminDemoEnabled, createAdminMockClient } from './adminDemo'
 
 export const vehicleId = import.meta.env.VITE_VEHICLE_ID || 'VF8-DEMO-01'
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8000' : window.location.origin)
@@ -10,6 +11,7 @@ const api = new CabinSentinelClient({
   credentials: authMode === 'mock' ? 'omit' : 'include',
   getAccessToken: () => getPortalAccessToken(apiBaseUrl, authMode),
 })
+export const platformClient = (adminDemoEnabled() ? createAdminMockClient() : api) as typeof api
 
 function flattenState(state: Awaited<ReturnType<typeof api.v1VehicleState>>): V1CabinState {
   return {
