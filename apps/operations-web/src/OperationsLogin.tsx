@@ -1,3 +1,5 @@
+import { LoginPage } from '@cabinsentinel/auth'
+
 export function OperationsLogin() {
-  return null
+  return <LoginPage portal="operations"/>
 }
