@@ -23,6 +23,17 @@ describe('production role mapping', () => {
     expect(user.roles).toEqual(['OWNER'])
     expect(user.vehicleIds).toEqual(['VF8-02'])
     expect(canAccessPortal(user, 'owner')).toBe(true)
+    expect(canAccessPortal(user, 'operations')).toBe(false)
     expect(defaultPortal(user)).toBe('owner')
+  })
+
+  it('does not treat the selected portal as an authorization grant', () => {
+    const operator = mapV1User({ role: 'operator', subject: 'operator-1', trip_id: null, vehicle_ids: [] })
+    const caregiver = mapV1User({ role: 'caregiver', subject: 'caregiver-1', trip_id: null, vehicle_ids: ['VF8-03'] })
+
+    expect(canAccessPortal(operator, 'operations')).toBe(true)
+    expect(canAccessPortal(operator, 'owner')).toBe(false)
+    expect(canAccessPortal(caregiver, 'owner')).toBe(true)
+    expect(canAccessPortal(caregiver, 'operations')).toBe(false)
   })
 })

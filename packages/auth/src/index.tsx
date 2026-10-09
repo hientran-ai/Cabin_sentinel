@@ -12,7 +12,7 @@ interface AuthValue {
   loading: boolean
   error?: string
   config: AuthConfig
-  login: (input?: Portal | LoginCredentials) => Promise<void>
+  login: (input?: Portal | LoginCredentials, expectedPortal?: Portal) => Promise<void>
   logout: () => Promise<void>
   refresh: () => Promise<User | undefined>
   portalUrl: (portal: Portal) => string
@@ -171,7 +171,7 @@ export function AuthProvider({ config, children }: { config: AuthConfig; childre
   useEffect(() => { void refresh() }, [refresh])
   const portalUrl = useCallback((portal: Portal) => portal === 'owner' ? config.ownerUrl : config.operationsUrl, [config])
 
-  const login = useCallback(async (input?: Portal | LoginCredentials) => {
+  const login = useCallback(async (input?: Portal | LoginCredentials, expectedPortal?: Portal) => {
     setError(undefined)
     if (config.mode === 'mock') {
       if (typeof input !== 'string') return
@@ -200,6 +200,15 @@ export function AuthProvider({ config, children }: { config: AuthConfig; childre
       const session = await client.v1PlatformLogin(input.email.trim(), input.password)
       storeSession(session)
       const next = mapV1User(await client.v1Me(), session.user)
+      if (expectedPortal && !canAccessPortal(next, expectedPortal)) {
+        try { await client.v1PlatformLogout(csrfToken()) } catch { /* The local session is still rejected below. */ }
+        clearSession()
+        setUser(undefined)
+        setError(expectedPortal === 'operations'
+          ? 'Tài khoản này không có quyền Admin hoặc Operations.'
+          : 'Tài khoản này không có quyền truy cập không gian User.')
+        return
+      }
       setUser(next)
     } catch (reason) {
       clearSession()
@@ -246,36 +255,27 @@ export function LoginPage({ portal }: { portal: Portal }) {
   const locationState = useLocation().state as { from?: string } | null
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [selectedPortal, setSelectedPortal] = useState<Portal>(portal)
+  const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
-  const choose = async (persona: Portal) => {
-    if (persona !== portal) {
-      const query = config.mode === 'v1-demo' ? 'demo_role' : 'mock_role'
-      const target = portalUrl(persona)
-      location.assign(`${target}${target.includes('?') ? '&' : '?'}${query}=${persona}`)
-      return
-    }
-    await login(persona)
-  }
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setSubmitting(true)
-    try { await login({ email, password }) } finally { setSubmitting(false) }
+    try { await login({ email, password }, selectedPortal) } finally { setSubmitting(false) }
+  }
+  const demoLogin = async () => {
+    setSubmitting(true)
+    try { await login(selectedPortal) } finally { setSubmitting(false) }
   }
 
   if (loading) return <AuthLoading/>
   if (user) {
-    const target = canAccessPortal(user, portal) ? (locationState?.from || (portal === 'owner' ? '/overview' : '/admin')) : portalUrl(defaultPortal(user))
-    if (/^https?:/.test(target)) { location.assign(target); return <AuthLoading/> }
+    const destination = defaultPortal(user)
+    const canRestoreRequestedRoute = destination === portal && canAccessPortal(user, portal)
+    const target = canRestoreRequestedRoute ? (locationState?.from || (portal === 'owner' ? '/overview' : '/admin')) : portalUrl(destination)
+    if (destination !== portal || /^https?:/.test(target)) { location.assign(target); return <AuthLoading/> }
     return <Navigate to={target} replace/>
-  }
-
-  const selectRole = (persona: Portal) => {
-    if (config.mode === 'session') {
-      if (persona !== portal) location.assign(portalUrl(persona))
-      return
-    }
-    void choose(persona)
   }
 
   return <main className="auth-page">
@@ -287,28 +287,26 @@ export function LoginPage({ portal }: { portal: Portal }) {
         <p>Chọn đúng loại tài khoản để truy cập không gian làm việc dành riêng cho bạn.</p>
       </div>
 
-      <div className="auth-role-picker" aria-label="Chọn loại tài khoản">
-        <p>Bạn đăng nhập với vai trò</p>
-        <div>
-          <button type="button" className={portal === 'operations' ? 'is-active' : ''} aria-pressed={portal === 'operations'} onClick={() => selectRole('operations')}>
-            <span className="auth-role-icon"><Shield/></span>
-            <span><strong>Admin</strong><small>Quản trị và vận hành hệ thống</small></span>
-            <b>ADMIN</b>
-          </button>
-          <button type="button" className={portal === 'owner' ? 'is-active' : ''} aria-pressed={portal === 'owner'} onClick={() => selectRole('owner')}>
+      <div className="auth-role-picker">
+        <p id="auth-role-label">Bạn muốn truy cập với vai trò</p>
+        <div role="tablist" aria-labelledby="auth-role-label">
+          <button type="button" role="tab" className={selectedPortal === 'owner' ? 'is-active' : ''} aria-selected={selectedPortal === 'owner'} onClick={() => setSelectedPortal('owner')}>
             <span className="auth-role-icon auth-role-user">U</span>
             <span><strong>User</strong><small>Theo dõi phương tiện và cảnh báo</small></span>
-            <b>USER</b>
+          </button>
+          <button type="button" role="tab" className={selectedPortal === 'operations' ? 'is-active' : ''} aria-selected={selectedPortal === 'operations'} onClick={() => setSelectedPortal('operations')}>
+            <span className="auth-role-icon"><Shield/></span>
+            <span><strong>Admin</strong><small>Quản trị và vận hành hệ thống</small></span>
           </button>
         </div>
       </div>
 
       {error && <div className="auth-error" role="alert">{error}</div>}
       {config.mode === 'session' ? <form className="auth-form" onSubmit={submit}>
-        <label><span>Email</span><input type="email" autoComplete="username" required value={email} onChange={event => setEmail(event.target.value)} placeholder="name@example.com"/></label>
-        <label><span>Mật khẩu</span><input type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} placeholder="••••••••••••"/></label>
-        <button className="auth-primary" type="submit" disabled={submitting}>{submitting ? 'Đang đăng nhập…' : `Đăng nhập với vai trò ${portal === 'operations' ? 'Admin' : 'User'}`}</button>
-      </form> : <p className="auth-demo-hint">Chế độ demo: chọn Admin hoặc User phía trên để vào hệ thống.</p>}
+        <label><span>Email</span><input type="email" inputMode="email" autoComplete="username" required disabled={submitting} value={email} onChange={event => setEmail(event.target.value)} placeholder="name@example.com"/></label>
+        <label><span>Mật khẩu</span><div className="auth-password"><input type={showPassword ? 'text' : 'password'} autoComplete="current-password" required disabled={submitting} value={password} onChange={event => setPassword(event.target.value)} placeholder="••••••••••••"/><button type="button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} aria-pressed={showPassword}>{showPassword ? 'Ẩn' : 'Hiện'}</button></div></label>
+        <button className="auth-primary" type="submit" disabled={submitting} aria-busy={submitting}>{submitting && <span className="auth-button-spinner" aria-hidden="true"/>}{submitting ? 'Đang xác minh…' : `Đăng nhập với vai trò ${selectedPortal === 'operations' ? 'Admin' : 'User'}`}</button>
+      </form> : <div className="auth-demo-login"><p className="auth-demo-hint">Chế độ demo sử dụng phiên mô phỏng và không thay đổi cơ chế đăng nhập production.</p><button className="auth-primary" type="button" disabled={submitting} onClick={() => void demoLogin()}>{submitting ? 'Đang mở phiên…' : `Tiếp tục với vai trò ${selectedPortal === 'operations' ? 'Admin' : 'User'}`}</button></div>}
 
       <div className="auth-trust"><span><Shield/></span><p><strong>{config.mode === 'v1-demo' ? 'Token demo chỉ lưu trong sessionStorage.' : 'Phiên đăng nhập được bảo vệ an toàn.'}</strong><small>{config.mode === 'v1-demo' ? 'Backend tự tắt endpoint demo trong môi trường production.' : 'Vai trò thật được backend xác minh sau khi đăng nhập.'}</small></p></div>
     </section>
