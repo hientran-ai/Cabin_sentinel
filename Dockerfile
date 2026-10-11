@@ -49,7 +49,6 @@ RUN if [ "$BUNDLE_STOCK_DEMO_MODEL" = "true" ]; then \
 # (docker-compose does) or accounts, incidents and the audit log are lost when the container is replaced.
 RUN mkdir -p /app/data /tmp/ultralytics && chown -R appuser:appuser /app /tmp/ultralytics
 VOLUME ["/app/data"]
-ENV STORAGE_PERSISTENT=
 
 USER appuser
 
