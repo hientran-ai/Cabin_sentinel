@@ -67,3 +67,23 @@ def age_classifier(status: str | None = None) -> dict:
         "available": False, "reason": "not_loaded",
         "sha256": file_sha256(path),
     }
+
+
+def storage(db_path: str) -> dict:
+    """Is the database on a volume that survives a restart? A free HF Space or an unmounted container path is not."""
+    from src.config import get_settings
+
+    configured = get_settings().storage_persistent
+    path = Path(db_path).resolve()
+    mounted = any(p != Path("/") and os.path.ismount(p) for p in [path.parent, *path.parent.parents])
+    persistent = configured if configured is not None else mounted
+    return {"persistent": bool(persistent), "path_kind": "volume" if persistent else "ephemeral",
+            "note": None if persistent else "Dữ liệu mất khi dịch vụ khởi động lại. Gắn volume (Docker) hoặc Persistent Storage (HF) và đặt CABINSENTINEL_DB_PATH vào đó."}
+
+
+def snapshot(app) -> dict:
+    """One view of the loaded models, shared by /health and /admin/system so they can never disagree."""
+    provider = getattr(app.state, "vision_provider", None)
+    age_status = getattr(provider, "age_status", "disabled")
+    return {"vision_model": vision_model(), "privacy_model": privacy_model(), "age_classifier": age_classifier(age_status),
+            "provider_ready": provider is not None, "age_status": age_status}

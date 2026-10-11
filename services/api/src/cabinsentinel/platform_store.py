@@ -695,6 +695,11 @@ class PlatformStore:
         return self._all("SELECT ts, firmware, battery_pct, rssi_dbm, status FROM heartbeats WHERE device_id=? ORDER BY id DESC LIMIT ?",
                          (device_id, limit))
 
+    def reset_vehicle_ops(self, vehicle_id: str) -> None:
+        """Demo reset: drop operator work (assignments, notes, commands) and samples of one vehicle."""
+        for table in ("incident_ops", "commands", "samples"):
+            self._run(f"DELETE FROM {table} WHERE vehicle_id=?", (vehicle_id,))  # noqa: S608 - fixed names
+
     # -- telemetry ---------------------------------------------------------
     def record_sample(self, vehicle_id: str, state: dict | None) -> None:
         if not state:
