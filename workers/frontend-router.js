@@ -33,7 +33,19 @@ function adminAssetRequest(request, pathname) {
   return new Request(target, { method: request.method, headers: request.headers })
 }
 
-const legacyLoginPaths = new Set(['/', '/login', '/user/login', '/signin', '/sign-in', '/admin/signin', '/admin/sign-in'])
+const legacyLoginPaths = new Set(['/', '/login', '/signin', '/sign-in', '/admin/signin', '/admin/sign-in'])
+// Family users (owners, caregivers) sign in on the Cabin Noir mobile web with their phone number.
+const mobileLoginPaths = new Set(['/user', '/user/login', '/app'])
+
+function mobileAppRedirect(env) {
+  try {
+    const target = new URL(env.MOBILE_APP_URL || 'https://cabin-noir.duckdns.org/app/')
+    if (target.protocol !== 'https:') return null
+    return Response.redirect(target.toString(), 302)
+  } catch {
+    return null
+  }
+}
 
 function unifiedLoginRedirect(request) {
   const target = new URL('/admin/login', request.url)
@@ -44,7 +56,9 @@ export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url)
     if (pathname === '/health' || pathname.startsWith('/api/')) return proxyBackend(request, env)
-    if (legacyLoginPaths.has(pathname.replace(/\/+$/, '') || '/')) return unifiedLoginRedirect(request)
+    const route = pathname.replace(/\/+$/, '') || '/'
+    if (mobileLoginPaths.has(route)) return mobileAppRedirect(env) || unifiedLoginRedirect(request)
+    if (legacyLoginPaths.has(route)) return unifiedLoginRedirect(request)
     if (pathname === '/admin' || pathname.startsWith('/admin/')) {
       return env.ASSETS.fetch(adminAssetRequest(request, pathname))
     }

@@ -1,0 +1,15 @@
+backend/.venv/
+backend/*.db
+__pycache__/
+.pytest_cache/
+ios/build/
+*.xcuserstate
+xcuserdata/
+.DS_Store
+backend/.env
+backend/data/
+
+# local Xcode build folders
+ios/build*/
+# test videos stay on the developer machine (they may show real people)
+ios/CabinSentinel/Noir/DemoClips/

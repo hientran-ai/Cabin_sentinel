@@ -1,0 +1,133 @@
+import { ICONS } from "./icons.js";
+
+const SVG = "http://www.w3.org/2000/svg";
+// Tiny DOM helpers. Text always goes through textContent, never innerHTML, so server data cannot inject markup.
+export function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (k.startsWith("aria-") && typeof v === "boolean") { el.setAttribute(k, String(v)); continue; }   // ARIA wants "true"/"false", not an empty attribute
+    if (v === false || v == null) continue;
+    if (k === "class") el.className = v;
+    else if (k === "on") for (const [ev, fn] of Object.entries(v)) el.addEventListener(ev, fn);
+    else if (k === "dataset") Object.assign(el.dataset, v);
+    else if (k in el && k !== "list") { try { el[k] = v; } catch { el.setAttribute(k, v); } }
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat(Infinity)) {
+    if (kid == null || kid === false) continue;
+    el.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+  }
+  return el;
+}
+
+// Static SVG icons (stroke style). These strings are constants, not data.
+
+export function icon(name) {
+  const s = document.createElementNS(SVG, "svg");
+  s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("fill", "none"); s.setAttribute("stroke", "currentColor");
+  s.setAttribute("stroke-width", "1.8"); s.setAttribute("stroke-linecap", "round"); s.setAttribute("stroke-linejoin", "round");
+  s.setAttribute("aria-hidden", "true"); s.setAttribute("class", "ic");
+  let parts = ICONS[name];
+  if (!parts) { console.warn("icon missing:", name); parts = ICONS.help; }        // a visible "?" instead of a wrong picture
+  for (const [tag, attrs] of parts) {
+    const el = document.createElementNS(SVG, tag);
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+    s.append(el);
+  }
+  return s;
+}
+
+export const fmt = {
+  clock(ts) { return ts ? new Date(ts * 1000).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "–"; },
+  datetime(ts) { return ts ? new Date(ts * 1000).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "–"; },
+  ago(ts) {
+    if (!ts) return "chưa có";
+    const s = Math.max(0, Math.round(Date.now() / 1000 - ts));
+    if (s < 10) return "vừa xong";
+    if (s < 60) return `${s} giây trước`;
+    if (s < 3600) return `${Math.round(s / 60)} phút trước`;
+    if (s < 86400) return `${Math.round(s / 3600)} giờ trước`;
+    return `${Math.round(s / 86400)} ngày trước`;
+  },
+  dur(s) {
+    if (s == null) return "–";
+    s = Math.round(s);
+    if (s < 60) return `${s} giây`;
+    if (s < 3600) { const m = Math.floor(s / 60), r = s % 60; return r ? `${m} phút ${r} giây` : `${m} phút`; }
+    const hh = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); return m ? `${hh} giờ ${m} phút` : `${hh} giờ`;
+  },
+  basis(b) { return { measured: "Đo thật", simulated: "Mô phỏng", unknown: "Chưa rõ nguồn" }[b] || b; },
+  secs(n) { const m = Math.floor(n / 60); return `${m}:${String(n % 60).padStart(2, "0")}`; },
+};
+
+export function toast(message, kind = "") {
+  let box = document.querySelector(".toasts");
+  if (!box) { box = h("div", { class: "toasts", role: "status", "aria-live": "polite" }); document.body.append(box); }
+  for (const old of box.querySelectorAll(".toast")) if (old.textContent === message) old.remove();   // the same message never stacks
+  while (box.children.length >= 2) box.firstElementChild.remove();                                   // at most two at a time
+  const t = h("div", { class: `toast ${kind}` }, message);
+  box.append(t);
+  setTimeout(() => t.remove(), kind === "err" ? 6000 : 3500);
+}
+
+// Bottom sheet. Resolves with whatever `close(value)` is called with. Escape and the backdrop dismiss it.
+export function sheet(build, { title } = {}) {
+  return new Promise((resolve) => {
+    const prev = document.activeElement;
+    let done = false;
+    const close = (v) => { if (done) return; done = true; scrim.remove(); document.removeEventListener("keydown", onKey); removeEventListener("hashchange", onNav); prev && prev.focus && prev.focus(); resolve(v); };
+    const onKey = (e) => { if (e.key === "Escape") close(undefined); };
+    const onNav = () => close(undefined);                 // a sheet belongs to the page that opened it
+    addEventListener("hashchange", onNav);
+    const body = h("div", { class: "gap" });
+    const sh = h("div", { class: "sheet", role: "dialog", "aria-modal": "true", "aria-label": title || "Hộp thoại" },
+      title && h("div", { class: "row between", style: "margin-bottom:12px" }, h("h2", {}, title),
+        h("button", { class: "icon-btn", "aria-label": "Đóng", on: { click: () => close(undefined) } }, icon("x"))), body);
+    const scrim = h("div", { class: "scrim", on: { click: (e) => { if (e.target === scrim) close(undefined); } } }, sh);
+    document.body.append(scrim);
+    document.addEventListener("keydown", onKey);
+    body.append(build(close));
+    const first = sh.querySelector("input,button:not(.icon-btn),select"); first && first.focus();
+  });
+}
+
+export const confirmDialog = ({ title, message, ok = "Đồng ý", danger = false, cancel = "Quay lại" }) =>
+  sheet((close) => h("div", { class: "gap" },
+    h("p", { style: "margin:0" }, message),
+    h("div", { class: "row wrap" },
+      h("button", { class: "btn grow", on: { click: () => close(false) } }, cancel),
+      h("button", { class: `btn grow ${danger ? "danger" : "primary"}`, on: { click: () => close(true) } }, ok))), { title }).then((v) => v === true);
+
+export function field(label, input, hint) {
+  const id = "f" + Math.random().toString(36).slice(2, 8);
+  input.id = id;
+  return h("div", { class: "field" }, h("label", { for: id }, label), input, hint && h("div", { class: "small muted" }, hint));
+}
+
+export function switchRow(label, sub, checked, onChange) {
+  const input = h("input", { type: "checkbox", checked, role: "switch", on: { change: (e) => onChange(e.target.checked, e.target) } });
+  return h("label", { class: "switch" }, h("div", {}, h("div", {}, label), sub && h("div", { class: "small muted" }, sub)), input);
+}
+
+export async function busy(btn, fn) {
+  btn.disabled = true;
+  try { return await fn(); } finally { btn.disabled = false; }
+}
+
+export function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination); o.frequency.value = 880; g.gain.value = 0.08;
+    o.start(); setTimeout(() => { o.stop(); ctx.close(); }, 350);
+  } catch { /* audio blocked */ }
+}
+
+/** The vehicle's photo, or a neutral drawing for models we have no photo of (never another model's photo). */
+export function carPic(v, cls = "carpic") {
+  const img = v && v.image;
+  const file = img === "vf6" ? "car-vf6" : img === "vf8" ? (v.color === "red" ? "car-vf8-red" : v.color === "black" ? "car-vf8-black" : "car-vf8") : null;
+  const label = v ? `${v.model || "Xe"}${v.color ? ` màu ${({ white: "trắng", black: "đen", red: "đỏ" })[v.color] || v.color}` : ""}` : "Xe";
+  if (file) return h("img", { class: cls, src: `img/${file}.png`, alt: label, loading: "lazy", decoding: "async" });
+  return h("div", { class: `${cls} generic`, role: "img", "aria-label": label }, icon("car-side"));
+}

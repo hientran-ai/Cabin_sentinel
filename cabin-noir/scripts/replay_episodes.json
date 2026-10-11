@@ -1,0 +1,50 @@
+{
+ "model": "yolov8n.pt",
+ "sample_fps": 2.0,
+ "conf": 0.12,
+ "clips": [
+  {
+   "clip": "gemini_generated_video_1383a244.mp4",
+   "duration_s": 10.0,
+   "sampled": 20,
+   "dark_samples": 0,
+   "episodes": [
+    {
+     "kind": "person",
+     "seat": "rear_left",
+     "name": null,
+     "start_t": 0.0,
+     "duration_s": 10.0,
+     "frames": 20,
+     "conf_mean": 0.92,
+     "conf_max": 0.93
+    }
+   ]
+  },
+  {
+   "clip": "1791194699890_4129929173257862706_g5999115891161810211.mp4",
+   "duration_s": 8.33,
+   "sampled": 17,
+   "dark_samples": 0,
+   "episodes": [
+    {
+     "kind": "person",
+     "seat": "rear_mid",
+     "name": null,
+     "start_t": 2.51,
+     "duration_s": 2.0,
+     "frames": 4,
+     "conf_mean": 0.17,
+     "conf_max": 0.28
+    }
+   ]
+  },
+  {
+   "clip": "1791195059580_4129929173257862706_g5999115891161810211.mp4",
+   "duration_s": 12.5,
+   "sampled": 25,
+   "dark_samples": 0,
+   "episodes": []
+  }
+ ]
+}

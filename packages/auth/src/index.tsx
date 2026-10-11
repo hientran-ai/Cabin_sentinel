@@ -6,7 +6,26 @@ import type { Permission, User, V1Me, V1PlatformUser, V1SessionResponse } from '
 export type Portal = 'owner' | 'operations'
 export type AuthMode = 'session' | 'v1-demo' | 'mock'
 export type AuthErrorCode = 'session_verification_failed' | 'credentials_required' | 'demo_disabled' | 'demo_unavailable' | 'wrong_portal_operations' | 'wrong_portal_owner' | 'invalid_credentials' | 'rate_limited' | 'login_unavailable'
-export interface AuthConfig { apiBaseUrl: string; mode: AuthMode; ownerUrl: string; operationsUrl: string }
+export interface AuthConfig {
+  apiBaseUrl: string; mode: AuthMode; ownerUrl: string; operationsUrl: string
+  /** Cabin Noir mobile web. When set, the "User" choice signs in there (phone number + one-time code) instead of with email. */
+  mobileAppUrl?: string
+}
+
+export const DEFAULT_MOBILE_APP_URL = 'https://cabin-noir.duckdns.org/app/'
+
+/** Where a family user signs in: the Cabin Noir mobile web when configured (https only, or localhost while developing). */
+export function mobileSignInUrl(config: Pick<AuthConfig, 'mobileAppUrl'>): string | undefined {
+  const raw = config.mobileAppUrl?.trim()
+  if (!raw) return undefined
+  try {
+    const url = new URL(raw)
+    const local = url.hostname === 'localhost' || url.hostname === '127.0.0.1'
+    return url.protocol === 'https:' || (local && url.protocol === 'http:') ? url.toString() : undefined
+  } catch {
+    return undefined
+  }
+}
 export interface LoginCredentials { email: string; password: string }
 interface AuthValue {
   user?: User
@@ -286,6 +305,7 @@ const loginCopy = {
     sessionSafe: 'Phiên đăng nhập được bảo vệ an toàn.', sessionSafeDetail: 'Vai trò thật được backend xác minh sau khi đăng nhập.',
     demoSafe: 'Token demo chỉ lưu trong sessionStorage.', demoSafeDetail: 'Backend tự tắt endpoint demo trong môi trường production.',
     hero: <>Một cổng đăng nhập.<br/>Hai vai trò.<br/>Đúng quyền truy cập.</>,
+    mobileTitle: 'Chủ xe và người thân dùng Cabin Noir', mobileDetail: 'Đăng nhập bằng số điện thoại, mã một lần gửi qua Telegram. Mở được trên điện thoại và máy tính.', mobileOpen: 'Mở Cabin Noir', mobileNote: 'Không cần email. Tài khoản Cabin Noir tách riêng với tài khoản quản trị.',
     adminHero: 'Quản trị người dùng, phương tiện và toàn bộ hệ thống.', userHero: 'Theo dõi phương tiện, trạng thái cabin và các cảnh báo.', rbac: 'Bảo mật theo vai trò', rbacHero: 'Mỗi tài khoản chỉ thấy dữ liệu và chức năng được cấp phép.',
   },
   en: {
@@ -298,6 +318,7 @@ const loginCopy = {
     sessionSafe: 'Your session is securely protected.', sessionSafeDetail: 'The backend verifies your actual role after sign-in.',
     demoSafe: 'The demo token stays in sessionStorage.', demoSafeDetail: 'The backend disables demo login in production.',
     hero: <>One login gateway.<br/>Two workspaces.<br/>Verified access.</>,
+    mobileTitle: 'Owners and family use Cabin Noir', mobileDetail: 'Sign in with your phone number and a one-time code sent over Telegram. Works on phones and computers.', mobileOpen: 'Open Cabin Noir', mobileNote: 'No email needed. Cabin Noir accounts are separate from admin accounts.',
     adminHero: 'Manage users, vehicles and system operations.', userHero: 'Monitor vehicles, cabin status and safety alerts.', rbac: 'Role-based security', rbacHero: 'Each account only sees authorized data and capabilities.',
   },
 } as const
@@ -331,6 +352,7 @@ export function LoginPage({ portal }: { portal: Portal }) {
     return saved === 'en' || saved === 'vi' ? saved : navigator.language.toLowerCase().startsWith('vi') ? 'vi' : 'en'
   })
   const copy = loginCopy[locale]
+  const mobileUrl = mobileSignInUrl(config)
 
   useEffect(() => {
     localStorage.setItem('cs_login_locale', locale)
@@ -386,7 +408,12 @@ export function LoginPage({ portal }: { portal: Portal }) {
       </div>
 
       {error && <div className="auth-error" role="alert">{authErrorCopy[locale][error]}</div>}
-      {config.mode === 'session' ? <form className="auth-form" onSubmit={submit}>
+      {selectedPortal === 'owner' && mobileUrl ? <div className="auth-mobile">
+        <p className="auth-mobile-title">{copy.mobileTitle}</p>
+        <p className="auth-mobile-detail">{copy.mobileDetail}</p>
+        <a className="auth-primary auth-mobile-open" href={mobileUrl}>{copy.mobileOpen}</a>
+        <p className="auth-mobile-note">{copy.mobileNote}</p>
+      </div> : config.mode === 'session' ? <form className="auth-form" onSubmit={submit}>
         <label><span>{copy.email}</span><input type="email" inputMode="email" autoComplete="username" required disabled={submitting} value={email} onChange={event => setEmail(event.target.value)} placeholder="name@example.com"/></label>
         <label><span>{copy.password}</span><div className="auth-password"><input type={showPassword ? 'text' : 'password'} autoComplete="current-password" required disabled={submitting} value={password} onChange={event => setPassword(event.target.value)} placeholder="••••••••••••"/><button type="button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? copy.hidePassword : copy.showPassword} aria-pressed={showPassword}>{showPassword ? copy.hide : copy.show}</button></div></label>
         <button className="auth-primary" type="submit" disabled={submitting} aria-busy={submitting}>{submitting && <span className="auth-button-spinner" aria-hidden="true"/>}{submitting ? copy.signingIn : copy.signIn(selectedPortal === 'operations' ? copy.admin : copy.user)}</button>

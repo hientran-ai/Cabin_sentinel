@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canAccessPortal, defaultPortal, mapV1User, portalForPath, safeReturnPath } from './index'
+import { canAccessPortal, defaultPortal, mapV1User, mobileSignInUrl, portalForPath, safeReturnPath } from './index'
 
 describe('production role mapping', () => {
   it('routes an admin to Operations', () => {
@@ -50,5 +50,22 @@ describe('production role mapping', () => {
     expect(safeReturnPath('https://evil.example/admin')).toBeUndefined()
     expect(safeReturnPath('/login')).toBeUndefined()
     expect(safeReturnPath('/admin/login')).toBeUndefined()
+  })
+})
+
+describe('family users sign in on the Cabin Noir mobile web', () => {
+  it('uses the configured https address', () => {
+    expect(mobileSignInUrl({ mobileAppUrl: 'https://cabin-noir.duckdns.org/app/' })).toBe('https://cabin-noir.duckdns.org/app/')
+  })
+
+  it('allows plain http only on localhost', () => {
+    expect(mobileSignInUrl({ mobileAppUrl: 'http://localhost:8000/app/' })).toBe('http://localhost:8000/app/')
+    expect(mobileSignInUrl({ mobileAppUrl: 'http://example.com/app/' })).toBeUndefined()
+  })
+
+  it('rejects scripts and empty values, so the page falls back to the email form', () => {
+    expect(mobileSignInUrl({ mobileAppUrl: 'javascript:alert(1)' })).toBeUndefined()
+    expect(mobileSignInUrl({ mobileAppUrl: '' })).toBeUndefined()
+    expect(mobileSignInUrl({})).toBeUndefined()
   })
 })

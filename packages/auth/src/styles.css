@@ -98,3 +98,10 @@
 @media(max-width:920px){.auth-page{grid-template-columns:1fr!important}.auth-card{min-height:calc(100vh - 28px)}.auth-visual{display:none}}
 @media(max-width:560px){.auth-page{padding:0!important}.auth-card{min-height:100vh;padding:24px 18px;border:0;border-radius:0}.auth-brand{grid-template-columns:42px minmax(0,1fr) auto;margin-bottom:30px}.auth-brand>span{width:42px;height:42px}.auth-brand small{display:none}.auth-language{min-height:34px;padding:0 10px}.auth-role-picker button{min-height:96px;padding:10px 6px}.auth-role-picker button small{font-size:.58rem}}
 @media(prefers-reduced-motion:reduce){.auth-page *,.auth-loading *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* "User" choice: hand off to the Cabin Noir mobile web (phone number sign-in). Inherits colours so it reads on light and dark themes. */
+.auth-mobile{margin-top:18px;padding:16px;border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:17px;background:color-mix(in srgb,currentColor 5%,transparent);display:grid;gap:6px;color:inherit}
+.auth-mobile-title{margin:0;font-weight:850;font-size:.9rem;color:inherit}
+.auth-mobile-detail,.auth-mobile-note{margin:0;font-size:.78rem;line-height:1.55;color:inherit;opacity:.75}
+.auth-mobile-note{font-size:.7rem;opacity:.6;margin-top:6px}
+.auth-mobile-open{display:flex;align-items:center;justify-content:center;text-decoration:none;margin-top:10px}

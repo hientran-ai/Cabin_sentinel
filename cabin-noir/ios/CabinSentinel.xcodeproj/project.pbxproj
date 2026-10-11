@@ -1,0 +1,645 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		42945992D3881364C13B2A48 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F4D2173AF49C4DA578C929E7 /* Foundation.framework */; };
+		C9141E3A69F1E9E532D63124 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DBC836408D624D3867DC026A /* Assets.xcassets */; };
+		CF065DEA02EC805315BAF419 /* CabinNoirWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 663C09F80E3FA8014005F6BD /* CabinNoirWidgets.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E7604E27958CB9A619E1FECA /* CabinActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A252C8724067C34C0B5C28 /* CabinActivityAttributes.swift */; };
+		F2727696D8D81E578B4B8D80 /* CabinNoirWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5FCC6CE2D98805BB33201FE /* CabinNoirWidgets.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		5503DCD29466F9435750E6E5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CA000000000000000000000A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 677C0AF429B8AE1091DCBA29;
+			remoteInfo = CabinNoirWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		3CA7D6D9B247205ADAE407D0 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				CF065DEA02EC805315BAF419 /* CabinNoirWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		249BEE0E8980015B6049F9FF /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		663C09F80E3FA8014005F6BD /* CabinNoirWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CabinNoirWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B6A252C8724067C34C0B5C28 /* CabinActivityAttributes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CabinActivityAttributes.swift; path = ../CabinSentinel/Noir/CabinActivityAttributes.swift; sourceTree = "<group>"; };
+		CA0000000000000000000001 /* CabinSentinel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CabinSentinel.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CA0000000000000000000010 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		CA0000000000000000000101 /* CabinNoir.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CabinNoir.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D5FCC6CE2D98805BB33201FE /* CabinNoirWidgets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CabinNoirWidgets.swift; sourceTree = "<group>"; };
+		DBC836408D624D3867DC026A /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F4D2173AF49C4DA578C929E7 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		CA0000000000000000000110 /* Exceptions for "CabinSentinel" folder in "CabinSentinel" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Noir/NoirLiveActivity.swift,
+				Noir/NoirAccount.swift,
+				Noir/NoirAlert.swift,
+				Noir/NoirApp.swift,
+				Noir/NoirBell.swift,
+				Noir/NoirCabinLog.swift,
+				Noir/NoirCamera.swift,
+				Noir/NoirClimate.swift,
+				Noir/NoirDestination.swift,
+				Noir/NoirDevice.swift,
+				Noir/NoirGlance.swift,
+				Noir/NoirHistory.swift,
+				Noir/NoirHome.swift,
+				Noir/NoirLaunch.swift,
+				Noir/NoirList.swift,
+				Noir/NoirLive.swift,
+				Noir/NoirSchool.swift,
+				Noir/Production/DeviceModel.swift,
+				Noir/Production/DeviceSettings.swift,
+				Noir/Production/DeviceViews.swift,
+				Noir/Production/OwnerViews.swift,
+				Services/NoirTheme.swift,
+			);
+			target = CA0000000000000000000006 /* CabinSentinel */;
+		};
+		CA0000000000000000000111 /* Exceptions for "CabinSentinel" folder in "CabinNoir" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/CabinSentinelApp.swift,
+			);
+			target = CA0000000000000000000102 /* CabinNoir */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		CA0000000000000000000002 /* CabinSentinel */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				CA0000000000000000000110 /* Exceptions for "CabinSentinel" folder in "CabinSentinel" target */,
+				CA0000000000000000000111 /* Exceptions for "CabinSentinel" folder in "CabinNoir" target */,
+			);
+			path = CabinSentinel;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3F52F2DEA023639A61FF50F4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				42945992D3881364C13B2A48 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA0000000000000000000003 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA0000000000000000000107 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		78C132FDAAD6AB33A4D71423 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				CAC419B904C467718D741F79 /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		A11C9E35F8AE73DB972AA413 /* CabinNoirWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				D5FCC6CE2D98805BB33201FE /* CabinNoirWidgets.swift */,
+				249BEE0E8980015B6049F9FF /* Info.plist */,
+				B6A252C8724067C34C0B5C28 /* CabinActivityAttributes.swift */,
+				DBC836408D624D3867DC026A /* Assets.xcassets */,
+			);
+			name = CabinNoirWidgets;
+			path = CabinNoirWidgets;
+			sourceTree = "<group>";
+		};
+		CA0000000000000000000004 = {
+			isa = PBXGroup;
+			children = (
+				CA0000000000000000000002 /* CabinSentinel */,
+				CA0000000000000000000011 /* Config */,
+				CA0000000000000000000005 /* Products */,
+				78C132FDAAD6AB33A4D71423 /* Frameworks */,
+				A11C9E35F8AE73DB972AA413 /* CabinNoirWidgets */,
+			);
+			sourceTree = "<group>";
+		};
+		CA0000000000000000000005 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CA0000000000000000000001 /* CabinSentinel.app */,
+				CA0000000000000000000101 /* CabinNoir.app */,
+				663C09F80E3FA8014005F6BD /* CabinNoirWidgets.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		CA0000000000000000000011 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				CA0000000000000000000010 /* Info.plist */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		CAC419B904C467718D741F79 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				F4D2173AF49C4DA578C929E7 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		677C0AF429B8AE1091DCBA29 /* CabinNoirWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A6C26541F8DA5D6B870B2924 /* Build configuration list for PBXNativeTarget "CabinNoirWidgets" */;
+			buildPhases = (
+				EE2F82B25C391A5DBB66CCC5 /* Sources */,
+				3F52F2DEA023639A61FF50F4 /* Frameworks */,
+				388A389DC2D35DA6720CA60C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CabinNoirWidgets;
+			productName = CabinNoirWidgets;
+			productReference = 663C09F80E3FA8014005F6BD /* CabinNoirWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		CA0000000000000000000006 /* CabinSentinel */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CA0000000000000000000007 /* Build configuration list for PBXNativeTarget "CabinSentinel" */;
+			buildPhases = (
+				CA0000000000000000000008 /* Sources */,
+				CA0000000000000000000003 /* Frameworks */,
+				CA0000000000000000000009 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				CA0000000000000000000002 /* CabinSentinel */,
+			);
+			name = CabinSentinel;
+			productName = CabinSentinel;
+			productReference = CA0000000000000000000001 /* CabinSentinel.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CA0000000000000000000102 /* CabinNoir */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CA0000000000000000000103 /* Build configuration list for PBXNativeTarget "CabinNoir" */;
+			buildPhases = (
+				CA0000000000000000000106 /* Sources */,
+				CA0000000000000000000107 /* Frameworks */,
+				CA0000000000000000000108 /* Resources */,
+				3CA7D6D9B247205ADAE407D0 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				44610D32CD0621C9AA750A1C /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				CA0000000000000000000002 /* CabinSentinel */,
+			);
+			name = CabinNoir;
+			productName = CabinNoir;
+			productReference = CA0000000000000000000101 /* CabinNoir.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CA000000000000000000000A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2700;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					CA0000000000000000000006 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					CA0000000000000000000102 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+				};
+			};
+			buildConfigurationList = CA000000000000000000000B /* Build configuration list for PBXProject "CabinSentinel" */;
+			developmentRegion = vi;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				vi,
+				en,
+				Base,
+			);
+			mainGroup = CA0000000000000000000004;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = CA0000000000000000000005 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CA0000000000000000000006 /* CabinSentinel */,
+				CA0000000000000000000102 /* CabinNoir */,
+				677C0AF429B8AE1091DCBA29 /* CabinNoirWidgets */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		388A389DC2D35DA6720CA60C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C9141E3A69F1E9E532D63124 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA0000000000000000000009 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA0000000000000000000108 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CA0000000000000000000008 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA0000000000000000000106 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE2F82B25C391A5DBB66CCC5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F2727696D8D81E578B4B8D80 /* CabinNoirWidgets.swift in Sources */,
+				E7604E27958CB9A619E1FECA /* CabinActivityAttributes.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		44610D32CD0621C9AA750A1C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = CabinNoirWidgets;
+			target = 677C0AF429B8AE1091DCBA29 /* CabinNoirWidgets */;
+			targetProxy = 5503DCD29466F9435750E6E5 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		8CA4D5B389C95CAB6B1E442D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P5M34J84PB;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CabinNoirWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Cabin Noir Live";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.2;
+				NOIR_APP_ID = vn.cabinsentinel.noir;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOIR_APP_ID).widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		C4AFB1999CED4CF914CC4220 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P5M34J84PB;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CabinNoirWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Cabin Noir Live";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.2;
+				NOIR_APP_ID = vn.cabinsentinel.noir;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOIR_APP_ID).widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		CA000000000000000000000C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		CA000000000000000000000D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		CA000000000000000000000E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P5M34J84PB;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CabinSentinel;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Camera dùng để nhận diện người và thú cưng ở hàng ghế sau khi thiết bị này được đặt trong xe. Ảnh chỉ được xử lý trên máy, không được lưu hay gửi đi.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Ứng dụng kết nối tới máy chủ CabinSentinel của bạn khi máy chủ nằm trong mạng nội bộ (cùng Wi‑Fi).";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Thiết bị đặt trong xe dùng vị trí để biết xe đang chạy hay đang đỗ, và hiện vị trí xe cho chủ xe.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Chọn ảnh từ thư viện để gửi vào nhật ký xe. Chỉ ảnh bạn chọn và xác nhận mới được gửi.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.2;
+				PRODUCT_BUNDLE_IDENTIFIER = vn.cabinsentinel.app;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = vn.cabinsentinel.noir.namkhanh;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				"TARGETED_DEVICE_FAMILY[sdk=macosx*]" = "1,2";
+			};
+			name = Debug;
+		};
+		CA000000000000000000000F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P5M34J84PB;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CabinSentinel;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Camera dùng để nhận diện người và thú cưng ở hàng ghế sau khi thiết bị này được đặt trong xe. Ảnh chỉ được xử lý trên máy, không được lưu hay gửi đi.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Ứng dụng kết nối tới máy chủ CabinSentinel của bạn khi máy chủ nằm trong mạng nội bộ (cùng Wi‑Fi).";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Thiết bị đặt trong xe dùng vị trí để biết xe đang chạy hay đang đỗ, và hiện vị trí xe cho chủ xe.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Chọn ảnh từ thư viện để gửi vào nhật ký xe. Chỉ ảnh bạn chọn và xác nhận mới được gửi.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.2;
+				PRODUCT_BUNDLE_IDENTIFIER = vn.cabinsentinel.app;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = vn.cabinsentinel.noir.namkhanh;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				"TARGETED_DEVICE_FAMILY[sdk=macosx*]" = "1,2";
+			};
+			name = Release;
+		};
+		CA0000000000000000000104 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconNoir;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P5M34J84PB;
+				"ENABLE_APP_SANDBOX[sdk=macosx*]" = YES;
+				"ENABLE_OUTGOING_NETWORK_CONNECTIONS[sdk=macosx*]" = YES;
+				ENABLE_PREVIEWS = YES;
+				"ENABLE_RESOURCE_ACCESS_CAMERA[sdk=macosx*]" = YES;
+				"ENABLE_RESOURCE_ACCESS_LOCATION[sdk=macosx*]" = YES;
+				"ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY[sdk=macosx*]" = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Cabin Noir";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Camera dùng để nhận diện người và thú cưng ở hàng ghế sau khi thiết bị này được đặt trong xe. Ảnh chỉ được xử lý trên máy, không được lưu hay gửi đi.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Ứng dụng kết nối tới máy chủ CabinSentinel của bạn khi máy chủ nằm trong mạng nội bộ (cùng Wi-Fi).";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Thiết bị đặt trong xe dùng vị trí để biết xe đang chạy hay đang đỗ, và hiện vị trí xe cho chủ xe.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Chọn ảnh từ thư viện để gửi vào nhật ký xe. Chỉ ảnh bạn chọn và xác nhận mới được gửi.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.2;
+				NOIR_APP_ID = vn.cabinsentinel.noir;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOIR_APP_ID)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG PRODUCTION $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				"TARGETED_DEVICE_FAMILY[sdk=macosx*]" = "1,2";
+			};
+			name = Debug;
+		};
+		CA0000000000000000000105 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconNoir;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P5M34J84PB;
+				"ENABLE_APP_SANDBOX[sdk=macosx*]" = YES;
+				"ENABLE_OUTGOING_NETWORK_CONNECTIONS[sdk=macosx*]" = YES;
+				ENABLE_PREVIEWS = YES;
+				"ENABLE_RESOURCE_ACCESS_CAMERA[sdk=macosx*]" = YES;
+				"ENABLE_RESOURCE_ACCESS_LOCATION[sdk=macosx*]" = YES;
+				"ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY[sdk=macosx*]" = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Cabin Noir";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Camera dùng để nhận diện người và thú cưng ở hàng ghế sau khi thiết bị này được đặt trong xe. Ảnh chỉ được xử lý trên máy, không được lưu hay gửi đi.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Ứng dụng kết nối tới máy chủ CabinSentinel của bạn khi máy chủ nằm trong mạng nội bộ (cùng Wi-Fi).";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Thiết bị đặt trong xe dùng vị trí để biết xe đang chạy hay đang đỗ, và hiện vị trí xe cho chủ xe.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Chọn ảnh từ thư viện để gửi vào nhật ký xe. Chỉ ảnh bạn chọn và xác nhận mới được gửi.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.2;
+				NOIR_APP_ID = vn.cabinsentinel.noir;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOIR_APP_ID)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "PRODUCTION $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				"TARGETED_DEVICE_FAMILY[sdk=macosx*]" = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A6C26541F8DA5D6B870B2924 /* Build configuration list for PBXNativeTarget "CabinNoirWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C4AFB1999CED4CF914CC4220 /* Release */,
+				8CA4D5B389C95CAB6B1E442D /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CA0000000000000000000007 /* Build configuration list for PBXNativeTarget "CabinSentinel" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CA000000000000000000000E /* Debug */,
+				CA000000000000000000000F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CA000000000000000000000B /* Build configuration list for PBXProject "CabinSentinel" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CA000000000000000000000C /* Debug */,
+				CA000000000000000000000D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CA0000000000000000000103 /* Build configuration list for PBXNativeTarget "CabinNoir" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CA0000000000000000000104 /* Debug */,
+				CA0000000000000000000105 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = CA000000000000000000000A /* Project object */;
+}
