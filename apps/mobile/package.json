@@ -13,5 +13,5 @@
     "test": "vitest run"
   },
   "dependencies": { "@cabinsentinel/api-client": "*", "@cabinsentinel/contracts": "*", "@cabinsentinel/domain": "*", "expo": "^54.0.0", "expo-linking": "~8.0.0", "expo-status-bar": "~3.0.8", "react": "19.1.0", "react-native": "0.81.5" },
-  "devDependencies": { "@types/react": "^19.1.0", "typescript": "~6.0.2", "vitest": "^3.0.5" }
+  "devDependencies": { "@types/react": "^19.1.0", "typescript": "~6.0.2", "vitest": "^5.0.3" }
 }

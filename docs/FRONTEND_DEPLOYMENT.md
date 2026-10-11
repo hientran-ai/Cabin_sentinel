@@ -1,6 +1,6 @@
 # Frontend build and deployment
 
-Node.js 20+ is required. From the repository root run `npm ci`, then `npm run typecheck`, `npm run lint`, `npm test` and `npm run build:web`.
+Node.js 22.12+ is required. From the repository root run `npm ci`, then `npm run typecheck`, `npm run lint`, `npm test` and `npm run build:web`.
 
 ## Unified Cloudflare Worker
 
@@ -13,8 +13,11 @@ The Worker serves both frontend portals and proxies backend requests through the
 - Deploy command: `npx wrangler deploy`.
 - Preview command: `npx wrangler versions upload`.
 - Build output is `dist`; `wrangler.jsonc` configures it automatically.
-- No frontend environment variables are required for the production defaults.
+- Set the GitHub Actions variable `VITE_MOBILE_APP_URL` to the public Cabin Noir URL.
+- Set `VITE_CAMERA_API_BASE_URL` only when the browser camera must call a separate Gradio origin. Leave it empty when same-origin Worker proxying is sufficient.
 - `BACKEND_ORIGIN` defaults to `https://khanh3636-backend-p068.hf.space` in `wrangler.jsonc`.
+
+Cloudflare runtime variables are not injected into an already-built Vite bundle. `VITE_*` values must therefore be present during `npm run build:web`; the CI workflow forwards the GitHub Actions variables at that step.
 
 Owner routes are served from `/overview`, `/vehicles`, `/events` and related paths. Operations routes are served from `/admin` and `/admin/*`. Both portals share one origin and login session; the backend-provided role determines which portal is accessible.
 

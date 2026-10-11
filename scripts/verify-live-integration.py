@@ -3,9 +3,9 @@ import argparse
 import hashlib
 import json
 import time
-from datetime import datetime, timezone
-from uuid import uuid4
+from datetime import UTC, datetime
 from pathlib import Path
+from uuid import uuid4
 
 import httpx
 
@@ -52,7 +52,7 @@ with httpx.Client(base_url=args.base_url, timeout=90) as client:
     # GET exposes normalized state, not the original VisionPayload. Submit a
     # documented synthetic packet once, then repeat that exact packet twice.
     packet = {'vehicle_id': data['vehicle_state']['vehicle_id'],
-              'timestamp': datetime.now(timezone.utc).isoformat(),
+              'timestamp': datetime.now(UTC).isoformat(),
               'frame_id': 'integration-duplicate-' + uuid4().hex,
               'camera_status': 'OK', 'detected_objects': []}
     first = client.post('/api/v1/vision', headers=headers, json=packet)

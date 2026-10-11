@@ -6,7 +6,8 @@ const productionEnv = {
   // Production browsers call the Cloudflare Worker origin. The Worker proxies
   // /api/* and /health to BACKEND_ORIGIN; never bake developer localhost URLs.
   VITE_API_BASE_URL: '',
-  VITE_CAMERA_API_BASE_URL: '',
+  VITE_CAMERA_API_BASE_URL: process.env.VITE_CAMERA_API_BASE_URL || '',
+  VITE_MOBILE_APP_URL: process.env.VITE_MOBILE_APP_URL || '',
   VITE_AUTH_MODE: 'session',
   VITE_OWNER_WEB_URL: '',
   VITE_OPERATIONS_WEB_URL: '',

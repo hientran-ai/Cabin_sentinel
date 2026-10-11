@@ -4,7 +4,6 @@ from pathlib import Path
 import edge_tts
 from edge_tts.exceptions import NoAudioReceived
 
-
 CUES = [
     "CabinSentinel phát hiện dấu hiệu sự sống trong cabin, kết hợp nhiệt độ và trạng thái kết nối để cảnh báo sớm.",
     "Một cabin đóng kín có thể nóng lên rất nhanh. Những phút đầu tiên quyết định khả năng phản ứng kịp thời.",

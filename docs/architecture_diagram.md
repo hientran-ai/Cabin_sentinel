@@ -23,5 +23,7 @@ decision and action attempts. All action results currently mean **simulated**;
 `request_unlock` is pending confirmation only and has no actuator connection.
 The health endpoint reports a disconnected broker as degraded.
 
-The original `/api/v1/chat` template route remains available for compatibility
-with the team's existing code and tests. It is outside the safety path.
+The original `/api/v1/chat` template route remains available in development and
+tests for compatibility. It is disabled by default in production because it is
+outside the safety path. Set `AGENT_API_ENABLED=true` only after adding the
+required authentication, rate limiting and a production agent implementation.

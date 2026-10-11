@@ -1,6 +1,9 @@
 """Local verification server using existing camera contract and real YOLO on CPU.
 Not a replacement or publication of the Hugging Face deployment.
 """
+# Environment and import-path setup must happen before importing the application modules.
+# ruff: noqa: E402
+
 import os
 import sys
 from pathlib import Path
@@ -15,7 +18,8 @@ os.environ.setdefault('YOLO_CONFIG_DIR', '/private/tmp/cabinsentinel-yolo-config
 os.environ.setdefault('YOLO_AUTOINSTALL', 'false')
 
 import gradio as gr
-from src.cabinsentinel.camera import CameraSessions, CameraError
+
+from src.cabinsentinel.camera import CameraError, CameraSessions
 from src.cabinsentinel.service import CabinService
 from src.cabinsentinel.timer import SafetyTimer
 from src.vision.provider import TamVisionProvider
@@ -27,8 +31,10 @@ sessions = CameraSessions(CabinService(os.environ['CABINSENTINEL_DB_PATH']))
 timer = SafetyTimer(sessions)
 
 def run(method, *args):
-    try: return getattr(sessions, method)(*args)
-    except CameraError as exc: return {'error': exc.message, 'code': exc.code, 'decision_current': False}
+    try:
+        return getattr(sessions, method)(*args)
+    except CameraError as exc:
+        return {'error': exc.message, 'code': exc.code, 'decision_current': False}
 
 def start(scenario, source): return run('start', scenario, source)
 def status(session_id, session_token): return run('status', session_id, session_token)
@@ -38,8 +44,15 @@ def frame(session_id, session_token, image, sequence, captured_at): return run('
 
 with gr.Blocks() as demo:
     gr.Markdown('Local camera integration verification · YOLO CPU · vehicle/actions SIMULATED')
-    scenario = gr.Textbox(value='hot_locked'); source = gr.Textbox(value='browser'); sid = gr.Textbox(); token = gr.Textbox(type='password')
-    image = gr.Image(type='pil'); sequence = gr.Number(precision=0); captured = gr.Textbox(); device = gr.Textbox(); result = gr.JSON()
+    scenario = gr.Textbox(value='hot_locked')
+    source = gr.Textbox(value='browser')
+    sid = gr.Textbox()
+    token = gr.Textbox(type='password')
+    image = gr.Image(type='pil')
+    sequence = gr.Number(precision=0)
+    captured = gr.Textbox()
+    device = gr.Textbox()
+    result = gr.JSON()
     for name, fn, inputs in [('camera_start', start, [scenario, source]), ('camera_status', status, [sid, token]), ('camera_stop', stop, [sid, token]), ('camera_report', report, [sid, token, device])]:
         gr.Button(name).click(fn, inputs=inputs, outputs=result, api_name=name, queue=False)
     gr.Button('camera_frame').click(frame, inputs=[sid, token, image, sequence, captured], outputs=result, api_name='camera_frame', concurrency_limit=1)

@@ -2,8 +2,9 @@
 Uses public test images, never a webcam. Credentials remain in memory.
 """
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
+
 import httpx
 
 root = Path(__file__).resolve().parents[1]
@@ -20,7 +21,8 @@ def call(name, data):
     response = client.get('/gradio_api/call/' + name + '/' + event.json()['event_id'])
     response.raise_for_status()
     for chunk in response.text.split('\n\n'):
-        if 'event: error' in chunk: return {'transport_error': 'SSE_ERROR'}
+        if 'event: error' in chunk:
+            return {'transport_error': 'SSE_ERROR'}
         if 'event: complete' in chunk:
             line = next(line for line in chunk.splitlines() if line.startswith('data:'))
             return json.loads(line[5:])[0]
@@ -31,7 +33,7 @@ def upload(filename, content):
     response.raise_for_status()
     return {'path': response.json()[0], 'meta': {'_type': 'gradio.FileData'}}
 
-def now(): return datetime.now(timezone.utc).isoformat()
+def now(): return datetime.now(UTC).isoformat()
 
 info = client.get('/gradio_api/info', headers={'Origin': 'http://127.0.0.1:5183'})
 check('discovery + production preview CORS', info.status_code == 200 and
@@ -55,7 +57,7 @@ try:
     check('same sequence different payload conflict', call('camera_frame', credentials + [image, 1, now()]).get('code') == 'FRAME_CONFLICT')
     read1, read2 = call('camera_status', credentials), call('camera_status', credentials)
     check('status only reads committed revision', read1['revision'] == read2['revision'] == result['revision'])
-    stale = (datetime.now(timezone.utc) - timedelta(seconds=10)).isoformat()
+    stale = (datetime.now(UTC) - timedelta(seconds=10)).isoformat()
     check('old capture explicitly rejected', call('camera_frame', credentials + [image, 2, stale]).get('code') == 'STALE_FRAME')
     broken = upload('corrupt.png', b'not an image')
     failure = call('camera_frame', credentials + [broken, 2, now()])

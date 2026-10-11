@@ -17,10 +17,11 @@
     "build:mobile:production:android": "npm run eas:production:android --workspace @cabinsentinel/mobile",
     "build:mobile:production:ios": "npm run eas:production:ios --workspace @cabinsentinel/mobile",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspace @cabinsentinel/api-client --workspace @cabinsentinel/auth --workspace @cabinsentinel/domain --workspace @cabinsentinel/mobile --workspace @cabinsentinel/owner-web",
+    "test": "npm run test --workspace @cabinsentinel/api-client --workspace @cabinsentinel/auth --workspace @cabinsentinel/domain --workspace @cabinsentinel/mobile --workspace @cabinsentinel/owner-web --workspace @cabinsentinel/operations-web && npm run test:worker",
+    "test:worker": "vitest run workers/frontend-router.test.js",
     "lint": "oxlint apps packages",
     "validate:frontend": "npm run typecheck --workspace @cabinsentinel/owner-web --workspace @cabinsentinel/operations-web --workspace @cabinsentinel/auth && npm run test --workspace @cabinsentinel/auth --workspace @cabinsentinel/owner-web && npm run build:web"
   },
   "devDependencies": { "oxlint": "^1.81.0", "wrangler": "^4.146.0" },
-  "engines": { "node": ">=20" }
+  "engines": { "node": ">=22.12" }
 }

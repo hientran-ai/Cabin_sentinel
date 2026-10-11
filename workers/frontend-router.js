@@ -1,4 +1,4 @@
-function backendUrl(requestUrl, backendOrigin) {
+export function backendUrl(requestUrl, backendOrigin) {
   const source = new URL(requestUrl)
   const backend = new URL(backendOrigin)
   if (backend.protocol !== 'https:' && backend.hostname !== 'localhost' && backend.hostname !== '127.0.0.1') {
@@ -26,7 +26,7 @@ async function proxyBackend(request, env) {
   }
 }
 
-function adminAssetRequest(request, pathname) {
+export function adminAssetRequest(request, pathname) {
   const target = new URL(request.url)
   const isStaticAsset = pathname.startsWith('/admin/assets/') || /\.[a-z0-9]+$/i.test(pathname)
   if (!isStaticAsset) target.pathname = '/admin/index.html'
@@ -37,7 +37,7 @@ const legacyLoginPaths = new Set(['/', '/login', '/signin', '/sign-in', '/admin/
 // Family users (owners, caregivers) sign in on the Cabin Noir mobile web with their phone number.
 const mobileLoginPaths = new Set(['/user', '/user/login', '/app'])
 
-function mobileAppRedirect(env) {
+export function mobileAppRedirect(env) {
   try {
     const target = new URL(env.MOBILE_APP_URL || 'https://cabin-noir.duckdns.org/app/')
     if (target.protocol !== 'https:') return null
@@ -45,6 +45,18 @@ function mobileAppRedirect(env) {
   } catch {
     return null
   }
+}
+
+export function isBackendPath(pathname) {
+  return pathname === '/health' || pathname.startsWith('/api/')
+}
+
+export function isLegacyLoginPath(pathname) {
+  return legacyLoginPaths.has(pathname.replace(/\/+$/, '') || '/')
+}
+
+export function isMobileLoginPath(pathname) {
+  return mobileLoginPaths.has(pathname.replace(/\/+$/, '') || '/')
 }
 
 function unifiedLoginRedirect(request) {
@@ -55,10 +67,9 @@ function unifiedLoginRedirect(request) {
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url)
-    if (pathname === '/health' || pathname.startsWith('/api/')) return proxyBackend(request, env)
-    const route = pathname.replace(/\/+$/, '') || '/'
-    if (mobileLoginPaths.has(route)) return mobileAppRedirect(env) || unifiedLoginRedirect(request)
-    if (legacyLoginPaths.has(route)) return unifiedLoginRedirect(request)
+    if (isBackendPath(pathname)) return proxyBackend(request, env)
+    if (isMobileLoginPath(pathname)) return mobileAppRedirect(env) || unifiedLoginRedirect(request)
+    if (isLegacyLoginPath(pathname)) return unifiedLoginRedirect(request)
     if (pathname === '/admin' || pathname.startsWith('/admin/')) {
       return env.ASSETS.fetch(adminAssetRequest(request, pathname))
     }

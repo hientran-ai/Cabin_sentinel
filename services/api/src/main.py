@@ -33,6 +33,12 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
+    if getattr(settings, "app_env", "development") == "production" and not getattr(
+        settings, "platform_signing_key", ""
+    ):
+        logger.error(
+            "PLATFORM_SIGNING_KEY is unset; signed evidence URLs will become invalid after a restart",
+        )
     app.state.vision_provider = None
     if settings.model_path:
         age_path = getattr(settings, "age_classifier_path", "")
@@ -102,7 +108,8 @@ app.add_middleware(
     expose_headers=["X-Correlation-ID"],
 )
 
-app.include_router(router, prefix="/api/v1")
+if settings.agent_enabled:
+    app.include_router(router, prefix="/api/v1")
 app.include_router(cabin_router)
 app.include_router(demo_router)
 app.include_router(fleet_router)

@@ -92,6 +92,47 @@
   to { transform: rotate(360deg); }
 }
 
+.auth-mobile {
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 17px;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+  color: inherit;
+}
+
+.auth-mobile-title {
+  margin: 0;
+  color: inherit;
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.auth-mobile-detail,
+.auth-mobile-note {
+  margin: 0;
+  color: inherit;
+  opacity: 0.75;
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.auth-mobile-note {
+  margin-top: 6px;
+  opacity: 0.6;
+  font-size: 0.7rem;
+}
+
+.auth-mobile-open {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  text-decoration: none;
+}
+
 .auth-form label>span{color:#d8dbe1}
 .auth-form input{min-height:50px;border-color:rgba(255,255,255,.12);border-radius:13px;background:#090b0f;color:#f7f8fa;caret-color:#f5c542}
 .auth-form input::placeholder{color:#666d79}.auth-form input:hover{border-color:rgba(255,255,255,.2)}

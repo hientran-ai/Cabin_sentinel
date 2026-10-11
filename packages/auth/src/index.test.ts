@@ -1,5 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import { canAccessPortal, defaultPortal, mapV1User, mobileSignInUrl, portalForPath, safeReturnPath } from './index'
+import {
+  canAccessPortal,
+  defaultPortal,
+  loginMethodForPortal,
+  mapV1User,
+  mobileSignInUrl,
+  portalForPath,
+  safeReturnPath,
+  type AuthConfig,
+} from './index'
+
+const config = (mobileAppUrl?: string): AuthConfig => ({
+  apiBaseUrl: '',
+  mode: 'session',
+  ownerUrl: '/overview',
+  operationsUrl: '/admin',
+  mobileAppUrl,
+})
 
 describe('production role mapping', () => {
   it('routes an admin to Operations', () => {
@@ -51,8 +68,22 @@ describe('production role mapping', () => {
     expect(safeReturnPath('/login')).toBeUndefined()
     expect(safeReturnPath('/admin/login')).toBeUndefined()
   })
-})
 
+  it('sends owners to the configured HTTPS mobile app while admins keep credential login', () => {
+    const authConfig = config('https://cabin-noir.duckdns.org/app/')
+
+    expect(mobileSignInUrl(authConfig)).toBe('https://cabin-noir.duckdns.org/app/')
+    expect(loginMethodForPortal('owner', authConfig)).toBe('mobile-app')
+    expect(loginMethodForPortal('operations', authConfig)).toBe('credentials')
+  })
+
+  it('rejects unsafe mobile-app URLs and falls back to the configured login mode', () => {
+    expect(mobileSignInUrl(config('javascript:alert(1)'))).toBeUndefined()
+    expect(mobileSignInUrl(config('http://example.com/app'))).toBeUndefined()
+    expect(loginMethodForPortal('owner', config('http://example.com/app'))).toBe('credentials')
+    expect(loginMethodForPortal('owner', { ...config(), mode: 'v1-demo' })).toBe('demo')
+  })
+})
 describe('family users sign in on the Cabin Noir mobile web', () => {
   it('uses the configured https address', () => {
     expect(mobileSignInUrl({ mobileAppUrl: 'https://cabin-noir.duckdns.org/app/' })).toBe('https://cabin-noir.duckdns.org/app/')

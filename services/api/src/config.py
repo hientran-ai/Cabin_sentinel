@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     cookie_samesite: Literal["strict", "lax", "none"] = "lax"  # use none only for a cross-site SPA (needs HTTPS)
     evidence_retention_hours: int = Field(default=72, ge=1, le=24 * 90)
     evidence_max_bytes: int = Field(default=2 * 1024 * 1024, ge=1)
+    agent_api_enabled: bool | None = None  # None: available outside production, disabled in production
 
     # LLM
     openai_api_key: str = ""
@@ -76,6 +77,12 @@ class Settings(BaseSettings):
     def commands_enabled(self) -> bool:
         if self.remote_commands_enabled is not None:
             return self.remote_commands_enabled
+        return self.app_env != "production"
+
+    @property
+    def agent_enabled(self) -> bool:
+        if self.agent_api_enabled is not None:
+            return self.agent_api_enabled
         return self.app_env != "production"
 
 

@@ -8,32 +8,11 @@ import { useLocale } from './i18n'
 import { useConfirmAction } from './ConfirmDialog'
 
 type PageName = 'incidents' | 'commands' | 'vehicles' | 'devices' | 'tenants' | 'users' | 'models' | 'rules' | 'audit' | 'system'
-type Spec = { eyebrow: string; title: string; subtitle: string }
-const specs: Record<PageName, Spec> = {
-  incidents: { eyebrow: 'Incident operations', title: 'Incident queue', subtitle: 'Assignment, escalation and case notes backed by the incident API.' },
-  commands: { eyebrow: 'Response operations', title: 'Command lifecycle', subtitle: 'Remote command records and operator rejection controls.' },
-  vehicles: { eyebrow: 'Fleet management', title: 'Fleet vehicles', subtitle: 'Tenant-scoped inventory and backend-owned safety status.' },
-  devices: { eyebrow: 'Edge operations', title: 'Device fleet', subtitle: 'Connectivity, firmware targets and device access controls.' },
-  tenants: { eyebrow: 'Platform administration', title: 'Tenants', subtitle: 'Organizations and the users, vehicles and devices in their authorized scope.' },
-  users: { eyebrow: 'Identity administration', title: 'Users & access', subtitle: 'Accounts, roles, sessions and access-review signals.' },
-  models: { eyebrow: 'AI operations', title: 'Model registry', subtitle: 'Artifact registration, staged rollout and rollback.' },
-  rules: { eyebrow: 'Decision governance', title: 'Safety rules', subtitle: 'Versioned and audited rulesets from the control plane.' },
-  audit: { eyebrow: 'Compliance', title: 'Audit log', subtitle: 'Actor, action, target, outcome and correlation history.' },
-  system: { eyebrow: 'Platform reliability', title: 'System health', subtitle: 'Dependencies, metrics, alerts and loaded AI capability.' },
-}
+
 const text = (v: unknown, fallback = '—') => v == null || v === '' ? fallback : typeof v === 'object' ? JSON.stringify(v) : String(v)
 const list = (v: unknown) => Array.isArray(v) ? v.filter((x): x is JsonRecord => !!x && typeof x === 'object') : []
 const strings = (v: unknown) => Array.isArray(v) ? v.map(String) : []
 
-function Header({ spec, busy, refresh }: { spec: Spec; busy: boolean; refresh: () => void }) {
-  return <div className="page-header"><div><p className="eyebrow">{spec.eyebrow}</p><h1>{spec.title}</h1><p>{spec.subtitle}</p></div><button className="secondary-button" disabled={busy} onClick={refresh}>{busy ? 'Refreshing…' : 'Refresh data'}</button></div>
-}
-function State({ loading, error, empty }: { loading: boolean; error: boolean; empty?: boolean }) {
-  if (loading) return <div className="table-state"><span className="spinner"/>Loading verified backend data…</div>
-  if (error) return <div className="platform-state is-error"><strong>Backend data unavailable</strong><span>No placeholder or inferred-safe data is shown.</span></div>
-  if (empty) return <div className="platform-state"><strong>No records</strong><span>The backend returned an empty authorized scope.</span></div>
-  return null
-}
 function Pill({ value }: { value: unknown }) {
   const label = text(value, 'UNKNOWN')
   const tone = /critical|failed|revoked|error|offline|unavailable|disabled/i.test(label) ? 'danger' : /active|ready|online|safe|ok|acknowledged/i.test(label) ? 'ok' : 'neutral'
@@ -42,98 +21,6 @@ function Pill({ value }: { value: unknown }) {
 function Notice({ mutation }: { mutation: { error: unknown; isSuccess: boolean } }) {
   const { bi } = useLocale()
   return mutation.error ? <p className="action-notice is-error">{mutation.error instanceof Error ? mutation.error.message : bi('Backend đã từ chối thao tác này.', 'The backend rejected this action.')}</p> : mutation.isSuccess ? <p className="action-notice is-success">{bi('Backend đã cập nhật và ghi nhận audit.', 'Backend updated and the action was audited.')}</p> : null
-}
-
-function IncidentActions({ item }: { item: JsonRecord }) {
-  const qc = useQueryClient(); const ops = item.ops as JsonRecord || {}; const [assignee, setAssignee] = useState(text(ops.assignee, '')); const [note, setNote] = useState('')
-  const mutation = useMutation({ mutationFn: ({ action, extra = {} }: { action: 'assign' | 'escalate' | 'note'; extra?: JsonRecord }) => platformClient.v1OpsIncidentAction(text(item.incident_id), action, { vehicle_id: text(item.vehicle_id), version: Number(ops.version ?? 0), ...extra }), onSuccess: () => { setNote(''); void qc.invalidateQueries({ queryKey: ['ops-incidents'] }) } })
-  return <div className="inline-actions wide-actions"><input aria-label="Assignee" value={assignee} onChange={e => setAssignee(e.target.value)} placeholder="Assignee ID"/><button disabled={!assignee || mutation.isPending} onClick={() => mutation.mutate({ action: 'assign', extra: { assignee } })}>Assign</button><button disabled={mutation.isPending || item.status !== 'OPEN'} onClick={() => mutation.mutate({ action: 'escalate' })}>Escalate</button><input aria-label="Case note" value={note} onChange={e => setNote(e.target.value)} placeholder="Case note"/><button disabled={!note || mutation.isPending} onClick={() => mutation.mutate({ action: 'note', extra: { note } })}>Add note</button><Notice mutation={mutation}/></div>
-}
-function Incidents() {
-  const q = useQuery({ queryKey: ['ops-incidents'], queryFn: () => platformClient.v1OpsIncidents(), refetchInterval: 5_000 }); const items = q.data?.items ?? []
-  return <><Header spec={specs.incidents} busy={q.isFetching} refresh={() => void q.refetch()}/><section className="surface platform-surface"><State loading={q.isLoading} error={q.isError} empty={!items.length}/><div className="record-stack">{items.map((item, i) => { const ops = item.ops as JsonRecord || {}; return <article className="record-card action-card" key={text(item.incident_id, String(i))}><div className="record-summary"><div><strong>{text(item.incident_id)}</strong><small>{text(item.vehicle_name, text(item.vehicle_id))} · opened {text(item.opened_at)}</small></div><Pill value={item.risk_level}/><Pill value={ops.ops_status ?? 'UNASSIGNED'}/></div><IncidentActions item={item}/></article> })}</div></section></>
-}
-
-function CommandActions({ item }: { item: JsonRecord }) {
-  const qc = useQueryClient(); const [reason, setReason] = useState(''); const terminal = /acknowledged|failed|expired|rejected/i.test(text(item.status))
-  const mutation = useMutation({ mutationFn: () => platformClient.v1OpsRejectCommand(text(item.command_id), reason || undefined), onSuccess: () => void qc.invalidateQueries({ queryKey: ['ops-commands'] }) })
-  return <div className="inline-actions"><input aria-label="Rejection reason" value={reason} onChange={e => setReason(e.target.value)} placeholder="Rejection reason"/><button className="danger-button" disabled={terminal || mutation.isPending} onClick={() => mutation.mutate()}>Reject</button><Notice mutation={mutation}/></div>
-}
-function Commands() {
-  const q = useQuery({ queryKey: ['ops-commands'], queryFn: () => platformClient.v1OpsCommands(), refetchInterval: 5_000 }); const items = q.data?.commands ?? []
-  return <><Header spec={specs.commands} busy={q.isFetching} refresh={() => void q.refetch()}/><div className={`backend-note ${q.data?.enabled ? '' : 'is-locked'}`}>{q.data?.enabled ? 'Remote command workflow is enabled by backend policy.' : 'Remote commands are disabled by backend policy. Existing records remain visible.'}</div><section className="surface platform-surface"><State loading={q.isLoading} error={q.isError} empty={!items.length}/><div className="record-stack">{items.map((item, i) => <article className="record-card action-card" key={text(item.command_id, String(i))}><div className="record-summary"><div><strong>{text(item.type).toUpperCase()}</strong><small>{text(item.vehicle_id)} · {text(item.command_id)}</small></div><Pill value={item.status}/></div><CommandActions item={item}/></article>)}</div></section></>
-}
-
-function Vehicles() {
-  const q = useQuery({ queryKey: ['admin-vehicles'], queryFn: () => platformClient.v1AdminVehicles(), refetchInterval: 10_000 }); const items = q.data?.items ?? []
-  return <><Header spec={specs.vehicles} busy={q.isFetching} refresh={() => void q.refetch()}/><section className="surface platform-surface"><State loading={q.isLoading} error={q.isError} empty={!items.length}/>{items.length > 0 && <div className="data-table"><div className="data-head"><span>Vehicle</span><span>Owner / tenant</span><span>Connectivity</span><span>Risk</span></div>{items.map((x, i) => <div className="data-row" key={text(x.vehicle_id, String(i))}><div><strong>{text(x.name)}</strong><small>{text(x.vehicle_id)} · {text(x.plate)}</small></div><div><strong>{text(x.owner_id)}</strong><small>{text(x.tenant_id, 'Platform')}</small></div><Pill value={x.online ? 'ONLINE' : 'OFFLINE'}/><Pill value={x.risk_level}/></div>)}</div>}</section></>
-}
-
-function DeviceActions({ item }: { item: JsonRecord }) {
-  const qc = useQueryClient(); const [firmware, setFirmware] = useState(text(item.target_firmware, text(item.firmware, '')))
-  const mutation = useMutation({ mutationFn: (action: 'firmware' | 'revoke') => action === 'firmware' ? platformClient.v1AdminSetFirmware(text(item.device_id), firmware || null) : platformClient.v1AdminRevokeDevice(text(item.device_id)), onSuccess: () => void qc.invalidateQueries({ queryKey: ['admin-devices'] }) })
-  const heartbeats = useMutation({ mutationFn: () => platformClient.v1AdminDeviceHeartbeats(text(item.device_id)) })
-  return <div className="inline-actions"><input aria-label="Target firmware" value={firmware} onChange={e => setFirmware(e.target.value)} placeholder="Target firmware"/><button disabled={mutation.isPending} onClick={() => mutation.mutate('firmware')}>Set firmware</button><button disabled={heartbeats.isPending} onClick={() => heartbeats.mutate()}>Load heartbeats</button><button className="danger-button" disabled={mutation.isPending || item.status === 'revoked'} onClick={() => mutation.mutate('revoke')}>Revoke</button><Notice mutation={mutation}/>{heartbeats.data && <pre className="action-json">{JSON.stringify(heartbeats.data, null, 2)}</pre>}</div>
-}
-function Devices() {
-  const q = useQuery({ queryKey: ['admin-devices'], queryFn: () => platformClient.v1AdminDevices(), refetchInterval: 10_000 }); const items = q.data?.devices ?? []
-  return <><Header spec={specs.devices} busy={q.isFetching} refresh={() => void q.refetch()}/>{q.data && <section className="mini-metrics"><article><span>Total</span><strong>{text(q.data.summary.total, '0')}</strong></article><article><span>Online</span><strong>{text(q.data.summary.online, '0')}</strong></article><article><span>Update pending</span><strong>{text(q.data.summary.update_pending, '0')}</strong></article></section>}<section className="surface platform-surface"><State loading={q.isLoading} error={q.isError} empty={!items.length}/><div className="record-stack">{items.map((x, i) => <article className="record-card action-card" key={text(x.device_id, String(i))}><div className="record-summary"><div><strong>{text(x.serial, text(x.device_id))}</strong><small>{text(x.vehicle_id)} · firmware {text(x.firmware)}</small></div><Pill value={x.online ? 'ONLINE' : x.status}/></div><DeviceActions item={x}/></article>)}</div></section></>
-}
-
-function CreateUser() {
-  const qc = useQueryClient(); const [form, setForm] = useState({ email: '', password: '', full_name: '', role: 'operator', tenant_id: '' })
-  const mutation = useMutation({ mutationFn: () => platformClient.v1AdminCreateUser({ ...form, tenant_id: form.tenant_id || null }), onSuccess: () => { setForm({ email: '', password: '', full_name: '', role: 'operator', tenant_id: '' }); void qc.invalidateQueries({ queryKey: ['admin-users'] }); void qc.invalidateQueries({ queryKey: ['admin-access-review'] }) } })
-  return <form className="control-form" onSubmit={(e: FormEvent) => { e.preventDefault(); mutation.mutate() }}><h2>Create account</h2><div className="form-grid"><label><span>Full name</span><input required value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })}/></label><label><span>Email</span><input required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}/></label><label><span>Temporary password</span><input required minLength={10} type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })}/></label><label><span>Role</span><select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}><option>operator</option><option>owner</option><option>caregiver</option><option>admin</option></select></label><label><span>Tenant ID (optional)</span><input value={form.tenant_id} onChange={e => setForm({ ...form, tenant_id: e.target.value })}/></label></div><button disabled={mutation.isPending}>Create user</button><Notice mutation={mutation}/></form>
-}
-function CreateTenant() {
-  const qc = useQueryClient(); const [name, setName] = useState(''); const tenants = useQuery({ queryKey: ['admin-tenants'], queryFn: () => platformClient.v1AdminTenants() }); const mutation = useMutation({ mutationFn: () => platformClient.v1AdminCreateTenant(name), onSuccess: () => { setName(''); void qc.invalidateQueries({ queryKey: ['admin-tenants'] }) } })
-  return <form className="control-form" onSubmit={e => { e.preventDefault(); mutation.mutate() }}><h2>Tenant management</h2><div className="inline-actions"><input required minLength={2} value={name} onChange={e => setName(e.target.value)} placeholder="New tenant name"/><button disabled={mutation.isPending}>Create tenant</button><span>{tenants.data?.tenants.map(x => text(x.name)).join(' · ') || 'No tenant in authorized scope'}</span></div><Notice mutation={mutation}/></form>
-}
-function UserActions({ item }: { item: JsonRecord }) {
-  const qc = useQueryClient(); const [role, setRole] = useState(text(item.role, 'operator'))
-  const mutation = useMutation({ mutationFn: (action: 'access' | 'sessions') => action === 'access' ? platformClient.v1AdminUpdateUser(text(item.user_id), { role, active: item.active !== true }) : platformClient.v1AdminRevokeUserSessions(text(item.user_id)), onSuccess: () => { void qc.invalidateQueries({ queryKey: ['admin-users'] }); void qc.invalidateQueries({ queryKey: ['admin-access-review'] }) } })
-  return <div className="inline-actions"><select aria-label="User role" value={role} onChange={e => setRole(e.target.value)}><option>admin</option><option>operator</option><option>owner</option><option>caregiver</option></select><button disabled={mutation.isPending} onClick={() => mutation.mutate('access')}>{item.active ? 'Update & disable' : 'Update & enable'}</button><button disabled={mutation.isPending} onClick={() => mutation.mutate('sessions')}>Revoke sessions</button><Notice mutation={mutation}/></div>
-}
-function Users() {
-  const users = useQuery({ queryKey: ['admin-users'], queryFn: () => platformClient.v1AdminUsers() }); const review = useQuery({ queryKey: ['admin-access-review'], queryFn: () => platformClient.v1AdminAccessReview() }); const roles = useQuery({ queryKey: ['admin-roles'], queryFn: () => platformClient.v1AdminRoles() }); const items = users.data?.users ?? []
-  return <><Header spec={specs.users} busy={users.isFetching || review.isFetching} refresh={() => { void users.refetch(); void review.refetch(); void roles.refetch() }}/><section className="mini-metrics"><article><span>Accounts</span><strong>{items.length}</strong></article><article><span>Flagged inactive</span><strong>{text(review.data?.summary.flagged)}</strong></article><article><span>Active admins</span><strong>{text(review.data?.summary.admins)}</strong></article></section><section className="surface platform-surface"><CreateTenant/><CreateUser/><State loading={users.isLoading} error={users.isError} empty={!items.length}/><div className="record-stack">{items.map((x, i) => <article className="record-card action-card" key={text(x.user_id, String(i))}><div className="record-summary"><div><strong>{text(x.full_name, text(x.email))}</strong><small>{text(x.email)} · {text(x.tenant_id, 'Platform')}</small></div><Pill value={x.active ? x.role : 'DISABLED'}/></div><UserActions item={x}/></article>)}</div></section><section className="surface platform-json"><h2>Effective role permissions</h2><pre>{JSON.stringify(roles.data ?? {}, null, 2)}</pre></section></>
-}
-
-function ModelForm() {
-  const qc = useQueryClient(); const [form, setForm] = useState({ name: '', version: '', sha256: '', note: '' })
-  const mutation = useMutation({ mutationFn: () => platformClient.v1AdminRegisterModel({ ...form, sha256: form.sha256 || null, note: form.note || null }), onSuccess: () => { setForm({ name: '', version: '', sha256: '', note: '' }); void qc.invalidateQueries({ queryKey: ['admin-models'] }) } })
-  return <form className="control-form" onSubmit={e => { e.preventDefault(); mutation.mutate() }}><h2>Register model</h2><div className="form-grid"><label><span>Name</span><input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}/></label><label><span>Version</span><input required value={form.version} onChange={e => setForm({ ...form, version: e.target.value })}/></label><label className="wide-field"><span>SHA-256 (optional)</span><input pattern="[0-9a-fA-F]{64}" value={form.sha256} onChange={e => setForm({ ...form, sha256: e.target.value })}/></label><label className="wide-field"><span>Release note</span><input value={form.note} onChange={e => setForm({ ...form, note: e.target.value })}/></label></div><button disabled={mutation.isPending}>Register</button><Notice mutation={mutation}/></form>
-}
-function ModelActions({ item }: { item: JsonRecord }) {
-  const qc = useQueryClient(); const [rollout, setRollout] = useState(Number(item.rollout_pct ?? 0)); const mutation = useMutation({ mutationFn: (action: 'rollout' | 'rollback') => action === 'rollout' ? platformClient.v1AdminRolloutModel(text(item.model_id), rollout) : platformClient.v1AdminRollbackModel(text(item.model_id)), onSuccess: () => { void qc.invalidateQueries({ queryKey: ['admin-models'] }); void qc.invalidateQueries({ queryKey: ['admin-vision'] }) } })
-  return <div className="inline-actions"><input aria-label="Rollout percent" type="number" min="0" max="100" value={rollout} onChange={e => setRollout(Number(e.target.value))}/><button disabled={mutation.isPending} onClick={() => mutation.mutate('rollout')}>Apply rollout</button><button disabled={mutation.isPending} onClick={() => mutation.mutate('rollback')}>Rollback</button><Notice mutation={mutation}/></div>
-}
-function Models() {
-  const q = useQuery({ queryKey: ['admin-models'], queryFn: () => platformClient.v1AdminModels() }); const vision = useQuery({ queryKey: ['admin-vision'], queryFn: () => platformClient.v1AdminVision() }); const items = q.data?.models ?? []
-  return <><Header spec={specs.models} busy={q.isFetching || vision.isFetching} refresh={() => { void q.refetch(); void vision.refetch() }}/><section className="platform-grid"><article className="surface platform-surface"><ModelForm/><h2>Registry</h2><State loading={q.isLoading} error={q.isError} empty={!items.length}/><div className="record-stack">{items.map((x, i) => <article className="record-card action-card" key={text(x.model_id, String(i))}><div className="record-summary"><div><strong>{text(x.name)} · {text(x.version)}</strong><small>{text(x.model_id)}</small></div><Pill value={x.status}/></div><ModelActions item={x}/></article>)}</div></article><article className="surface platform-json"><h2>Runtime deployment</h2><pre>{JSON.stringify(vision.data ?? {}, null, 2)}</pre></article></section></>
-}
-
-function RulesForm() {
-  const qc = useQueryClient(); const [version, setVersion] = useState(''); const [params, setParams] = useState('{\n  "temperature_warning_c": 35\n}'); const [note, setNote] = useState('')
-  const mutation = useMutation({ mutationFn: () => platformClient.v1AdminCreateRuleset({ version, params: JSON.parse(params) as JsonRecord, note: note || null }), onSuccess: () => { setVersion(''); setNote(''); void qc.invalidateQueries({ queryKey: ['admin-rulesets'] }) } })
-  return <form className="control-form" onSubmit={e => { e.preventDefault(); mutation.mutate() }}><h2>Create ruleset</h2><div className="form-grid"><label><span>Version</span><input required pattern="[A-Za-z0-9._-]{3,64}" value={version} onChange={e => setVersion(e.target.value)}/></label><label><span>Release note</span><input value={note} onChange={e => setNote(e.target.value)}/></label><label className="wide-field"><span>Numeric parameters (JSON)</span><textarea required rows={5} value={params} onChange={e => setParams(e.target.value)}/></label></div><button disabled={mutation.isPending}>Create ruleset</button><Notice mutation={mutation}/></form>
-}
-function RuleActions({ item }: { item: JsonRecord }) {
-  const qc = useQueryClient(); const mutation = useMutation({ mutationFn: () => platformClient.v1AdminActivateRuleset(text(item.version)), onSuccess: () => void qc.invalidateQueries({ queryKey: ['admin-rulesets'] }) })
-  return <div className="inline-actions"><button disabled={mutation.isPending || item.status === 'active'} onClick={() => mutation.mutate()}>Activate version</button><Notice mutation={mutation}/></div>
-}
-function Rules() {
-  const q = useQuery({ queryKey: ['admin-rulesets'], queryFn: () => platformClient.v1AdminRulesets() }); const items = q.data?.rulesets ?? []
-  return <><Header spec={specs.rules} busy={q.isFetching} refresh={() => void q.refetch()}/><section className="surface platform-surface"><div className="backend-note">{q.data?.note || 'Backend ruleset registry'}</div><RulesForm/><State loading={q.isLoading} error={q.isError} empty={!items.length}/><div className="record-stack">{items.map((x, i) => <article className="record-card action-card" key={text(x.version, String(i))}><div className="record-summary"><div><strong>{text(x.version)}</strong><small>Created by {text(x.created_by)}</small></div><Pill value={x.status}/></div><p>{text(x.note, 'No release note')}</p><pre>{JSON.stringify(x.params ?? {}, null, 2)}</pre><RuleActions item={x}/></article>)}</div></section></>
-}
-
-function Audit() {
-  const q = useQuery({ queryKey: ['admin-audit'], queryFn: () => platformClient.v1AdminAudit(), refetchInterval: 15_000 }); const [search, setSearch] = useState(''); const items = useMemo(() => (q.data?.entries ?? []).filter(x => !search || JSON.stringify(x).toLowerCase().includes(search.toLowerCase())), [q.data, search])
-  return <><Header spec={specs.audit} busy={q.isFetching} refresh={() => void q.refetch()}/><section className="surface platform-surface"><label className="platform-search"><span>Filter current audit window</span><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Actor, action, target, correlation ID…"/></label><State loading={q.isLoading} error={q.isError} empty={!items.length}/>{items.length > 0 && <div className="audit-list">{items.map((x, i) => <article key={text(x.id, String(i))}><div><strong>{text(x.action)}</strong><small>{text(x.ts)}</small></div><div><span>Actor</span><b>{text(x.actor)}</b></div><div><span>Target</span><b>{text(x.target)}</b></div><Pill value={x.outcome}/><code>{text(x.correlation_id)}</code></article>)}</div>}</section></>
-}
-function System() {
-  const q = useQuery({ queryKey: ['admin-system'], queryFn: () => platformClient.v1AdminSystem(), refetchInterval: 15_000 }); const vision = useQuery({ queryKey: ['admin-system-vision'], queryFn: () => platformClient.v1AdminVision(), refetchInterval: 30_000 }); const deps = q.data?.dependencies && typeof q.data.dependencies === 'object' ? q.data.dependencies as JsonRecord : {}; const alerts = list(q.data?.alerts)
-  return <><Header spec={specs.system} busy={q.isFetching || vision.isFetching} refresh={() => { void q.refetch(); void vision.refetch() }}/><State loading={q.isLoading} error={q.isError}/><section className="platform-grid"><article className="surface platform-surface"><h2>Dependencies</h2><div className="dependency-grid">{Object.entries(deps).map(([key, value]) => <div key={key}><span>{key.replaceAll('_', ' ')}</span><Pill value={value}/></div>)}</div><h2>Active alerts</h2>{alerts.length ? alerts.map((x, i) => <div className="system-alert" key={i}><Pill value={x.severity}/><div><strong>{text(x.code)}</strong><span>{text(x.message)}</span></div></div>) : <div className="platform-state"><strong>No active backend alerts</strong></div>}</article><article className="surface platform-json"><h2>Runtime metrics</h2><pre>{JSON.stringify(q.data?.metrics ?? {}, null, 2)}</pre><h2>Loaded vision</h2><pre>{JSON.stringify(vision.data ?? {}, null, 2)}</pre></article></section></>
 }
 
 function LocalState({ loading, error, empty }: { loading: boolean; error: boolean; empty?: boolean }) {

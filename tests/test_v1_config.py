@@ -26,3 +26,16 @@ def test_production_accepts_vercel_and_local_origins():
     )
     assert settings.model_confidence == 0.25
     assert settings.cabinsentinel_mqtt_enabled is False
+
+
+def test_agent_template_api_is_disabled_by_default_in_production():
+    production = Settings(
+        _env_file=None,
+        app_env="production",
+        cors_origins="https://demo.vercel.app",
+    )
+    development = Settings(_env_file=None, app_env="development")
+
+    assert production.agent_enabled is False
+    assert development.agent_enabled is True
+    assert production.model_copy(update={"agent_api_enabled": True}).agent_enabled is True

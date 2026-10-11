@@ -27,6 +27,11 @@ export function mobileSignInUrl(config: Pick<AuthConfig, 'mobileAppUrl'>): strin
   }
 }
 export interface LoginCredentials { email: string; password: string }
+
+export function loginMethodForPortal(portal: Portal, config: AuthConfig): 'mobile-app' | 'credentials' | 'demo' {
+  if (portal === 'owner' && mobileSignInUrl(config)) return 'mobile-app'
+  return config.mode === 'session' ? 'credentials' : 'demo'
+}
 interface AuthValue {
   user?: User
   loading: boolean
@@ -353,6 +358,7 @@ export function LoginPage({ portal }: { portal: Portal }) {
   })
   const copy = loginCopy[locale]
   const mobileUrl = mobileSignInUrl(config)
+  const loginMethod = loginMethodForPortal(selectedPortal, config)
 
   useEffect(() => {
     localStorage.setItem('cs_login_locale', locale)
@@ -408,12 +414,12 @@ export function LoginPage({ portal }: { portal: Portal }) {
       </div>
 
       {error && <div className="auth-error" role="alert">{authErrorCopy[locale][error]}</div>}
-      {selectedPortal === 'owner' && mobileUrl ? <div className="auth-mobile">
+      {loginMethod === 'mobile-app' && mobileUrl ? <div className="auth-mobile">
         <p className="auth-mobile-title">{copy.mobileTitle}</p>
         <p className="auth-mobile-detail">{copy.mobileDetail}</p>
         <a className="auth-primary auth-mobile-open" href={mobileUrl}>{copy.mobileOpen}</a>
         <p className="auth-mobile-note">{copy.mobileNote}</p>
-      </div> : config.mode === 'session' ? <form className="auth-form" onSubmit={submit}>
+      </div> : loginMethod === 'credentials' ? <form className="auth-form" onSubmit={submit}>
         <label><span>{copy.email}</span><input type="email" inputMode="email" autoComplete="username" required disabled={submitting} value={email} onChange={event => setEmail(event.target.value)} placeholder="name@example.com"/></label>
         <label><span>{copy.password}</span><div className="auth-password"><input type={showPassword ? 'text' : 'password'} autoComplete="current-password" required disabled={submitting} value={password} onChange={event => setPassword(event.target.value)} placeholder="••••••••••••"/><button type="button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? copy.hidePassword : copy.showPassword} aria-pressed={showPassword}>{showPassword ? copy.hide : copy.show}</button></div></label>
         <button className="auth-primary" type="submit" disabled={submitting} aria-busy={submitting}>{submitting && <span className="auth-button-spinner" aria-hidden="true"/>}{submitting ? copy.signingIn : copy.signIn(selectedPortal === 'operations' ? copy.admin : copy.user)}</button>
