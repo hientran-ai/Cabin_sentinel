@@ -1,17 +1,17 @@
 # CabinSentinel V1 Online Demo
 
-This is the synchronous image-upload path in `src/cabinsentinel/demo_api.py`.
+This is the synchronous image-upload path in `services/api/src/cabinsentinel/demo_api.py`.
 `BUILD_PHASE/app` is an older reference prototype. V1 risk and action decisions
-come from `src/cabinsentinel/service.py`, `rules.py` and `graph.py` in P-068.
+come from `services/api/src/cabinsentinel/service.py`, `rules.py` and `graph.py` in P-068.
 
 ## Model contract
 
 Tâm's source is currently at the BaoTam branch, commit `3b78fd1`,
 `scripts/run_vision.py`. Its CPU YOLO settings are `classes=[0,15,16]`
 (`person`, `cat`, `dog`), `conf=0.25`, `imgsz=640`. The V1 provider at
-`src/vision/provider.py` uses those settings for one uploaded image and returns
+`services/api/src/vision/provider.py` uses those settings for one uploaded image and returns
 the same detector frame fields: `timestamp`, `frame_id`, `detections` and
-`latency_ms`. `src/cabinsentinel/vision_adapter.py` converts that frame to the
+`latency_ms`. `services/api/src/cabinsentinel/vision_adapter.py` converts that frame to the
 canonical `VisionPayload`. The optional age classifier from Tâm's experiment is
 not in V1; `child`/`adult` labels are rejected until their safety contract is
 approved. A child may be detected as `person`; no age claim is made.

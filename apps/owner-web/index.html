@@ -3,9 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#fff9f7" />
+    <meta name="theme-color" content="#090b0f" />
     <meta name="description" content="CabinSentinel Owner - trải nghiệm giám sát an toàn cabin dành cho chủ xe." />
     <title>CabinSentinel Owner</title>
+    <script>
+      const entryPath = window.location.pathname.replace(/\/+$/, '') || '/'
+      if (entryPath === '/' || entryPath === '/login') {
+        window.location.replace('/admin/login')
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

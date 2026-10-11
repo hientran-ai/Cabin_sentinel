@@ -30,7 +30,10 @@ ENV YOLO_AUTOINSTALL=false
 # Security: run as non-root user
 RUN useradd -m appuser
 
-# Copy only runtime application code; model weights are supplied separately.
+# Copy the backend and its temporary compatibility namespace. Keeping the
+# namespace bridge lets the existing `src.main` deployment command work while
+# the physical backend source lives under services/api/src.
+COPY services/api/src ./services/api/src
 COPY src ./src
 # Privacy preview works in a fresh image without an inference-time download.
 COPY models/face_detection_yunet_2023mar.onnx models/YUNET-LICENSE ./models/

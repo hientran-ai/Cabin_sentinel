@@ -26,7 +26,7 @@ flowchart LR
 
 Ba điểm cốt lõi:
 
-1. **Risk do backend quyết định, bằng luật xác định** (`src/cabinsentinel/rules.py`). Frontend **không tự suy** CRITICAL/SAFE từ danh sách detection hay nhiệt độ. Không có LLM trong đường quyết định.
+1. **Risk do backend quyết định, bằng luật xác định** (`services/api/src/cabinsentinel/rules.py`). Frontend **không tự suy** CRITICAL/SAFE từ danh sách detection hay nhiệt độ. Không có LLM trong đường quyết định.
 2. **Frame gốc chỉ đi từ trình duyệt → backend.** Ảnh người dùng nhìn thấy luôn là `preview` do backend làm mờ mặt. Không bao giờ hiển thị video/frame gốc.
 3. **Thiếu dữ liệu ≠ an toàn.** Dữ liệu cũ, mất mạng, lỗi → hiển thị `UNKNOWN`, không bao giờ `SAFE`.
 

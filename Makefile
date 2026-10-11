@@ -7,13 +7,13 @@ test:
 	pytest tests/ -v
 
 lint:
-	ruff check src/ tests/
+	ruff check services/api/src/ src/ tests/
 
 format:
-	ruff format src/ tests/
+	ruff format services/api/src/ src/ tests/
 
 typecheck:
-	mypy src/
+	mypy services/api/src/
 
 check: lint format test
 

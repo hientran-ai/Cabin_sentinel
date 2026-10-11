@@ -91,8 +91,8 @@ flowchart LR
 
 | Component | Responsibility | Current code to retain/evolve |
 | --- | --- | --- |
-| Device adapters | Receive camera, radar, temperature, engine, door, HVAC and vehicle-mode data | `src/cabinsentinel/mqtt.py`, `models.py` |
-| Perception adapter | Run the approved model, validate output, redact evidence before export | `src/vision/provider.py`, `vision_adapter.py` |
+| Device adapters | Receive camera, radar, temperature, engine, door, HVAC and vehicle-mode data | `services/api/src/cabinsentinel/mqtt.py`, `models.py` |
+| Perception adapter | Run the approved model, validate output, redact evidence before export | `services/api/src/vision/provider.py`, `vision_adapter.py` |
 | Fusion buffer | Order and join inputs by event time within a bounded window; reject duplicate/future input | logic currently in `CabinService` |
 | Occupancy estimator | Produce `PRESENT`, `SUSPECTED`, `ABSENT`, or `UNKNOWN` and preserve conflicts | `rules.py` |
 | Safety rules engine | Pure deterministic state transition and action-intent calculation | extract and strengthen `rules.py` |
@@ -388,7 +388,7 @@ a missing vision model must remain visible as unavailable.
 
 ### Phase 0 - Stabilize the baseline
 
-- Preserve `src/cabinsentinel/rules.py` behavior and the current tests.
+- Preserve `services/api/src/cabinsentinel/rules.py` behavior and the current tests.
 - Label `/api/v1/demo/*` and the existing frontend as demo-only.
 - Fix text-encoding issues in Markdown/UI strings.
 - Remove the unused template chat/LLM path from production composition, or keep

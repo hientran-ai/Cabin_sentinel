@@ -3,7 +3,7 @@
 Source checked on 2026-10-03: [P-068 / BaoTam at f7c04a0](https://github.com/AI20K-Build-Phase-Cohort-4/P-068/tree/f7c04a0af31f7e7847a02a012e5d1c85f22e54fc).
 Cabin now contains its offline inference modules: age/domain router, crop preparation helpers, motion, age overlay, detection evaluation and H.264 export, with `scripts/run_vision.py`, `scripts/evaluate_people.py` and the corresponding source tests.
 
-The earlier Cabin audit overstated age-source integration: Cabin main had the YOLO adapter and face preview, but no `src/vision/age.py`. This patch adds the missing inference source. Training pipelines/datasets and private footage are outside this patch.
+The earlier Cabin audit overstated age-source integration: Cabin main had the YOLO adapter and face preview, but no `services/api/src/vision/age.py`. This patch adds the missing inference source. Training pipelines/datasets and private footage are outside this patch.
 
 ## Artifact inventory
 

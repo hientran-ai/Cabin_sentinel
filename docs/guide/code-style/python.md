@@ -74,10 +74,10 @@ except:  # Che mọi lỗi!
 
 ```bash
 # Check
-ruff check src/ tests/
+ruff check services/api/src/ src/ tests/
 
 # Auto-fix
-ruff check --fix src/ tests/
+ruff check --fix services/api/src/ src/ tests/
 ```
 
 Ruff chạy tự động trong CI — code không pass ruff sẽ bị reject.

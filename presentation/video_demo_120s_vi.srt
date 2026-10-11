@@ -1,0 +1,84 @@
+1
+00:00:00,500 --> 00:00:07,500
+CabinSentinel. Phát hiện sớm,
+phản ứng đúng, bảo vệ riêng tư.
+
+2
+00:00:08,500 --> 00:00:14,500
+Một cabin đóng kín có thể nguy hiểm
+chỉ trong vài phút.
+
+3
+00:00:15,000 --> 00:00:21,500
+AI Vision và telemetry cảnh báo sớm.
+Thiếu dữ liệu không có nghĩa an toàn.
+
+4
+00:00:22,500 --> 00:00:29,000
+Một màn hình cho trạng thái cabin,
+nhiệt độ, occupancy và camera.
+
+5
+00:00:29,500 --> 00:00:36,500
+Kết nối Edge, Cloud, rule và revision
+luôn được hiển thị rõ.
+
+6
+00:00:37,000 --> 00:00:44,000
+Verdict do backend tạo và chỉ hiện tại
+khi dữ liệu còn hiệu lực.
+
+7
+00:00:45,500 --> 00:00:51,500
+Người dùng đồng ý bật camera.
+Mỗi lượt dùng một session riêng.
+
+8
+00:00:52,000 --> 00:00:58,000
+Frame được gửi tới backend.
+AI phát hiện person, dog hoặc cat.
+
+9
+00:00:58,500 --> 00:01:05,500
+Preview ưu tiên che mặt,
+không nhận diện danh tính.
+
+10
+00:01:06,000 --> 00:01:13,500
+Backend kết hợp detection và telemetry,
+đánh giá bằng safety rules.
+
+11
+00:01:14,000 --> 00:01:19,500
+Rule trả về HOT_OCCUPANT
+và mức rủi ro CRITICAL.
+
+12
+00:01:20,500 --> 00:01:27,000
+39,2°C cùng bằng chứng hiện diện
+làm rủi ro trở nên rõ ràng.
+
+13
+00:01:27,500 --> 00:01:34,000
+Từ detection đến quyết định,
+mọi tiến trình đều có thể truy vết.
+
+14
+00:01:34,500 --> 00:01:40,500
+Horn, SMS, notification: SIMULATED.
+Unlock: chờ con người xác nhận.
+
+15
+00:01:41,000 --> 00:01:47,000
+Operations dashboard cho đội vận hành,
+không tuyên bố điều khiển xe thật.
+
+16
+00:01:48,500 --> 00:01:53,000
+Phát hiện sớm. Xác minh rõ ràng.
+Phản ứng có trách nhiệm.
+
+17
+00:01:53,500 --> 00:01:58,500
+CabinSentinel — AI Cabin Safety.
+Khám phá CabinSentinel.

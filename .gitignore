@@ -75,6 +75,14 @@ out/
 # Generated reports and local analysis artifacts
 /output/
 /tmp/
+/.tmp/
+/.wrangler/
+
+# Local presentation renders/recordings (source notes and captions stay trackable)
+/presentation/*.mp4
+/presentation/*.m4a
+/presentation/*.mp3
+/presentation/voice_cues_180/
 
 # AI logs — tracked structure, ignored content
 .ai-log/*.jsonl

@@ -91,3 +91,10 @@
 @keyframes auth-spin {
   to { transform: rotate(360deg); }
 }
+
+.auth-form label>span{color:#d8dbe1}
+.auth-form input{min-height:50px;border-color:rgba(255,255,255,.12);border-radius:13px;background:#090b0f;color:#f7f8fa;caret-color:#f5c542}
+.auth-form input::placeholder{color:#666d79}.auth-form input:hover{border-color:rgba(255,255,255,.2)}
+.auth-form input:focus{border-color:rgba(245,197,66,.72);background:#0c0f14;box-shadow:0 0 0 3px rgba(245,197,66,.11)}
+.auth-password button{border:1px solid rgba(255,255,255,.09);background:#1a1e25;color:#f5c542}
+.auth-password button:hover,.auth-password button:focus-visible{border-color:rgba(245,197,66,.35);background:#222730;outline-color:rgba(245,197,66,.15)}

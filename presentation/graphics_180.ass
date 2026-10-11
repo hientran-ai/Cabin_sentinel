@@ -1,0 +1,25 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: TopBrand,Segoe UI Semibold,34,&H00F8F2E8,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,0,0,8,60,60,18,1
+Style: TopTag,Segoe UI,22,&H00E4D9CD,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,9,60,60,22,1
+Style: Benefit,Segoe UI Semibold,44,&H00F8F2E8,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,0,0,5,80,80,40,1
+Style: OutroBrand,Segoe UI Semibold,70,&H00F8F2E8,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,0,0,5,80,80,55,1
+Style: CTA,Segoe UI Semibold,36,&H00FFFFFF,&H000000FF,&H00000000,&H00B05C50,-1,0,0,0,100,100,0,0,3,2,0,5,80,80,40,1
+Style: Legal,Segoe UI,21,&H00D8D0C7,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,2,80,80,28,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.20,0:00:08.80,TopBrand,,0,0,0,,CabinSentinel
+Dialogue: 0,0:00:00.60,0:00:08.80,TopTag,,0,0,0,,AI Cabin Safety Monitoring
+Dialogue: 0,0:02:51.00,0:02:54.00,Benefit,,0,0,0,,Phát hiện sớm
+Dialogue: 0,0:02:54.00,0:02:57.00,Benefit,,0,0,0,,Xác minh rõ ràng
+Dialogue: 0,0:02:57.00,0:03:00.00,OutroBrand,,0,0,70,,CabinSentinel
+Dialogue: 0,0:02:57.20,0:02:59.60,CTA,,0,0,-70,,Khám phá CabinSentinel
+Dialogue: 0,0:02:51.00,0:03:00.00,Legal,,0,0,0,,Technical demo — telemetry và actions đang được mô phỏng.

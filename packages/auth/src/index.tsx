@@ -5,12 +5,13 @@ import type { Permission, User, V1Me, V1PlatformUser, V1SessionResponse } from '
 
 export type Portal = 'owner' | 'operations'
 export type AuthMode = 'session' | 'v1-demo' | 'mock'
+export type AuthErrorCode = 'session_verification_failed' | 'credentials_required' | 'demo_disabled' | 'demo_unavailable' | 'wrong_portal_operations' | 'wrong_portal_owner' | 'invalid_credentials' | 'rate_limited' | 'login_unavailable'
 export interface AuthConfig { apiBaseUrl: string; mode: AuthMode; ownerUrl: string; operationsUrl: string }
 export interface LoginCredentials { email: string; password: string }
 interface AuthValue {
   user?: User
   loading: boolean
-  error?: string
+  error?: AuthErrorCode
   config: AuthConfig
   login: (input?: Portal | LoginCredentials, expectedPortal?: Portal) => Promise<void>
   logout: () => Promise<void>
@@ -120,7 +121,7 @@ export function defaultPortal(user: User | undefined): Portal {
 export function AuthProvider({ config, children }: { config: AuthConfig; children: ReactNode }) {
   const [user, setUser] = useState<User>()
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string>()
+  const [error, setError] = useState<AuthErrorCode>()
   const client = useMemo(() => new CabinSentinelClient({
     baseUrl: config.apiBaseUrl,
     credentials: config.mode === 'mock' ? 'omit' : 'include',
@@ -160,7 +161,7 @@ export function AuthProvider({ config, children }: { config: AuthConfig; childre
         if (config.mode === 'v1-demo') sessionStorage.removeItem(V1_TOKEN_KEY)
         if (config.mode === 'session') clearSession()
       } else {
-        setError('Không thể xác minh phiên đăng nhập. Vui lòng thử lại.')
+        setError('session_verification_failed')
       }
       return undefined
     } finally {
@@ -186,14 +187,12 @@ export function AuthProvider({ config, children }: { config: AuthConfig; childre
         sessionStorage.setItem(V1_TOKEN_KEY, result.access_token)
         setUser(mapV1User(await client.v1Me()))
       } catch (reason) {
-        setError(reason instanceof ApiError && reason.status === 404
-          ? 'Backend đã tắt demo login. Hãy dùng chế độ session cho production.'
-          : 'Không thể đăng nhập vào backend V1. Hãy kiểm tra backend đang chạy.')
+        setError(reason instanceof ApiError && reason.status === 404 ? 'demo_disabled' : 'demo_unavailable')
       }
       return
     }
     if (!input || typeof input === 'string') {
-      setError('Vui lòng nhập email và mật khẩu.')
+      setError('credentials_required')
       return
     }
     try {
@@ -204,19 +203,15 @@ export function AuthProvider({ config, children }: { config: AuthConfig; childre
         try { await client.v1PlatformLogout(csrfToken()) } catch { /* The local session is still rejected below. */ }
         clearSession()
         setUser(undefined)
-        setError(expectedPortal === 'operations'
-          ? 'Tài khoản này không có quyền Admin hoặc Operations.'
-          : 'Tài khoản này không có quyền truy cập không gian User.')
+        setError(expectedPortal === 'operations' ? 'wrong_portal_operations' : 'wrong_portal_owner')
         return
       }
       setUser(next)
     } catch (reason) {
       clearSession()
       setError(reason instanceof ApiError && reason.status === 401
-        ? 'Email hoặc mật khẩu không đúng.'
-        : reason instanceof ApiError && reason.status === 429
-          ? 'Đăng nhập tạm thời bị giới hạn. Vui lòng thử lại sau.'
-          : 'Không thể đăng nhập. Hãy kiểm tra kết nối backend và thử lại.')
+        ? 'invalid_credentials'
+        : reason instanceof ApiError && reason.status === 429 ? 'rate_limited' : 'login_unavailable')
     }
   }, [client, config.mode])
 
@@ -250,14 +245,97 @@ function Shield() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 3 4.5 6v5c0 5 3 8.5 7.5 10 4.5-1.5 7.5-5 7.5-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
 }
 
+export const UNIFIED_LOGIN_PATH = '/admin/login'
+
+export function safeReturnPath(value?: string | null) {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return undefined
+  try {
+    const parsed = new URL(value, 'https://cabinsentinel.local')
+    const path = `${parsed.pathname}${parsed.search}${parsed.hash}`
+    if (['/login', '/user/login', '/admin/login', '/signin', '/sign-in'].includes(parsed.pathname.replace(/\/+$/, '') || '/')) return undefined
+    return path
+  } catch {
+    return undefined
+  }
+}
+
+export function portalForPath(path: string): Portal {
+  return path === '/admin' || path.startsWith('/admin/') ? 'operations' : 'owner'
+}
+
+export function UnifiedLoginRedirect() {
+  const routeLocation = useLocation()
+  const locationState = routeLocation.state as { from?: string } | null
+  useEffect(() => {
+    const from = safeReturnPath(locationState?.from)
+    const target = from ? `${UNIFIED_LOGIN_PATH}?from=${encodeURIComponent(from)}` : UNIFIED_LOGIN_PATH
+    window.location.replace(target)
+  }, [locationState?.from])
+  return <AuthLoading/>
+}
+
+type LoginLocale = 'vi' | 'en'
+const loginCopy = {
+  vi: {
+    brand: 'Hệ thống an toàn kết nối', language: 'English', eyebrow: 'Chào mừng trở lại', title: 'Đăng nhập vào hệ thống',
+    intro: 'Một tài khoản, một trang đăng nhập. Chọn không gian bạn muốn truy cập; quyền thực tế luôn do backend xác minh.',
+    roleLabel: 'Bạn muốn truy cập không gian', user: 'User', userDetail: 'Theo dõi phương tiện và cảnh báo', admin: 'Admin', adminDetail: 'Quản trị và vận hành hệ thống',
+    email: 'Email', password: 'Mật khẩu', show: 'Hiện', hide: 'Ẩn', showPassword: 'Hiện mật khẩu', hidePassword: 'Ẩn mật khẩu',
+    signingIn: 'Đang xác minh…', signIn: (role: string) => `Đăng nhập với vai trò ${role}`, opening: 'Đang mở phiên…', continue: (role: string) => `Tiếp tục với vai trò ${role}`,
+    demoHint: 'Chế độ demo chỉ dùng phiên mô phỏng và không thay đổi cơ chế đăng nhập production.',
+    sessionSafe: 'Phiên đăng nhập được bảo vệ an toàn.', sessionSafeDetail: 'Vai trò thật được backend xác minh sau khi đăng nhập.',
+    demoSafe: 'Token demo chỉ lưu trong sessionStorage.', demoSafeDetail: 'Backend tự tắt endpoint demo trong môi trường production.',
+    hero: <>Một cổng đăng nhập.<br/>Hai vai trò.<br/>Đúng quyền truy cập.</>,
+    adminHero: 'Quản trị người dùng, phương tiện và toàn bộ hệ thống.', userHero: 'Theo dõi phương tiện, trạng thái cabin và các cảnh báo.', rbac: 'Bảo mật theo vai trò', rbacHero: 'Mỗi tài khoản chỉ thấy dữ liệu và chức năng được cấp phép.',
+  },
+  en: {
+    brand: 'Connected safety system', language: 'Tiếng Việt', eyebrow: 'Welcome back', title: 'Sign in to CabinSentinel',
+    intro: 'One account, one login page. Choose the workspace you want; the backend always verifies your actual access.',
+    roleLabel: 'Choose a workspace', user: 'User', userDetail: 'Monitor vehicles and alerts', admin: 'Admin', adminDetail: 'Manage and operate the system',
+    email: 'Email', password: 'Password', show: 'Show', hide: 'Hide', showPassword: 'Show password', hidePassword: 'Hide password',
+    signingIn: 'Verifying…', signIn: (role: string) => `Sign in as ${role}`, opening: 'Opening session…', continue: (role: string) => `Continue as ${role}`,
+    demoHint: 'Demo mode uses a simulated session and does not change production authentication.',
+    sessionSafe: 'Your session is securely protected.', sessionSafeDetail: 'The backend verifies your actual role after sign-in.',
+    demoSafe: 'The demo token stays in sessionStorage.', demoSafeDetail: 'The backend disables demo login in production.',
+    hero: <>One login gateway.<br/>Two workspaces.<br/>Verified access.</>,
+    adminHero: 'Manage users, vehicles and system operations.', userHero: 'Monitor vehicles, cabin status and safety alerts.', rbac: 'Role-based security', rbacHero: 'Each account only sees authorized data and capabilities.',
+  },
+} as const
+
+const authErrorCopy: Record<LoginLocale, Record<AuthErrorCode, string>> = {
+  vi: {
+    session_verification_failed: 'Không thể xác minh phiên đăng nhập. Vui lòng thử lại.', credentials_required: 'Vui lòng nhập email và mật khẩu.',
+    demo_disabled: 'Backend đã tắt demo login. Hãy dùng chế độ session cho production.', demo_unavailable: 'Không thể đăng nhập vào backend V1. Hãy kiểm tra backend đang chạy.',
+    wrong_portal_operations: 'Tài khoản này không có quyền Admin hoặc Operations.', wrong_portal_owner: 'Tài khoản này không có quyền truy cập không gian User.',
+    invalid_credentials: 'Email hoặc mật khẩu không đúng.', rate_limited: 'Đăng nhập tạm thời bị giới hạn. Vui lòng thử lại sau.', login_unavailable: 'Không thể đăng nhập. Hãy kiểm tra kết nối backend và thử lại.',
+  },
+  en: {
+    session_verification_failed: 'Your session could not be verified. Please try again.', credentials_required: 'Enter your email and password.',
+    demo_disabled: 'Demo login is disabled by the backend. Use session mode in production.', demo_unavailable: 'The V1 backend is unavailable. Check the backend and try again.',
+    wrong_portal_operations: 'This account does not have Admin or Operations access.', wrong_portal_owner: 'This account does not have access to the User workspace.',
+    invalid_credentials: 'The email or password is incorrect.', rate_limited: 'Sign-in is temporarily rate limited. Please try again later.', login_unavailable: 'Unable to sign in. Check the backend connection and try again.',
+  },
+}
+
 export function LoginPage({ portal }: { portal: Portal }) {
   const { user, loading, error, config, login, portalUrl } = useAuth()
-  const locationState = useLocation().state as { from?: string } | null
+  const routeLocation = useLocation()
+  const locationState = routeLocation.state as { from?: string } | null
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [selectedPortal, setSelectedPortal] = useState<Portal>(portal)
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [locale, setLocale] = useState<LoginLocale>(() => {
+    const saved = localStorage.getItem('cs_login_locale')
+    return saved === 'en' || saved === 'vi' ? saved : navigator.language.toLowerCase().startsWith('vi') ? 'vi' : 'en'
+  })
+  const copy = loginCopy[locale]
+
+  useEffect(() => {
+    localStorage.setItem('cs_login_locale', locale)
+    document.documentElement.lang = locale
+  }, [locale])
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -272,49 +350,55 @@ export function LoginPage({ portal }: { portal: Portal }) {
   if (loading) return <AuthLoading/>
   if (user) {
     const destination = defaultPortal(user)
-    const canRestoreRequestedRoute = destination === portal && canAccessPortal(user, portal)
-    const target = canRestoreRequestedRoute ? (locationState?.from || (portal === 'owner' ? '/overview' : '/admin')) : portalUrl(destination)
-    if (destination !== portal || /^https?:/.test(target)) { location.assign(target); return <AuthLoading/> }
+    const queryFrom = new URLSearchParams(routeLocation.search).get('from')
+    const requested = safeReturnPath(locationState?.from || queryFrom)
+    const target = requested && canAccessPortal(user, portalForPath(requested))
+      ? requested
+      : destination === 'owner' ? '/overview' : '/admin'
+    if (portalForPath(target) !== portal) {
+      location.assign(requested ? new URL(target, window.location.origin).toString() : portalUrl(destination))
+      return <AuthLoading/>
+    }
     return <Navigate to={target} replace/>
   }
 
   return <main className="auth-page">
     <section className="auth-card">
-      <div className="auth-brand"><span><Shield/></span><div><strong>CabinSentinel</strong><small>Hệ thống an toàn kết nối</small></div></div>
+      <div className="auth-brand"><span><Shield/></span><div><strong>CabinSentinel</strong><small>{copy.brand}</small></div><button className="auth-language" type="button" onClick={() => setLocale(value => value === 'vi' ? 'en' : 'vi')} aria-label={copy.language}>{copy.language}</button></div>
       <div className="auth-copy">
-        <span className="auth-eyebrow">Chào mừng trở lại</span>
-        <h1>Đăng nhập vào hệ thống</h1>
-        <p>Chọn đúng loại tài khoản để truy cập không gian làm việc dành riêng cho bạn.</p>
+        <span className="auth-eyebrow">{copy.eyebrow}</span>
+        <h1>{copy.title}</h1>
+        <p>{copy.intro}</p>
       </div>
 
       <div className="auth-role-picker">
-        <p id="auth-role-label">Bạn muốn truy cập với vai trò</p>
+        <p id="auth-role-label">{copy.roleLabel}</p>
         <div role="tablist" aria-labelledby="auth-role-label">
           <button type="button" role="tab" className={selectedPortal === 'owner' ? 'is-active' : ''} aria-selected={selectedPortal === 'owner'} onClick={() => setSelectedPortal('owner')}>
             <span className="auth-role-icon auth-role-user">U</span>
-            <span><strong>User</strong><small>Theo dõi phương tiện và cảnh báo</small></span>
+            <span><strong>{copy.user}</strong><small>{copy.userDetail}</small></span>
           </button>
           <button type="button" role="tab" className={selectedPortal === 'operations' ? 'is-active' : ''} aria-selected={selectedPortal === 'operations'} onClick={() => setSelectedPortal('operations')}>
             <span className="auth-role-icon"><Shield/></span>
-            <span><strong>Admin</strong><small>Quản trị và vận hành hệ thống</small></span>
+            <span><strong>{copy.admin}</strong><small>{copy.adminDetail}</small></span>
           </button>
         </div>
       </div>
 
-      {error && <div className="auth-error" role="alert">{error}</div>}
+      {error && <div className="auth-error" role="alert">{authErrorCopy[locale][error]}</div>}
       {config.mode === 'session' ? <form className="auth-form" onSubmit={submit}>
-        <label><span>Email</span><input type="email" inputMode="email" autoComplete="username" required disabled={submitting} value={email} onChange={event => setEmail(event.target.value)} placeholder="name@example.com"/></label>
-        <label><span>Mật khẩu</span><div className="auth-password"><input type={showPassword ? 'text' : 'password'} autoComplete="current-password" required disabled={submitting} value={password} onChange={event => setPassword(event.target.value)} placeholder="••••••••••••"/><button type="button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} aria-pressed={showPassword}>{showPassword ? 'Ẩn' : 'Hiện'}</button></div></label>
-        <button className="auth-primary" type="submit" disabled={submitting} aria-busy={submitting}>{submitting && <span className="auth-button-spinner" aria-hidden="true"/>}{submitting ? 'Đang xác minh…' : `Đăng nhập với vai trò ${selectedPortal === 'operations' ? 'Admin' : 'User'}`}</button>
-      </form> : <div className="auth-demo-login"><p className="auth-demo-hint">Chế độ demo sử dụng phiên mô phỏng và không thay đổi cơ chế đăng nhập production.</p><button className="auth-primary" type="button" disabled={submitting} onClick={() => void demoLogin()}>{submitting ? 'Đang mở phiên…' : `Tiếp tục với vai trò ${selectedPortal === 'operations' ? 'Admin' : 'User'}`}</button></div>}
+        <label><span>{copy.email}</span><input type="email" inputMode="email" autoComplete="username" required disabled={submitting} value={email} onChange={event => setEmail(event.target.value)} placeholder="name@example.com"/></label>
+        <label><span>{copy.password}</span><div className="auth-password"><input type={showPassword ? 'text' : 'password'} autoComplete="current-password" required disabled={submitting} value={password} onChange={event => setPassword(event.target.value)} placeholder="••••••••••••"/><button type="button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? copy.hidePassword : copy.showPassword} aria-pressed={showPassword}>{showPassword ? copy.hide : copy.show}</button></div></label>
+        <button className="auth-primary" type="submit" disabled={submitting} aria-busy={submitting}>{submitting && <span className="auth-button-spinner" aria-hidden="true"/>}{submitting ? copy.signingIn : copy.signIn(selectedPortal === 'operations' ? copy.admin : copy.user)}</button>
+      </form> : <div className="auth-demo-login"><p className="auth-demo-hint">{copy.demoHint}</p><button className="auth-primary" type="button" disabled={submitting} onClick={() => void demoLogin()}>{submitting ? copy.opening : copy.continue(selectedPortal === 'operations' ? copy.admin : copy.user)}</button></div>}
 
-      <div className="auth-trust"><span><Shield/></span><p><strong>{config.mode === 'v1-demo' ? 'Token demo chỉ lưu trong sessionStorage.' : 'Phiên đăng nhập được bảo vệ an toàn.'}</strong><small>{config.mode === 'v1-demo' ? 'Backend tự tắt endpoint demo trong môi trường production.' : 'Vai trò thật được backend xác minh sau khi đăng nhập.'}</small></p></div>
+      <div className="auth-trust"><span><Shield/></span><p><strong>{config.mode === 'v1-demo' ? copy.demoSafe : copy.sessionSafe}</strong><small>{config.mode === 'v1-demo' ? copy.demoSafeDetail : copy.sessionSafeDetail}</small></p></div>
     </section>
     <aside className="auth-visual">
-      <span>CabinSentinel</span><h2>Một cổng đăng nhập.<br/>Hai vai trò.<br/>Đúng quyền truy cập.</h2>
-      <div><b>01</b><p><strong>Admin</strong><small>Quản trị người dùng, phương tiện và toàn bộ hệ thống.</small></p></div>
-      <div><b>02</b><p><strong>User</strong><small>Theo dõi phương tiện, trạng thái cabin và các cảnh báo.</small></p></div>
-      <div><b>03</b><p><strong>Bảo mật theo vai trò</strong><small>Mỗi tài khoản chỉ thấy dữ liệu và chức năng được cấp phép.</small></p></div>
+      <span>CabinSentinel</span><h2>{copy.hero}</h2>
+      <div><b>01</b><p><strong>{copy.admin}</strong><small>{copy.adminHero}</small></p></div>
+      <div><b>02</b><p><strong>{copy.user}</strong><small>{copy.userHero}</small></p></div>
+      <div><b>03</b><p><strong>{copy.rbac}</strong><small>{copy.rbacHero}</small></p></div>
     </aside>
   </main>
 }

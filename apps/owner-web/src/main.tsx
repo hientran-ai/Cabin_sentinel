@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import { AuthCallback, AuthProvider, LoginPage, RequirePortal, type AuthConfig } from '@cabinsentinel/auth'
+import { AuthCallback, AuthProvider, RequirePortal, UnifiedLoginRedirect, type AuthConfig } from '@cabinsentinel/auth'
 import { App } from './App'
 import '@cabinsentinel/auth/styles.css'
 import '@cabinsentinel/auth/form.css'
@@ -17,7 +17,7 @@ const authConfig: AuthConfig = {
   operationsUrl: import.meta.env.VITE_OPERATIONS_WEB_URL || `${window.location.origin}/admin`,
 }
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode><QueryClientProvider client={queryClient}><BrowserRouter><AuthProvider config={authConfig}><Routes><Route path="/login" element={<LoginPage portal="owner" />} /><Route path="/auth/callback" element={<AuthCallback portal="owner" />} /><Route path="*" element={<RequirePortal portal="owner"><App /></RequirePortal>} /></Routes></AuthProvider></BrowserRouter></QueryClientProvider></React.StrictMode>,
+  <React.StrictMode><QueryClientProvider client={queryClient}><BrowserRouter><AuthProvider config={authConfig}><Routes><Route path="/login" element={<UnifiedLoginRedirect />} /><Route path="/user/login" element={<UnifiedLoginRedirect />} /><Route path="/signin" element={<UnifiedLoginRedirect />} /><Route path="/sign-in" element={<UnifiedLoginRedirect />} /><Route path="/auth/callback" element={<AuthCallback portal="owner" />} /><Route path="*" element={<RequirePortal portal="owner"><App /></RequirePortal>} /></Routes></AuthProvider></BrowserRouter></QueryClientProvider></React.StrictMode>,
 )
 
 // A replaced session/context module invalidates memory credentials and consumers.

@@ -18,7 +18,10 @@ class Settings(BaseSettings):
     app_port: int = Field(default=8000, ge=1, le=65535)
     app_host: str = "0.0.0.0"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = (
+        "http://localhost:3000,http://localhost:4173,http://localhost:4174,"
+        "http://127.0.0.1:4173,http://127.0.0.1:4174"
+    )
     max_upload_size_bytes: int = Field(default=5 * 1024 * 1024, ge=1)
     max_image_pixels: int = Field(default=20_000_000, ge=1)
     max_concurrent_demo_requests: int = Field(default=1, ge=1)

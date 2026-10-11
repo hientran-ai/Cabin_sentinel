@@ -45,6 +45,8 @@ export interface Incident {
   occurredAt: string
   temperatureC?: number
   occupancy: VehicleSnapshot['occupancy']
+  revision?: number
+  acknowledgedAt?: string
 }
 
 export interface NotificationSettings {

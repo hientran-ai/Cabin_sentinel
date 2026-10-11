@@ -33,10 +33,18 @@ function adminAssetRequest(request, pathname) {
   return new Request(target, { method: request.method, headers: request.headers })
 }
 
+const legacyLoginPaths = new Set(['/', '/login', '/user/login', '/signin', '/sign-in', '/admin/signin', '/admin/sign-in'])
+
+function unifiedLoginRedirect(request) {
+  const target = new URL('/admin/login', request.url)
+  return Response.redirect(target.toString(), 308)
+}
+
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url)
     if (pathname === '/health' || pathname.startsWith('/api/')) return proxyBackend(request, env)
+    if (legacyLoginPaths.has(pathname.replace(/\/+$/, '') || '/')) return unifiedLoginRedirect(request)
     if (pathname === '/admin' || pathname.startsWith('/admin/')) {
       return env.ASSETS.fetch(adminAssetRequest(request, pathname))
     }

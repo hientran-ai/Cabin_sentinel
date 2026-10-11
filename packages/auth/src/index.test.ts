@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canAccessPortal, defaultPortal, mapV1User } from './index'
+import { canAccessPortal, defaultPortal, mapV1User, portalForPath, safeReturnPath } from './index'
 
 describe('production role mapping', () => {
   it('routes an admin to Operations', () => {
@@ -35,5 +35,20 @@ describe('production role mapping', () => {
     expect(canAccessPortal(operator, 'owner')).toBe(false)
     expect(canAccessPortal(caregiver, 'owner')).toBe(true)
     expect(canAccessPortal(caregiver, 'operations')).toBe(false)
+  })
+
+  it('classifies canonical portal paths without granting access', () => {
+    expect(portalForPath('/admin/users')).toBe('operations')
+    expect(portalForPath('/user/vehicles')).toBe('owner')
+    expect(portalForPath('/overview')).toBe('owner')
+  })
+
+  it('accepts only local non-login return paths', () => {
+    expect(safeReturnPath('/admin/audit?tab=security')).toBe('/admin/audit?tab=security')
+    expect(safeReturnPath('/user/vehicles#active')).toBe('/user/vehicles#active')
+    expect(safeReturnPath('//evil.example/admin')).toBeUndefined()
+    expect(safeReturnPath('https://evil.example/admin')).toBeUndefined()
+    expect(safeReturnPath('/login')).toBeUndefined()
+    expect(safeReturnPath('/admin/login')).toBeUndefined()
   })
 })
