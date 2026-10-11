@@ -30,7 +30,11 @@ WEIGHTS_SHA256 = "f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b
 # commands disabled, and let the owner configure an exact frontend origin.
 os.environ.setdefault("APP_ENV", "production")
 os.environ.setdefault("CABINSENTINEL_MQTT_ENABLED", "false")
-os.environ.setdefault("CABINSENTINEL_DB_PATH", str(APP_DIR / "data" / "cabinsentinel.db"))
+# A Space with Persistent Storage mounts it at /data: keep accounts, incidents and audit there so they survive a restart.
+# Without it the database is on the container's ephemeral disk and /health reports storage.persistent=false.
+_PERSISTENT_DIR = Path("/data")
+_USE_PERSISTENT = _PERSISTENT_DIR.is_dir() and os.access(_PERSISTENT_DIR, os.W_OK)
+os.environ.setdefault("CABINSENTINEL_DB_PATH", str((_PERSISTENT_DIR if _USE_PERSISTENT else APP_DIR / "data") / "cabinsentinel.db"))
 os.environ.setdefault("MAX_CONCURRENT_DEMO_REQUESTS", "2")
 os.environ.setdefault("MODEL_PATH", str(WEIGHTS))
 os.environ.setdefault("YOLO_AUTOINSTALL", "false")
@@ -171,7 +175,7 @@ def run_api_lifespan() -> None:
 with gr.Blocks(title="CabinSentinel V1") as demo:
     gr.Markdown(
         "# 🛡️ CabinSentinel V1 — In-Cabin Safety Backend\n"
-        "REST API cho frontend: `POST /api/v1/demo/analyze` · `GET /health` · Swagger tại [`/docs`](/docs). "
+        "REST API cho frontend: `POST /api/v1/demo/analyze` · `GET /health` · tài liệu API chỉ mở khi `DOCS_ENABLED=true`. "
         "Nút bên dưới chạy YOLO trên ZeroGPU; REST API chạy trên CPU. "
         "Mọi hành động (còi, SMS, thông báo) đều là mô phỏng."
     )
