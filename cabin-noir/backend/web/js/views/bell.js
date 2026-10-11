@@ -1,5 +1,6 @@
 // The bell in the top bar: one list of alerts, new devices, camera/connection problems and update notices.
 // It stays alive between page repaints (the shell is rebuilt every few seconds), so open state and scroll are not lost.
+import { scrollToY } from "../frame.js";
 import { get } from "../api.js";
 import { h, icon, fmt } from "../ui.js";
 import { saveTab } from "./histtab.js";
@@ -43,7 +44,8 @@ function paint() {
 }
 
 let seenAtAtOpen = 0;
-function open() { st.open = true; seenAtAtOpen = seenAt(); markSeen(); paint(); refresh(); }
+// The list hangs under the top bar, so bring the bar into view first.
+function open() { scrollToY(0); st.open = true; seenAtAtOpen = seenAt(); markSeen(); paint(); refresh(); }
 function close() { if (st.open) { st.open = false; paint(); } }
 
 export async function refresh() {

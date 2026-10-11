@@ -23,6 +23,7 @@ NAMES = {
     "users": "users-round", "contact": "contact-round", "smartphone": "smartphone", "cpu": "cpu", "map": "map", "route": "route",
     "flag": "flag", "calendar": "calendar", "search": "search", "share": "share", "printer": "printer", "seal": "badge-check",
     "telegram": "send", "mail": "mail", "message": "message-circle", "door": "door-open", "sun": "sun", "moon": "moon",
+    "wifi": "wifi", "signal": "signal", "battery-full": "battery-full", "phone-frame": "smartphone", "maximize": "maximize-2",
 }
 
 

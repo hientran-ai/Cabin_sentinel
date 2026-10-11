@@ -6,7 +6,7 @@ import secrets
 import urllib.request
 from typing import Any, Callable, Sequence
 
-from . import config, db, telegram
+from . import config, db, telegram, webpush
 
 Sender = Callable[[str, str, str, int, Sequence[str], str | None], bool]
 
@@ -54,9 +54,11 @@ def _channel(user_id: str) -> str:
     return (db.loads(row["settings"]) if row else {}).get("notify_channel", "auto")
 
 
-def notify_user(user_id: str, title: str, message: str, urgent: bool = False, tags: Sequence[str] = (), click: str | None = None) -> bool:
+def notify_user(user_id: str, title: str, message: str, urgent: bool = False, tags: Sequence[str] = (), click: str | None = None,
+                url: str | None = None) -> bool:
     """Send through the user's channel: Telegram when linked ("auto"), ntfy otherwise. A failed Telegram send falls back to ntfy
-    so an alert is never lost because one channel is down."""
+    so an alert is never lost because one channel is down. Browsers with notifications turned on get it as well (Web Push)."""
+    web_ok = webpush.notify_user(user_id, title, message, urgent=urgent, url=url, tag=url)
     channel = _channel(user_id)
     chat = telegram.chat_for(user_id) if config.telegram_configured() else None
     use_tg = bool(chat) and channel in ("auto", "telegram", "both")
@@ -66,4 +68,4 @@ def notify_user(user_id: str, title: str, message: str, urgent: bool = False, ta
     if channel in ("ntfy", "both") or not use_tg or not ok:
         ok = publish(topic_for(user_id), title, message, priority=5 if urgent else 3,
                      tags=tags or (["rotating_light"] if urgent else ["warning"]), click=click) or ok
-    return ok
+    return ok or web_ok

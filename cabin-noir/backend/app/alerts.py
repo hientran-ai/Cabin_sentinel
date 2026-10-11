@@ -40,11 +40,11 @@ def _deliver(key: str, kind: str, vehicle_id: str, incident_id: str | None, fn: 
                          (key, kind, vehicle_id, incident_id, now(), status, detail))
 
 
-def _push_all(vehicle_id: str, level: str | None, title: str, message: str, urgent: bool) -> tuple[bool, str]:
+def _push_all(vehicle_id: str, level: str | None, title: str, message: str, urgent: bool, url: str | None = None) -> tuple[bool, str]:
     people = recipients(vehicle_id, level)
     if not people:
         return False, "skipped: không có ai nhận thông báo"
-    sent = sum(1 for p in people if push.notify_user(p["user_id"], title, message, urgent=urgent))
+    sent = sum(1 for p in people if push.notify_user(p["user_id"], title, message, urgent=urgent, url=url))
     return sent > 0, f"{sent}/{len(people)} máy"
 
 
@@ -92,14 +92,14 @@ def _incident(inc: Any, t: float) -> None:
     label = f"{v['name']} · {v['plate']}"
     word = "Nghiêm trọng" if level == "critical" else "Cảnh báo"
     _deliver(f"{iid}:lvl:{level}", "level", vid, iid,
-             lambda: _push_all(vid, level, f"{word}: có thể có người trong xe", f"{label}. {inc['reason']} Mở ứng dụng để xem việc cần làm.", level == "critical"))
+             lambda: _push_all(vid, level, f"{word}: có thể có người trong xe", f"{label}. {inc['reason']} Mở ứng dụng để xem việc cần làm.", level == "critical", f"./#/incident/{iid}"))
     if inc["viewed_at"] is not None:
         return   # someone saw it: escalation stops, the incident stays open until a confirmed check
     # Repeat the push every minute until someone opens it.
     n = int((t - inc["created_at"]) // PUSH_REPEAT_S)
     if n >= 1:
         _deliver(f"{iid}:rep:{n}", "repeat", vid, iid,
-                 lambda: _push_all(vid, level, f"Vẫn chưa ai xem: {word.lower()}", f"{label}. Đã {n} phút. Mở ứng dụng ngay.", level == "critical"))
+                 lambda: _push_all(vid, level, f"Vẫn chưa ai xem: {word.lower()}", f"{label}. Đã {n} phút. Mở ứng dụng ngay.", level == "critical", f"./#/incident/{iid}"))
     owner = db.one("SELECT user_id, phone FROM members WHERE vehicle_id=? AND role='owner'", vid)
     for off, key, _title, _note in ESCALATION:
         if t < inc["created_at"] + off or key == "push":
@@ -111,7 +111,7 @@ def _incident(inc: Any, t: float) -> None:
             nums = [c["phone"] for c in db.all_("SELECT phone FROM contacts WHERE user_id=?", owner["user_id"])] if owner else []
             fn = (lambda nums=nums: _sms(nums, f"CabinSentinel: có thể có người trong xe {label}. Hãy tới kiểm tra hoặc gọi 112.")) if level == "critical" else (lambda: (False, "skipped: chỉ áp dụng cho Nghiêm trọng"))
         elif key == "suggest_112":
-            fn = lambda: _push_all(vid, level, "Gọi 112 nếu thấy người trong xe", f"{label}. Ứng dụng không tự gọi 112 và không mở khóa xe.", True)
+            fn = lambda: _push_all(vid, level, "Gọi 112 nếu thấy người trong xe", f"{label}. Ứng dụng không tự gọi 112 và không mở khóa xe.", True, f"./#/incident/{iid}")
         else:   # call_owner, call_family: automatic phone calls are not supported
             fn = lambda: (False, "skipped: chưa hỗ trợ gọi tự động")
         _deliver(dkey, key, vid, iid, fn)

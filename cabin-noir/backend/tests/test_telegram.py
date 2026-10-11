@@ -160,3 +160,22 @@ def test_otp_answer_does_not_reveal_whether_phone_is_known(tg):
     a = c.post("/v1/auth/otp", json={"phone": "0900000001"}).json()
     b = c.post("/v1/auth/otp", json={"phone": phone or "0900000002"}).json()
     assert set(a) == set(b)
+
+
+def test_one_fixed_tester_number_gets_its_code_on_screen(prod, monkeypatch):
+    from app import config, telegram
+    c, clock, sent, _ = prod
+    assert "dev_code" not in c.post("/v1/auth/otp", json={"phone": "0999999999"}).json()           # off unless configured
+    monkeypatch.setattr(config, "OTP_TESTER_PHONE", "0999999999")
+    r = c.post("/v1/auth/otp", json={"phone": "0999999999"}).json()
+    assert len(r["dev_code"]) == 6
+    assert c.post("/v1/auth/verify", json={"phone": "0999999999", "code": r["dev_code"], "name": "Tester"}).status_code == 200
+    assert "dev_code" not in c.post("/v1/auth/otp", json={"phone": "0901000002"}).json()           # any other number: normal sign-in
+    assert "tester" not in c.get("/v1/config").json()                                             # not advertised
+    # if the tester number is linked to Telegram, its code goes there like for anyone else
+    monkeypatch.setattr(config, "telegram_configured", lambda: True)
+    monkeypatch.setattr(telegram, "chat_for_phone", lambda phone: 42)
+    monkeypatch.setattr(telegram, "send_code", lambda chat, code: True)
+    monkeypatch.setattr(telegram, "login_start", lambda phone: {"deep_link": "https://t.me/x"})
+    clock.t += 700                                                                                # past the per-number rate limit window
+    assert "dev_code" not in c.post("/v1/auth/otp", json={"phone": "0999999999"}).json()

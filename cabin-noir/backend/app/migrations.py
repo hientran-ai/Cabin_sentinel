@@ -14,7 +14,7 @@ import hashlib
 import sqlite3
 from typing import Callable
 
-LATEST = 6
+LATEST = 7
 
 V1 = """
 CREATE TABLE IF NOT EXISTS users (
@@ -225,7 +225,15 @@ def _m6(conn: sqlite3.Connection) -> None:
     conn.execute("CREATE INDEX IF NOT EXISTS idx_cabin_log_incident ON cabin_log(incident_id)")
 
 
-MIGRATIONS: list[tuple[int, Callable[[sqlite3.Connection], None]]] = [(1, _m1), (2, _m2), (3, _m3), (4, _m4), (5, _m5), (6, _m6)]
+def _m7(conn: sqlite3.Connection) -> None:
+    """Web Push: browsers that turned notifications on (removed with the user, or when the browser drops them), and the server key."""
+    conn.execute("CREATE TABLE IF NOT EXISTS web_push (endpoint TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, "
+                 "p256dh TEXT NOT NULL, auth TEXT NOT NULL, agent TEXT, created_at REAL NOT NULL, last_ok_at REAL)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_web_push_user ON web_push(user_id)")
+    conn.execute("CREATE TABLE IF NOT EXISTS server_keys (name TEXT PRIMARY KEY, value TEXT NOT NULL)")
+
+
+MIGRATIONS: list[tuple[int, Callable[[sqlite3.Connection], None]]] = [(1, _m1), (2, _m2), (3, _m3), (4, _m4), (5, _m5), (6, _m6), (7, _m7)]
 
 
 def current(conn: sqlite3.Connection) -> int:

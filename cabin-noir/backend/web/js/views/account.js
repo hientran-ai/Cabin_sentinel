@@ -1,6 +1,7 @@
 import { get, post, put, patch, del, api, auth } from "../api.js";
 import { h, icon, carPic, fmt, toast, sheet, confirmDialog, field, switchRow, busy } from "../ui.js";
 import { signedOut } from "../app.js";
+import * as wp from "../webpush.js";
 
 export const live = false;      // forms live here: repaint only when an action asks for it
 const ROLE = { owner: "Chủ xe", confirm: "Xem và xác nhận", view: "Chỉ xem", school: "Chỉ đưa đón" };
@@ -51,7 +52,7 @@ export async function render(ctx) {
         switchRow("Cảnh báo mức Cảnh báo", "Mức Nghiêm trọng luôn được gửi", st.notify_warning, (v) => save({ notify_warning: v })),
         switchRow("Thông tin chung", "Kết nối lại thiết bị, đóng sự cố…", st.notify_info, (v) => save({ notify_info: v })),
         switchRow("Nhắc khi rời xe", "Nhắc kiểm tra ghế sau khi khóa xe", st.exit_reminder, (v) => save({ exit_reminder: v })),
-        "Notification" in window && switchRow("Thông báo của trình duyệt", "Hiện khi tab này mở nhưng đang ẩn", Notification.permission === "granted", async (v, el) => { if (v) { const r = await Notification.requestPermission(); el.checked = r === "granted"; } })),
+        pushRow()),
       push && h("p", { class: "small muted", style: "margin:6px 4px 0" }, `ntfy (kênh dự phòng): chủ đề riêng ${push.topic}. Ai biết tên chủ đề đều đọc được, đừng chia sẻ.`)),
 
     section("Mục đích sử dụng", list(h("div", { class: "switch" }, h("div", {}, "Dùng cho"), h("select", { "aria-label": "Mục đích", style: "width:auto", on: { change: (e) => save({ purpose: e.target.value }) } },
@@ -67,7 +68,7 @@ export async function render(ctx) {
       h("button", { class: "item", style: "color:var(--red)", on: { click: () => deleteAccount() } }, icon("trash"), h("div", { class: "grow" }, h("div", {}, "Xóa tài khoản và dữ liệu"), h("div", { class: "sub" }, "Xóa luôn các xe bạn là chủ xe và toàn bộ lịch sử, ảnh")))),
       h("p", { class: "small muted", style: "margin:6px 4px 0" }, "Lịch sử cảm biến và hành trình tự xóa sau 7 ngày, ảnh sau 30 ngày, nhật ký truy cập sau 365 ngày. Ảnh camera gốc không bao giờ rời thiết bị.")),
 
-    h("button", { class: "btn block", style: "margin-top:18px", on: { click: async (e) => busy(e.target, async () => { try { await post("/v1/auth/logout"); } catch { /* token may already be gone */ } signedOut(); }) } }, "Đăng xuất"),
+    h("button", { class: "btn block", style: "margin-top:18px", on: { click: async (e) => busy(e.target, async () => { try { await wp.disable(); await post("/v1/auth/logout"); } catch { /* token may already be gone */ } signedOut(); }) } }, "Đăng xuất"),
     h("p", { class: "small muted center" }, "Cabin Noir chỉ giám sát, không mở khóa hay điều khiển xe và không thể đảm bảo an toàn tuyệt đối. Thấy người trong xe: gọi 112."));
 }
 
@@ -150,4 +151,24 @@ function deleteAccount() {
   return sheet((close) => { const t = h("input", { type: "text", placeholder: "XOA TAI KHOAN", autocomplete: "off" });
     return h("div", { class: "gap" }, h("p", { style: "margin:0" }, "Việc này xóa vĩnh viễn tài khoản, các xe bạn là chủ xe cùng lịch sử, ảnh và thiết bị đã ghép. Không hoàn tác được."),
       field("Gõ XOA TAI KHOAN để xác nhận", t), h("button", { class: "btn danger block", on: { click: (e) => busy(e.target, async () => { if (t.value.trim() !== "XOA TAI KHOAN") { toast("Chưa gõ đúng dòng xác nhận.", "err"); return; } try { await del("/v1/me", { confirm: "XOA TAI KHOAN" }); close(true); toast("Đã xóa tài khoản.", "ok"); signedOut(); } catch (er) { toast(er.message, "err"); } }) } }, "Xóa vĩnh viễn")); }, { title: "Xóa tài khoản" });
+}
+
+// System notifications in this browser (Web Push): like the iPhone app, also when the tab is closed.
+function pushRow() {
+  const sub = wp.isIOS() && !wp.installed()
+    ? "Trên iPhone: Chia sẻ → Thêm vào Màn hình chính, mở từ biểu tượng đó rồi bật"
+    : "Hiện cảnh báo như ứng dụng điện thoại, kể cả khi đã đóng tab";
+  const row = switchRow("Thông báo trên máy này", sub, false, async (v, el) => {
+    el.disabled = true;
+    try {
+      if (v) { await wp.enable(); toast("Đã bật. Cảnh báo sẽ hiện trên máy này, cùng lúc với Telegram.", "ok"); }
+      else { await wp.disable(); toast("Đã tắt thông báo trên máy này.", "ok"); }
+      el.checked = v; testBtn.hidden = !v;
+    } catch (e) { el.checked = !v; toast(e.message, "err"); }
+    el.disabled = false;
+  });
+  const input = row.querySelector("input");
+  const testBtn = h("button", { class: "btn small ghost", hidden: true, on: { click: (e) => busy(e.target, async () => { try { await wp.test(); toast("Đã gửi thông báo thử.", "ok"); } catch (er) { toast(er.message, "err"); } }) } }, "Gửi thử");
+  wp.enabled().then((on) => { input.checked = on; testBtn.hidden = !on; }).catch(() => {});
+  return h("div", {}, row, h("div", { class: "row", style: "justify-content:flex-end;padding:0 4px 6px" }, testBtn));
 }

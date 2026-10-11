@@ -1,5 +1,7 @@
+import { scrollTop, scrollToY } from "./frame.js";
 import { auth, get, ApiError } from "./api.js";
-import { h, icon, toast, playBeep } from "./ui.js";
+import { h, icon, toast, banner as showBanner, playBeep } from "./ui.js";
+import { listen as listenPush, registration as pushRegistration } from "./webpush.js";
 import { bell, stopBell } from "./views/bell.js";
 
 // Shared state. Views read it and call actions; polling keeps it fresh.
@@ -42,9 +44,10 @@ function announce() {
   const inc = S.status && S.status.incident;
   const id = inc ? inc.id + ":" + inc.level : null;
   if (id && id !== lastIncident && lastIncident !== undefined) {
-    toast(`${inc.level === "critical" ? "Nghiêm trọng" : "Cảnh báo"}: ${inc.reason}`, "err");
+    showBanner({ title: `${inc.level === "critical" ? "Nghiêm trọng" : "Cảnh báo"}: có thể có người trong xe`, body: inc.reason, url: `#/incident/${inc.id}`, urgent: inc.level === "critical" });
     playBeep();
-    if ("Notification" in window && Notification.permission === "granted" && document.hidden) {
+    // With Web Push on, the service worker shows the system notification; this is the fallback for a hidden tab without it.
+    if ("Notification" in window && Notification.permission === "granted" && document.hidden && !(navigator.serviceWorker && navigator.serviceWorker.controller)) {
       new Notification("Cabin Noir: có thể có người trong xe", { body: inc.reason, tag: inc.id });
     }
   }
@@ -89,9 +92,9 @@ async function paint() {
   if (!mod) return;
   const node = await mod.render({ S, go, refresh, rerender: paint, arg: route.arg, vehicle, role });
   if (mod !== view) return;
-  const scrollY = window.scrollY;
+  const y = scrollTop();
   root.replaceChildren(shell(node));
-  window.scrollTo(0, scrollY);
+  scrollToY(y);
 }
 
 async function navigate() {
@@ -100,7 +103,7 @@ async function navigate() {
   route = { name: VIEWS[name] ? name : "home", arg: arg ? decodeURIComponent(arg) : null };
   if (view && view.destroy) view.destroy();
   view = await VIEWS[route.name]();
-  window.scrollTo(0, 0);
+  scrollToY(0);
   await paint();
 }
 
@@ -128,6 +131,9 @@ export function signedOut() {
 }
 
 window.addEventListener("hashchange", () => { if (auth.token) navigate(); });
+// A push that arrives while this page is visible shows as an in-page banner (the service worker skips the system one).
+listenPush((m) => { showBanner({ title: m.title, body: m.body, url: m.url, urgent: m.urgent }); if (m.urgent) playBeep(); });
+if ("Notification" in window && Notification.permission === "granted") pushRegistration().catch(() => {});
 window.addEventListener("cn:signout", () => { toast("Phiên đăng nhập đã hết. Đăng nhập lại."); signedOut(); });
 document.addEventListener("visibilitychange", () => { if (!document.hidden && auth.token) refresh(); });
 

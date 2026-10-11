@@ -8,6 +8,7 @@ export function render({ onDone }) {
   const codeIn = h("input", { type: "text", inputMode: "numeric", autocomplete: "one-time-code", placeholder: "6 chữ số", maxLength: 6 });
   let phone = "";
   let tg = null;
+  let tester = null;                                   // code returned on screen (tester number only)
 
   const stepPhone = () => {
     box.replaceChildren(
@@ -22,7 +23,8 @@ export function render({ onDone }) {
     try {
       const r = await post("/v1/auth/otp", { phone }, { anon: true });
       tg = r.telegram && r.telegram.deep_link ? r.telegram : null;
-      if (r.dev_code) toast(`Chế độ thử: mã là ${r.dev_code}`, "ok");
+      tester = r.dev_code || null;
+      if (tester) codeIn.value = tester;                // tester mode: code filled in, just press Đăng nhập
       stepCode();
     } catch (e) { toast(e.message, "err"); }
   }
@@ -30,10 +32,11 @@ export function render({ onDone }) {
     box.replaceChildren(...[h("h2", {}, "Nhập mã"), h("p", { class: "muted", style: "margin:0" }, `Mã có hiệu lực 5 phút. Số ${phone}.`),
       tg ? h("a", { class: "btn block", href: tg.deep_link, target: "_blank", rel: "noopener" }, "Mở Telegram để nhận mã") : null,
       tg ? h("p", { class: "small muted", style: "margin:0" }, "Đã liên kết Telegram thì mã tự gửi vào đó. Lần đầu: mở bot, bấm Start rồi chia sẻ số điện thoại để xác nhận số này là của bạn.") : null,
+      tester ? h("p", { class: "tester-note" }, `Mã ${tester} đã được điền sẵn.`) : null,
       field("Mã đăng nhập", codeIn),
       h("button", { class: "btn primary block", on: { click: (e) => busy(e.target, verify) } }, "Đăng nhập"),
       h("button", { class: "btn ghost block", on: { click: stepPhone } }, "Đổi số")].filter(Boolean));
-    codeIn.focus();
+    if (!tester) codeIn.focus();
   };
   async function verify() {
     try {

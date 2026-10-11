@@ -124,6 +124,8 @@ def purge(media_dir: str, t: float | None = None) -> dict[str, int]:
             counts[name] = conn.execute(f"DELETE FROM {name} WHERE {col}<?", (t,)).rowcount
         counts["cabin_log"] = conn.execute("DELETE FROM cabin_log WHERE ended_at IS NOT NULL AND ended_at<?", (t - RETENTION["cabin_log"],)).rowcount
         counts["tokens"] = 0
+    from . import webpush
+    counts["web_push"] = webpush.purge(t)
     return counts
 
 

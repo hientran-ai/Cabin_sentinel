@@ -18,7 +18,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response, 
 from pydantic import BaseModel, Field, field_validator
 
 from . import alerts as alert_worker
-from . import cabinlog, config, db, logic, notifications, otp, push, sms, telegram
+from . import cabinlog, config, db, logic, notifications, otp, push, sms, telegram, webpush
 from . import history as hist
 from .logic import SEAT_LABEL, now
 
@@ -274,6 +274,10 @@ def send_otp(body: OtpIn) -> dict[str, Any]:
     OTP_SENT[phone] = recent + [now()]
     code = otp.issue(phone)
     out: dict[str, Any] = {"sent": True, "expires_in": otp.TTL_S}
+    # Tester shortcut: one fixed number gets its code on screen (unless it was linked to Telegram).
+    if config.OTP_TESTER_PHONE and phone == config.OTP_TESTER_PHONE and not (config.telegram_configured() and telegram.chat_for_phone(phone)):
+        out["dev_code"] = code
+        return out
     # Telegram first. The answer is the same whether or not this phone has a linked chat (no account enumeration): a linked chat
     # gets the code at once, any other phone gets a one-time link to the bot, where sharing the phone contact proves it is theirs.
     tg_sent = False
@@ -1733,6 +1737,52 @@ def my_telegram_test(user: User = Depends(current_user)) -> dict[str, Any]:
     return {"sent": telegram.notify(chat, "Thông báo thử Cabin Noir", "Nếu bạn thấy tin này, cảnh báo sẽ tới được Telegram.", False)}
 
 
+class WebPushIn(BaseModel):
+    endpoint: str = Field(max_length=1024)
+    p256dh: str = Field(max_length=200)
+    auth: str = Field(max_length=100)
+
+
+class WebPushOut(BaseModel):
+    endpoint: Optional[str] = Field(None, max_length=1024)
+
+
+@app.get("/v1/webpush/key")
+def webpush_key() -> dict[str, Any]:
+    """Public key the browser needs to subscribe. Not secret."""
+    return {"public_key": webpush.public_key()}
+
+
+@app.get("/v1/me/webpush")
+def webpush_status(user: User = Depends(current_user)) -> dict[str, Any]:
+    return {"browsers": webpush.count(user.id)}
+
+
+@app.post("/v1/me/webpush")
+def webpush_subscribe(body: WebPushIn, request: Request, user: User = Depends(current_user)) -> dict[str, Any]:
+    if not webpush.valid_endpoint(body.endpoint):
+        raise err(422, "push_endpoint", "Trình duyệt này không dùng dịch vụ thông báo được hỗ trợ.")
+    if not webpush.valid_keys(body.p256dh, body.auth):
+        raise err(422, "push_keys", "Khóa thông báo không hợp lệ.")
+    webpush.subscribe(user.id, body.endpoint, body.p256dh, body.auth, request.headers.get("user-agent", ""))
+    return {"ok": True, "browsers": webpush.count(user.id)}
+
+
+@app.delete("/v1/me/webpush")
+def webpush_unsubscribe(body: WebPushOut, user: User = Depends(current_user)) -> dict[str, Any]:
+    return {"ok": True, "removed": webpush.unsubscribe(user.id, body.endpoint)}
+
+
+@app.post("/v1/me/webpush/test")
+def webpush_test(user: User = Depends(current_user)) -> dict[str, Any]:
+    if not webpush.count(user.id):
+        raise err(409, "push_none", "Máy này chưa bật thông báo trên trình duyệt.")
+    ok = webpush.notify_user(user.id, "Cabin Noir: thông báo thử", "Nếu bạn thấy tin này, cảnh báo sẽ hiện như vậy.", url="./#/account", tag="test")
+    if not ok:
+        raise err(502, "push_failed", "Không gửi được. Thử tắt rồi bật lại thông báo.")
+    return {"ok": True}
+
+
 @app.post("/v1/telegram/webhook/{secret}")
 async def telegram_webhook(secret: str, request: Request) -> dict[str, Any]:
     if not config.TELEGRAM_WEBHOOK_SECRET or not secrets.compare_digest(secret, config.TELEGRAM_WEBHOOK_SECRET):
@@ -1820,4 +1870,5 @@ def revoke_session(session_id: str, user: User = Depends(current_user)) -> dict[
 def logout_all(user: User = Depends(current_user)) -> dict[str, Any]:
     with db.tx() as conn:
         n = conn.execute("DELETE FROM tokens WHERE user_id=?", (user.id,)).rowcount
+        conn.execute("DELETE FROM web_push WHERE user_id=?", (user.id,))    # signed out everywhere: no more alerts in those browsers
     return {"ok": True, "revoked": n}

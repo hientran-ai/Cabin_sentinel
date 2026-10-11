@@ -1,4 +1,5 @@
 import { ICONS } from "./icons.js";
+import { portal } from "./frame.js";
 
 const SVG = "http://www.w3.org/2000/svg";
 // Tiny DOM helpers. Text always goes through textContent, never innerHTML, so server data cannot inject markup.
@@ -62,7 +63,7 @@ export const fmt = {
 
 export function toast(message, kind = "") {
   let box = document.querySelector(".toasts");
-  if (!box) { box = h("div", { class: "toasts", role: "status", "aria-live": "polite" }); document.body.append(box); }
+  if (!box) { box = h("div", { class: "toasts", role: "status", "aria-live": "polite" }); portal().append(box); }
   for (const old of box.querySelectorAll(".toast")) if (old.textContent === message) old.remove();   // the same message never stacks
   while (box.children.length >= 2) box.firstElementChild.remove();                                   // at most two at a time
   const t = h("div", { class: `toast ${kind}` }, message);
@@ -84,7 +85,7 @@ export function sheet(build, { title } = {}) {
       title && h("div", { class: "row between", style: "margin-bottom:12px" }, h("h2", {}, title),
         h("button", { class: "icon-btn", "aria-label": "Đóng", on: { click: () => close(undefined) } }, icon("x"))), body);
     const scrim = h("div", { class: "scrim", on: { click: (e) => { if (e.target === scrim) close(undefined); } } }, sh);
-    document.body.append(scrim);
+    portal().append(scrim);
     document.addEventListener("keydown", onKey);
     body.append(build(close));
     const first = sh.querySelector("input,button:not(.icon-btn),select"); first && first.focus();
@@ -130,4 +131,25 @@ export function carPic(v, cls = "carpic") {
   const label = v ? `${v.model || "Xe"}${v.color ? ` màu ${({ white: "trắng", black: "đen", red: "đỏ" })[v.color] || v.color}` : ""}` : "Xe";
   if (file) return h("img", { class: cls, src: `img/${file}.png`, alt: label, loading: "lazy", decoding: "async" });
   return h("div", { class: `${cls} generic`, role: "img", "aria-label": label }, icon("car-side"));
+}
+
+/** iPhone-style notification banner at the top of the screen (inside the phone frame on a computer). Tap opens `url`. */
+export function banner({ title, body = "", url = null, urgent = false }) {
+  const root = portal();
+  let box = root.querySelector(":scope > .banners");
+  if (!box) { box = h("div", { class: "banners", role: "alert", "aria-live": "assertive" }); root.append(box); }
+  for (const old of box.querySelectorAll(".banner-n")) if (old.dataset.title === title) old.remove();
+  const close = () => { b.classList.add("out"); setTimeout(() => b.remove(), 250); };
+  const b = h("div", { class: `banner-n ${urgent ? "urgent" : ""}`, tabindex: "0", on: {
+      click: () => { if (url) location.hash = new URL(url, location.href).hash || "#/home"; close(); },
+      keydown: (e) => { if (e.key === "Enter") e.currentTarget.click(); if (e.key === "Escape") close(); } } },
+    h("img", { src: "icon-192.png", alt: "" }),
+    h("div", { class: "grow" },
+      h("div", { class: "banner-top" }, h("span", {}, "CABIN NOIR"), h("span", {}, "bây giờ")),
+      h("div", { class: "banner-t" }, title), body && h("div", { class: "banner-b" }, body)),
+    h("button", { class: "banner-x", "aria-label": "Đóng thông báo", on: { click: (e) => { e.stopPropagation(); close(); } } }, icon("x")));
+  b.dataset.title = title;
+  box.prepend(b);
+  while (box.children.length > 3) box.lastElementChild.remove();
+  setTimeout(close, urgent ? 15000 : 8000);
 }

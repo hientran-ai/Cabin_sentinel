@@ -39,6 +39,9 @@ TELEGRAM_BOT_USERNAME = os.environ.get("TELEGRAM_BOT_USERNAME", "").lstrip("@")
 TELEGRAM_WEBHOOK_SECRET = os.environ.get("TELEGRAM_WEBHOOK_SECRET", "")
 # Public address of the web app (used for the "open" button in Telegram messages), for example https://cabin-noir.duckdns.org/app/
 WEB_BASE_URL = os.environ.get("WEB_BASE_URL", "").rstrip("/")
+# Web Push: the server key is created on first use and kept in the database unless given here (PEM). The contact goes to push services.
+WEBPUSH_VAPID_PRIVATE = os.environ.get("WEBPUSH_VAPID_PRIVATE", "").replace("\\n", "\n")
+WEBPUSH_CONTACT = os.environ.get("WEBPUSH_CONTACT", "mailto:admin@cabin-noir.invalid")
 
 
 def telegram_configured() -> bool:
@@ -62,6 +65,12 @@ DEVICE_CODE_TTL_S = 600
 
 def sms_configured() -> bool:
     return bool(TWILIO_SID and TWILIO_TOKEN and TWILIO_FROM)
+
+
+# Tester shortcut: one fixed phone number whose sign-in code is returned on screen, so testers get in at once.
+# Every other number signs in the normal way. Not advertised anywhere in the app. Empty = off.
+# If that number is ever linked to a Telegram chat, the code goes to Telegram like for anyone else.
+OTP_TESTER_PHONE = os.environ.get("OTP_TESTER_PHONE", "").replace(" ", "").strip()
 
 
 def otp_channel() -> str:
