@@ -67,6 +67,9 @@ async def lifespan(app: FastAPI):
         ensure_bootstrap_accounts(get_store(), settings)
     if getattr(settings, "demo_studio", False):
         demo_studio.start_studio(fleet_api.get_fleet(), get_store())
+    # Same source /health uses, so /admin/system/vision cannot report a different classifier state.
+    capabilities.bind_age_status(
+        lambda: getattr(getattr(app.state, "vision_provider", None), "age_status", "disabled"))
     timer = SafetyTimer(get_cabin_service())
     timer.start()
     app.state.safety_timer = timer
@@ -87,6 +90,7 @@ async def lifespan(app: FastAPI):
             if subscriber is not None:
                 subscriber.stop()
         finally:
+            capabilities.bind_age_status(None)
             timer.stop()
             app.state.sensor_subscriber = None
             app.state.safety_timer = None

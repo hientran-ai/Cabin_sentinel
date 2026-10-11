@@ -283,3 +283,23 @@ def test_health_capability_follows_the_loaded_classifier(monkeypatch, tmp_path):
     monkeypatch.setenv("AGE_CLASSIFIER_PATH", str(checkpoint))  # the name the loader really reads
     report = capabilities.age_classifier()
     assert report["available"] is False and report["reason"] == "not_loaded" and report["sha256"]
+
+
+def test_capability_without_explicit_status_follows_the_bound_provider(monkeypatch, tmp_path):
+    """/admin/system/vision calls age_classifier() with no argument; it must agree with /health."""
+    from src.cabinsentinel import capabilities
+
+    checkpoint = tmp_path / "age.pt"
+    checkpoint.write_bytes(b"fixture")
+    monkeypatch.setenv("AGE_CLASSIFIER_PATH", str(checkpoint))
+    state = {"status": "ok"}
+    capabilities.bind_age_status(lambda: state["status"])
+    try:
+        for status in ("ok", "load_failed", "error", "disabled"):
+            state["status"] = status
+            assert capabilities.age_classifier() == capabilities.age_classifier(status)
+        assert capabilities.age_classifier("error") == {"available": False, "reason": "inference_error"}
+        assert capabilities.age_classifier("disabled")["reason"] == "disabled"
+    finally:
+        capabilities.bind_age_status(None)
+    assert capabilities.age_classifier()["reason"] == "not_loaded"  # no provider view: file only, never "ok"

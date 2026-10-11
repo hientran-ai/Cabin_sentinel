@@ -2,6 +2,7 @@
 
 import hashlib
 import os
+from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
 
@@ -50,21 +51,39 @@ def privacy_model() -> dict:
     }
 
 
+_age_status_source: Callable[[], str | None] | None = None
+
+
+def bind_age_status(source: Callable[[], str | None] | None) -> None:
+    """Let every caller of ``age_classifier()`` see the live provider's state (None unbinds).
+
+    /health passes the provider status explicitly; endpoints that call ``age_classifier()`` without it
+    (/admin/system/vision) would otherwise report only the checkpoint file, contradicting /health.
+    """
+    global _age_status_source
+    _age_status_source = source
+
+
 def age_classifier(status: str | None = None) -> dict:
     """Age is evidence only (never an input to risk or actions); never fabricate a checkpoint.
 
-    ``status`` is the vision provider's own view (ok / load_failed / disabled). Without a provider the checkpoint
-    path from AGE_CLASSIFIER_PATH (or the older AGE_MODEL_PATH) is only reported, not claimed usable.
+    ``status`` is the vision provider's own view (ok / error / load_failed / disabled); when omitted it comes from
+    the provider bound with ``bind_age_status``. Without any provider view the checkpoint path from
+    AGE_CLASSIFIER_PATH (or the older AGE_MODEL_PATH) is only reported, not claimed usable.
     """
+    if status is None and _age_status_source is not None:
+        status = _age_status_source()
     if status == "ok":
         return {"available": True, "reason": None, "role": "EVIDENCE_ONLY"}
     if status == "load_failed":
         return {"available": False, "reason": "load_failed"}
+    if status == "error":
+        return {"available": False, "reason": "inference_error"}
     path = os.environ.get("AGE_CLASSIFIER_PATH") or os.environ.get("AGE_MODEL_PATH", "")
     if not path or not Path(path).is_file():
         return {"available": False, "reason": "checkpoint_unavailable"}
     return {
-        "available": False, "reason": "not_loaded",
+        "available": False, "reason": "disabled" if status == "disabled" else "not_loaded",
         "sha256": file_sha256(path),
     }
 
