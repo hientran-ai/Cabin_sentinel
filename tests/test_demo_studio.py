@@ -85,3 +85,13 @@ def test_api_docs_are_closed_in_production_and_open_in_development():
     assert prod.api_docs_enabled is False
     assert Settings(app_env="development").api_docs_enabled is True
     assert Settings(app_env="production", cors_origins="https://app.example.com", docs_enabled=True).api_docs_enabled is True
+
+
+def test_storage_report_says_when_data_would_not_survive_a_restart(tmp_path, monkeypatch):
+    from src.cabinsentinel import capabilities
+    from src.config import get_settings
+    monkeypatch.setattr(get_settings(), "storage_persistent", None)
+    ephemeral = capabilities.storage(str(tmp_path / "x.db"))
+    assert ephemeral["persistent"] is False and "Persistent Storage" in ephemeral["note"]
+    monkeypatch.setattr(get_settings(), "storage_persistent", True)
+    assert capabilities.storage(str(tmp_path / "x.db")) == {"persistent": True, "path_kind": "volume", "note": None}
