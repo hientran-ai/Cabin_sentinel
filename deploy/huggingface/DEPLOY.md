@@ -22,3 +22,9 @@ Cách chạy trên ZeroGPU:
 - `app.py` import backend trước `ultralytics`, vì ultralytics vá `PIL.Image.open`; sai thứ tự làm ảnh hỏng trả 500 thay vì 422.
 - `pydantic==2.12.5` vì Spaces cài `gradio[mcp]`, gói này yêu cầu `pydantic<=2.12.5`.
 - Space free không có ổ lưu bền: session mất khi Space ngủ hoặc restart.
+
+## Dữ liệu bền và tắt API docs
+
+- Bật **Persistent Storage** cho Space (Settings → Persistent storage). Disk mount ở `/data`; `app.py` tự đặt DB ở `/data/cabinsentinel.db` khi thư mục này tồn tại và ghi được. Sau deploy kiểm tra `GET /health` có `"storage":{"persistent":true}`. Không có ổ này thì tài khoản và sự cố mất khi Space khởi động lại.
+- `/docs`, `/redoc`, `/openapi.json` đã đóng ở production. Đặt biến `DOCS_ENABLED=true` nếu cần mở có chủ đích.
+- Môi trường demo cho doanh nghiệp: xem `docs/DEMO_STUDIO.md` (biến `DEMO_STUDIO`, `REMOTE_COMMANDS_ENABLED`, kênh ntfy/Telegram).
