@@ -32,8 +32,10 @@ def test_ntfy_and_telegram_messages_and_secret_handling(monkeypatch):
     results = notify.deliver("CabinSentinel: có người trong xe", "Xe VF8-DEMO-01: kiểm tra ngay.", urgent=True,
                              client=httpx.Client(transport=httpx.MockTransport(handler)))
     assert [r["ok"] for r in results] == [True, True]
-    assert str(seen[0].url) == "https://ntfy.example/cs-test-topic" and seen[0].headers["Priority"] == "urgent"
-    assert seen[0].headers["Title"].isascii()
+    import json
+    sent = json.loads(seen[0].content)
+    assert str(seen[0].url) == "https://ntfy.example" and sent["topic"] == "cs-test-topic" and sent["priority"] == 5
+    assert sent["title"] == "CabinSentinel: có người trong xe"          # Vietnamese survives
     assert "api.telegram.org/bot123:SECRET-TOKEN/sendMessage" in str(seen[1].url)
     assert "SECRET" not in repr(notify.recent()) and "SECRET" not in repr(notify.channels())
     assert notify.channels() == {"ntfy": True, "telegram": True}

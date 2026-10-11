@@ -24,7 +24,8 @@ _log: deque[dict] = deque(maxlen=30)
 _lock = threading.Lock()
 
 
-def _ntfy_url(settings) -> str | None:
+def _ntfy_target(settings) -> tuple[str, str] | None:
+    """(server url, topic) when ntfy is configured. Plain http only for localhost (tests, a self-hosted dev box)."""
     topic = (settings.ntfy_topic or "").strip()
     server = (settings.ntfy_server or "").strip().rstrip("/")
     if not topic or not server:
@@ -33,7 +34,7 @@ def _ntfy_url(settings) -> str | None:
     local = parsed.hostname in {"localhost", "127.0.0.1"}
     if parsed.scheme != "https" and not (parsed.scheme == "http" and local):
         return None
-    return f"{server}/{topic}"
+    return server, topic
 
 
 def _telegram_ready(settings) -> bool:
@@ -43,7 +44,7 @@ def _telegram_ready(settings) -> bool:
 def channels() -> dict:
     """Which channels are configured. The ntfy topic is the 'password' of that channel, so it is not exposed."""
     settings = get_settings()
-    return {"ntfy": _ntfy_url(settings) is not None, "telegram": _telegram_ready(settings)}
+    return {"ntfy": _ntfy_target(settings) is not None, "telegram": _telegram_ready(settings)}
 
 
 def configured() -> bool:
@@ -67,12 +68,12 @@ def deliver(title: str, body: str, *, urgent: bool = False, client: httpx.Client
     owns = client is None
     client = client or httpx.Client(timeout=TIMEOUT_S, follow_redirects=False)
     try:
-        url = _ntfy_url(settings)
-        if url:
+        target = _ntfy_target(settings)
+        if target:
             try:
-                r = client.post(url, content=body.encode(), headers={
-                    "Title": title.encode("ascii", "ignore").decode() or "CabinSentinel",
-                    "Priority": "urgent" if urgent else "default", "Tags": "rotating_light" if urgent else "bell"})
+                # JSON publish keeps Vietnamese text intact (header values must be ASCII).
+                r = client.post(target[0], json={"topic": target[1], "title": title, "message": body,
+                                                 "priority": 5 if urgent else 3, "tags": ["rotating_light" if urgent else "bell"]})
                 ok, detail = r.is_success, f"HTTP {r.status_code}"
             except httpx.HTTPError as exc:
                 ok, detail = False, type(exc).__name__
