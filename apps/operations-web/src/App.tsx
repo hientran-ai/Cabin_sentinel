@@ -82,7 +82,7 @@ function AdminShell() {
 
   return <div className="app-shell">
     <aside className={`sidebar ${open ? 'is-open' : ''}`}>
-      <div className="brand"><span><Icon name="shield"/></span><div><strong>CabinSentinel</strong><small>Operations</small></div><b>{isAdmin ? 'ADM' : 'OPS'}</b></div>
+      <div className="brand"><img className="brand-logo" src="/cabinsentinel-logo.png" alt="CabinSentinel"/><div><strong>CabinSentinel</strong><small>Operations</small></div><b>{isAdmin ? 'ADM' : 'OPS'}</b></div>
       <div className="workspace"><small>{locale === 'vi' ? 'Không gian làm việc' : 'Workspace'}</small><strong>{isAdmin ? t('platformControl') : t('safetyOperations')}</strong><span>{isAdmin ? t('administratorScope') : t('operatorScope')}</span></div>
       <nav aria-label="Operations navigation">
         {visibleGroups.map(group => <section className="nav-group" key={group.labelKey}>

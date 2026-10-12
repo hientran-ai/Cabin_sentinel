@@ -105,3 +105,4 @@
 .auth-mobile-detail,.auth-mobile-note{margin:0;font-size:.78rem;line-height:1.55;color:inherit;opacity:.75}
 .auth-mobile-note{font-size:.7rem;opacity:.6;margin-top:6px}
 .auth-mobile-open{display:flex;align-items:center;justify-content:center;text-decoration:none;margin-top:10px}
+.auth-brand>.brand-logo{width:45px;height:45px;border-radius:15px;object-fit:cover;display:block;box-shadow:0 8px 22px rgba(59,42,30,.24)}

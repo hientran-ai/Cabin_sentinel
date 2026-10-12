@@ -392,7 +392,7 @@ export function LoginPage({ portal }: { portal: Portal }) {
 
   return <main className="auth-page">
     <section className="auth-card">
-      <div className="auth-brand"><span><Shield/></span><div><strong>CabinSentinel</strong><small>{copy.brand}</small></div><button className="auth-language" type="button" onClick={() => setLocale(value => value === 'vi' ? 'en' : 'vi')} aria-label={copy.language}>{copy.language}</button></div>
+      <div className="auth-brand"><img className="brand-logo" src="/cabinsentinel-logo.png" alt="CabinSentinel"/><div><strong>CabinSentinel</strong><small>{copy.brand}</small></div><button className="auth-language" type="button" onClick={() => setLocale(value => value === 'vi' ? 'en' : 'vi')} aria-label={copy.language}>{copy.language}</button></div>
       <div className="auth-copy">
         <span className="auth-eyebrow">{copy.eyebrow}</span>
         <h1>{copy.title}</h1>
