@@ -15,7 +15,7 @@ const authConfig: AuthConfig = {
   mode: import.meta.env.VITE_AUTH_MODE === 'mock' ? 'mock' : import.meta.env.VITE_AUTH_MODE === 'session' ? 'session' : import.meta.env.VITE_AUTH_MODE === 'v1-demo' || import.meta.env.DEV ? 'v1-demo' : 'session',
   ownerUrl: import.meta.env.VITE_OWNER_WEB_URL || `${window.location.origin}/overview`,
   operationsUrl: import.meta.env.VITE_OPERATIONS_WEB_URL || `${window.location.origin}/admin`,
-  mobileAppUrl: import.meta.env.VITE_MOBILE_APP_URL ?? DEFAULT_MOBILE_APP_URL,
+  mobileAppUrl: import.meta.env.VITE_MOBILE_APP_URL || DEFAULT_MOBILE_APP_URL,
 }
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode><QueryClientProvider client={queryClient}><BrowserRouter><AuthProvider config={authConfig}><Routes><Route path="/login" element={<UnifiedLoginRedirect />} /><Route path="/user/login" element={<UnifiedLoginRedirect />} /><Route path="/signin" element={<UnifiedLoginRedirect />} /><Route path="/sign-in" element={<UnifiedLoginRedirect />} /><Route path="/auth/callback" element={<AuthCallback portal="owner" />} /><Route path="*" element={<RequirePortal portal="owner"><App /></RequirePortal>} /></Routes></AuthProvider></BrowserRouter></QueryClientProvider></React.StrictMode>,

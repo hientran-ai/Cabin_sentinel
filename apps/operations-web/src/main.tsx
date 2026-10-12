@@ -18,6 +18,6 @@ const authConfig: AuthConfig = {
   mode: demoMode || import.meta.env.VITE_AUTH_MODE === 'mock' ? 'mock' : import.meta.env.VITE_AUTH_MODE === 'session' ? 'session' : import.meta.env.VITE_AUTH_MODE === 'v1-demo' || import.meta.env.DEV ? 'v1-demo' : 'session',
   ownerUrl: import.meta.env.VITE_OWNER_WEB_URL || `${window.location.origin}/overview`,
   operationsUrl: import.meta.env.VITE_OPERATIONS_WEB_URL || `${window.location.origin}/admin`,
-  mobileAppUrl: import.meta.env.VITE_MOBILE_APP_URL ?? DEFAULT_MOBILE_APP_URL,
+  mobileAppUrl: import.meta.env.VITE_MOBILE_APP_URL || DEFAULT_MOBILE_APP_URL,
 }
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={queryClient}><BrowserRouter><AuthProvider config={authConfig}><LocaleProvider><Routes><Route path="/admin/login" element={<OperationsLogin/>} /><Route path="/admin/auth/callback" element={<AuthCallback portal="operations" />} /><Route path="*" element={<RequirePortal portal="operations" loginPath="/admin/login"><App /></RequirePortal>} /></Routes></LocaleProvider></AuthProvider></BrowserRouter></QueryClientProvider></React.StrictMode>)
