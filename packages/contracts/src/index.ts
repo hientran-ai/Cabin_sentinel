@@ -309,3 +309,35 @@ export interface V1VehicleEvents {
   vehicle_id: string
   events: V1FleetEvent[]
 }
+
+/** Demo studio (GET /api/v1/admin/demo/status). Every value it produces is labelled SIMULATED by the backend. */
+export type V1DemoScenarioId = 'SAFE' | 'WARNING' | 'CRITICAL' | 'RAMP' | 'OFFLINE'
+
+export interface V1DemoScenario { id: V1DemoScenarioId; label: string; description: string }
+
+export interface V1DemoVehicle {
+  vehicle_id: string
+  name: string
+  scenario: V1DemoScenarioId
+  risk_level: string
+  online: boolean
+  temperature_c: number | null
+  active_incident: string | null
+  data_source: string
+}
+
+export interface V1DemoNotification { at: string; channel: string; ok: boolean; detail: string }
+
+export interface V1DemoStatus {
+  enabled: boolean
+  label: 'SIMULATED'
+  scenarios: V1DemoScenario[]
+  vehicles: V1DemoVehicle[]
+  notifications: { ntfy: boolean; telegram: boolean; recent: V1DemoNotification[] }
+  last_error: string | null
+}
+
+/** Device channel (per-device token scoped to one vehicle). */
+export interface V1DevicePairing { device_id: string; vehicle_id: string; device_token: string }
+export interface V1DeviceHeartbeat { firmware?: string; battery_pct?: number; rssi_dbm?: number; status?: 'OK' | 'DEGRADED' | 'ERROR' }
+export interface V1DeviceCommand { command_id: string; vehicle_id: string; type: 'horn' | 'sms' | 'unlock'; status: string; incident_id?: string | null }

@@ -1,4 +1,4 @@
-import type { ApiErrorEnvelope, Incident, Page, RealtimeEvent, User, V1CabinState, V1DemoLoginResponse, V1DemoRole, V1FleetVehicleState, V1Health, V1Me, V1SessionResponse, V1VehicleEvents, V1VehicleList, Vehicle, VehicleStatus } from '@cabinsentinel/contracts'
+import type { ApiErrorEnvelope, Incident, Page, RealtimeEvent, User, V1CabinState, V1DemoLoginResponse, V1DemoRole, V1DemoScenarioId, V1DemoStatus, V1DeviceCommand, V1DeviceHeartbeat, V1DevicePairing, V1FleetVehicleState, V1Health, V1Me, V1SessionResponse, V1VehicleEvents, V1VehicleList, Vehicle, VehicleStatus } from '@cabinsentinel/contracts'
 import { acceptNewerRevision } from '@cabinsentinel/domain'
 
 export class ApiError extends Error {
@@ -215,6 +215,40 @@ export class CabinSentinelClient {
   v1AdminAudit(signal?: AbortSignal) { return this.request<{ entries: JsonRecord[] }>('/api/v1/admin/audit?limit=100', { signal }) }
   v1AdminSystem(signal?: AbortSignal) { return this.request<JsonRecord>('/api/v1/admin/system', { signal }) }
   v1AdminVision(signal?: AbortSignal) { return this.request<JsonRecord>('/api/v1/admin/system/vision', { signal }) }
+  v1RetireVehicle(vehicleId: string, signal?: AbortSignal) {
+    return this.request<JsonRecord>(`/api/v1/vehicles/${encodeURIComponent(vehicleId)}`, { method: 'DELETE', retry: false, signal })
+  }
+
+  // Demo studio (administrators of a deployment started with DEMO_STUDIO=true; 404 otherwise).
+  v1AdminDemoStatus(signal?: AbortSignal) { return this.request<V1DemoStatus>('/api/v1/admin/demo/status', { signal, retry: false }) }
+  v1AdminDemoRun(vehicleId: string, scenario: V1DemoScenarioId, signal?: AbortSignal) {
+    return this.request<JsonRecord>('/api/v1/admin/demo/run', { method: 'POST', retry: false, signal, body: JSON.stringify({ vehicle_id: vehicleId, scenario }) })
+  }
+  v1AdminDemoReset(signal?: AbortSignal) { return this.request<JsonRecord>('/api/v1/admin/demo/reset', { method: 'POST', retry: false, signal }) }
+  v1AdminDemoNotifyTest(signal?: AbortSignal) { return this.request<JsonRecord>('/api/v1/admin/demo/notify-test', { method: 'POST', retry: false, signal }) }
+
+  // Device channel. These calls carry a per-device token, never the user's session: no cookies, no user bearer.
+  private deviceRequest<T>(path: string, token: string | undefined, init: RequestOptions = {}) {
+    const headers = new Headers(init.headers)
+    if (token) headers.set('Authorization', `Bearer ${token}`)
+    return this.request<T>(path, { retry: false, auth: false, credentials: 'omit', ...init, headers })
+  }
+  v1DevicePair(pairingCode: string, serial: string, firmware?: string, signal?: AbortSignal) {
+    return this.deviceRequest<V1DevicePairing>('/api/v1/devices/pair', undefined, { method: 'POST', signal, body: JSON.stringify({ pairing_code: pairingCode, serial, ...(firmware ? { firmware } : {}) }) })
+  }
+  v1DeviceHeartbeat(token: string, payload: V1DeviceHeartbeat, signal?: AbortSignal) {
+    return this.deviceRequest<JsonRecord>('/api/v1/device/heartbeat', token, { method: 'POST', signal, body: JSON.stringify(payload) })
+  }
+  v1DeviceIngest(token: string, vehicleId: string, kind: 'sensors' | 'vision', payload: JsonRecord, signal?: AbortSignal) {
+    return this.deviceRequest<JsonRecord>(`/api/v1/vehicles/${encodeURIComponent(vehicleId)}/${kind}`, token, { method: 'POST', signal, body: JSON.stringify(payload) })
+  }
+  v1DeviceCommands(token: string, signal?: AbortSignal) {
+    return this.deviceRequest<{ commands: V1DeviceCommand[] }>('/api/v1/device/commands', token, { signal })
+  }
+  v1DeviceAck(token: string, commandId: string, ok: boolean, detail?: string, signal?: AbortSignal) {
+    return this.deviceRequest<JsonRecord>(`/api/v1/device/commands/${encodeURIComponent(commandId)}/ack`, token, { method: 'POST', signal, body: JSON.stringify({ ok, ...(detail ? { detail } : {}) }) })
+  }
+
   v1OpsIncidents(signal?: AbortSignal) { return this.request<JsonPage>('/api/v1/ops/incidents?page=1&page_size=100', { signal }) }
   v1OpsIncidentAction(incidentId: string, action: 'assign' | 'escalate' | 'note', payload: JsonRecord, signal?: AbortSignal) { return this.request<JsonRecord>(`/api/v1/ops/incidents/${encodeURIComponent(incidentId)}/${action}`, { method: 'POST', retry: false, signal, body: JSON.stringify(payload) }) }
   v1OpsCommands(signal?: AbortSignal) { return this.request<{ enabled: boolean; commands: JsonRecord[] }>('/api/v1/ops/commands?limit=100', { signal }) }
