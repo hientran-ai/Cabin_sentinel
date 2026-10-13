@@ -421,12 +421,6 @@ class CabinService:
         with self._lock, self._db:
             self._event(vehicle_id, event_type, payload)
 
-    def reset_vehicle(self, vehicle_id: str) -> None:
-        """Forget a (simulated) vehicle's state, events and action ledger so a demo can start from a clean slate."""
-        with self._lock, self._db:
-            for table in ("vehicles", "events", "action_ledger"):
-                self._db.execute(f"DELETE FROM {table} WHERE vehicle_id = ?", (vehicle_id,))  # noqa: S608 - fixed names
-
     def _event(self, vehicle_id: str, event_type: str, payload: dict) -> None:
         self._db.execute(
             "INSERT INTO events(vehicle_id, event_type, payload_json) VALUES (?, ?, ?)",

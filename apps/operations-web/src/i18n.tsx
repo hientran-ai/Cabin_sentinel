@@ -6,7 +6,6 @@ type Messages = Record<string, string>
 
 const messages: Record<Locale, Messages> = {
   vi: {
-    demoStudio: 'Demo studio', trialGroup: 'Thử nghiệm',
     admin: 'Quản trị', operations: 'Vận hành', overview: 'Tổng quan', incidents: 'Sự cố', evaluations: 'Đánh giá an toàn', commands: 'Lệnh điều khiển',
     vehicles: 'Phương tiện', devices: 'Thiết bị', tenants: 'Tổ chức', users: 'Người dùng & quyền', models: 'Mô hình AI', rules: 'Quy tắc an toàn', audit: 'Nhật ký kiểm toán', system: 'Sức khỏe hệ thống',
     safetyOperations: 'Vận hành an toàn', fleetManagement: 'Quản lý đội xe', platformAdministration: 'Quản trị nền tảng', assurance: 'Giám sát & tuân thủ', mainNavigation: 'Menu chính', operationsHub: 'Vận hành', fleetHub: 'Đội xe', peopleHub: 'Người dùng', systemHub: 'Hệ thống',
@@ -23,7 +22,6 @@ const messages: Record<Locale, Messages> = {
     dangerousAction: 'Hành động này có thể ảnh hưởng đến vận hành. Bạn có muốn tiếp tục?', updatedAudited: 'Backend đã cập nhật và ghi audit.',
   },
   en: {
-    demoStudio: 'Demo studio', trialGroup: 'Try it',
     admin: 'Admin', operations: 'Operations', overview: 'Overview', incidents: 'Incidents', evaluations: 'Safety evaluations', commands: 'Commands',
     vehicles: 'Vehicles', devices: 'Devices', tenants: 'Tenants', users: 'Users & access', models: 'AI models', rules: 'Safety rules', audit: 'Audit log', system: 'System health',
     safetyOperations: 'Safety operations', fleetManagement: 'Fleet management', platformAdministration: 'Platform administration', assurance: 'Assurance', mainNavigation: 'Main menu', operationsHub: 'Operations', fleetHub: 'Fleet', peopleHub: 'People', systemHub: 'System',

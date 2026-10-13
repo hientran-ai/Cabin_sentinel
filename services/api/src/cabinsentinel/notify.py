@@ -121,30 +121,3 @@ def deliver_async(title: str, body: str, *, urgent: bool = False, card_for=None)
     threading.Thread(target=run, daemon=True, name="notify").start()
     return True
 
-
-def deliver_photo(jpeg: bytes, caption: str, *, client: httpx.Client | None = None) -> bool:
-    """Opt-in alert photo, Telegram only (ntfy topics are readable by anyone who knows the name). Never raises."""
-    settings = get_settings()
-    if not _telegram_ready(settings) or not jpeg:
-        return False
-    owns = client is None
-    client = client or httpx.Client(timeout=TIMEOUT_S, follow_redirects=False)
-    try:
-        r = client.post(f"https://api.telegram.org/bot{settings.telegram_bot_token.get_secret_value()}/sendPhoto",
-                        data={"chat_id": settings.telegram_chat_id, "caption": caption[:1000], "protect_content": "true"},
-                        files={"photo": ("anh-canh-bao.jpg", jpeg, "image/jpeg")})
-        ok, detail = r.is_success, f"HTTP {r.status_code}"
-    except httpx.HTTPError as exc:
-        ok, detail = False, type(exc).__name__
-    finally:
-        if owns:
-            client.close()
-    _record("telegram", ok, f"ảnh cảnh báo · {detail}")
-    return ok
-
-
-def deliver_photo_async(jpeg: bytes, caption: str) -> bool:
-    if not _telegram_ready(get_settings()):
-        return False
-    threading.Thread(target=deliver_photo, args=(jpeg, caption), daemon=True, name="notify-photo").start()
-    return True

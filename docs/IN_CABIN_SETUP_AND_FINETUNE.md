@@ -41,7 +41,7 @@ và COCO gần như không có ảnh trẻ trong ghế ô tô. Đây là lỗi *
 | Ảnh tham chiếu cabin trống | Chụp khi lắp, có người xác nhận cabin trống (SR-09) | Dùng để xác minh "ghế trống" bằng bằng chứng dương (SR-01) |
 | Hiệu chỉnh ROI | Đánh dấu từng ghế và từng ô kính cho mỗi dòng xe/vị trí lắp | Mỗi xe có khoang sau khác nhau; loại người đi ngoài đường thấy qua kính |
 
-ROI làm được gì và không làm được gì (đã có trong code, `src/cabinsentinel/video_sim.py`):
+ROI làm được gì và không làm được gì (đã có trong code: nguồn "Video mẫu" của trang thiết bị Cabin Noir, `web/js/device-video.js` và `web/js/cabinref.js`):
 
 - Vùng **ghế**: phát hiện có tâm nằm trên ghế thì tính cho ghế đó.
 - Vùng **kính**: phát hiện có tâm nằm trong vùng kính **và** không nằm trên ghế nào thì coi là người ngoài xe, chỉ hiển thị, không tính.
@@ -121,7 +121,7 @@ Sự cố chỉ đóng khi có dữ liệu mới cho thấy không còn ai **và
 trẻ em được giữ cho đến lúc đó. Hết chuyến hoặc mở cửa **không** tự reset. Ảnh tham chiếu cabin trống chỉ chụp lại khi có người xác nhận (SR-09).
 
 **Người đi ngoài đường thấy qua kính.**
-Hiệu chỉnh ROI theo xe (mục 2). Đã có trên web: Demo studio → Camera mô phỏng → Hiệu chỉnh vùng cabin.
+Hiệu chỉnh ROI theo xe (mục 2). Đã có ở phía người dùng: Cabin Noir → trang thiết bị trong xe → Video mẫu (vùng ghế khai báo theo từng video; xử lý ngay trên máy người dùng).
 
 **Mỗi xe một kích thước khoang, có hiệu chỉnh ROI khi lắp không.**
 Có. Hiệu chỉnh lưu theo từng xe, có version và nhật ký kiểm toán (`PUT /api/v1/admin/demo/calibration/{vehicle_id}`).
