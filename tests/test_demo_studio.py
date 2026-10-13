@@ -31,7 +31,7 @@ def test_critical_to_assign_to_action_to_resolved(env, studio):
     admin = make_admin(env)
     status = env.client.get("/api/v1/admin/demo/status", headers=auth(admin)).json()
     assert status["label"] == "SIMULATED" and {v["vehicle_id"] for v in status["vehicles"]} >= {VEHICLE}
-    assert {s["id"] for s in status["scenarios"]} == {"SAFE", "WARNING", "CRITICAL", "RAMP", "OFFLINE"}
+    assert {s["id"] for s in status["scenarios"]} == {"SAFE", "WARNING", "CRITICAL", "RAMP", "VIDEO", "OFFLINE"}
 
     run = env.client.post("/api/v1/admin/demo/run", json={"vehicle_id": VEHICLE, "scenario": "CRITICAL"}, headers=auth(admin)).json()
     assert run["label"] == "SIMULATED" and run["risk_level"] == "CRITICAL" and run["data_source"] == "SIMULATED"

@@ -110,6 +110,9 @@ CREATE TABLE IF NOT EXISTS audit_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL, actor TEXT NOT NULL, actor_role TEXT,
   tenant_id TEXT, action TEXT NOT NULL, target TEXT, correlation_id TEXT, outcome TEXT NOT NULL, detail_json TEXT);
 CREATE INDEX IF NOT EXISTS audit_ts ON audit_log(ts);
+CREATE TABLE IF NOT EXISTS cabin_calibration (
+  vehicle_id TEXT PRIMARY KEY, zones_json TEXT NOT NULL, version INTEGER NOT NULL, updated_by TEXT NOT NULL,
+  updated_at TEXT NOT NULL);
 """
 
 BUILTIN_RULESET = {
@@ -699,6 +702,24 @@ class PlatformStore:
         """Demo reset: drop operator work (assignments, notes, commands) and samples of one vehicle."""
         for table in ("incident_ops", "commands", "samples"):
             self._run(f"DELETE FROM {table} WHERE vehicle_id=?", (vehicle_id,))  # noqa: S608 - fixed names
+
+    # -- cabin calibration --------------------------------------------------
+    def calibration(self, vehicle_id: str) -> dict | None:
+        """Cabin zones fitted for one vehicle (seats, excluded windows). Configuration, not personal data."""
+        row = self._one("SELECT * FROM cabin_calibration WHERE vehicle_id=?", (vehicle_id,))
+        if row is None:
+            return None
+        return {"vehicle_id": vehicle_id, "zones": json.loads(row["zones_json"]), "version": row["version"],
+                "updated_by": row["updated_by"], "updated_at": row["updated_at"]}
+
+    def save_calibration(self, vehicle_id: str, zones: list[dict], actor: str) -> dict:
+        current = self.calibration(vehicle_id)
+        version = (current["version"] if current else 0) + 1
+        self._run("INSERT INTO cabin_calibration(vehicle_id, zones_json, version, updated_by, updated_at) VALUES (?,?,?,?,?) "
+                  "ON CONFLICT(vehicle_id) DO UPDATE SET zones_json=excluded.zones_json, version=excluded.version, "
+                  "updated_by=excluded.updated_by, updated_at=excluded.updated_at",
+                  (vehicle_id, json.dumps(zones), version, actor, self.clock().isoformat()))
+        return self.calibration(vehicle_id)
 
     # -- telemetry ---------------------------------------------------------
     def record_sample(self, vehicle_id: str, state: dict | None) -> None:
