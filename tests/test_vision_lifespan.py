@@ -43,3 +43,21 @@ async def test_lifespan_exposes_unavailable_model_without_crashing(monkeypatch):
     monkeypatch.setattr(main, "TamVisionProvider", FailingProvider)
     async with main.lifespan(main.app):
         assert main.app.state.vision_provider is None
+
+
+@pytest.mark.asyncio
+async def test_lifespan_binds_age_state_for_admin_and_unbinds_on_shutdown(monkeypatch):
+    from src.cabinsentinel import capabilities
+
+    monkeypatch.setattr(main, "get_settings", lambda: SimpleNamespace(
+        model_path="", model_confidence=0.25, cabinsentinel_mqtt_enabled=False,
+    ))
+    monkeypatch.delenv("AGE_CLASSIFIER_PATH", raising=False)
+    monkeypatch.delenv("AGE_MODEL_PATH", raising=False)
+    async with main.lifespan(main.app):
+        main.app.state.vision_provider = SimpleNamespace(age_status="ok")
+        assert capabilities.age_classifier() == capabilities.age_classifier("ok")
+        assert capabilities.age_classifier()["available"] is True
+        main.app.state.vision_provider = None
+        assert capabilities.age_classifier()["available"] is False
+    assert capabilities.age_classifier()["reason"] == "checkpoint_unavailable"

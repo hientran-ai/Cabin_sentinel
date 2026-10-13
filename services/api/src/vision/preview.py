@@ -9,9 +9,11 @@ import os
 from pathlib import Path
 from time import perf_counter
 
+from src.config import APP_ROOT
+
 MODEL_SHA256 = '8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4'
 # services/api/src/vision/preview.py -> repository root
-DEFAULT_MODEL = Path(__file__).resolve().parents[4] / 'models' / 'face_detection_yunet_2023mar.onnx'
+DEFAULT_MODEL = APP_ROOT / 'models' / 'face_detection_yunet_2023mar.onnx'
 
 
 class FacePreview:

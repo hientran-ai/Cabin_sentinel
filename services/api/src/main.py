@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from src.api.routes import router
-from src.cabinsentinel import capabilities, fleet_api
+from src.cabinsentinel import capabilities, demo_studio, fleet_api
 from src.cabinsentinel.admin_api import router as admin_router
 from src.cabinsentinel.api import get_cabin_service
 from src.cabinsentinel.api import router as cabin_router
@@ -65,6 +65,11 @@ async def lifespan(app: FastAPI):
         logger.warning("MODEL_PATH is unset; Vision demo endpoint unavailable")
     if any(getattr(settings, name, "") for name in ("bootstrap_admin_email", "bootstrap_owner_email")):
         ensure_bootstrap_accounts(get_store(), settings)
+    if getattr(settings, "demo_studio", False):
+        demo_studio.start_studio(fleet_api.get_fleet(), get_store())
+    # Same source /health uses, so /admin/system/vision cannot report a different classifier state.
+    capabilities.bind_age_status(
+        lambda: getattr(getattr(app.state, "vision_provider", None), "age_status", "disabled"))
     timer = SafetyTimer(get_cabin_service())
     timer.start()
     app.state.safety_timer = timer
@@ -81,9 +86,11 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         try:
+            demo_studio.stop_studio()
             if subscriber is not None:
                 subscriber.stop()
         finally:
+            capabilities.bind_age_status(None)
             timer.stop()
             app.state.sensor_subscriber = None
             app.state.safety_timer = None
@@ -95,6 +102,10 @@ app = FastAPI(
     description="Offline in-cabin sensor fusion and deterministic safety agent",
     version="1.0.0",
     lifespan=lifespan,
+    # The API reference is for developers; a production deployment does not publish its own attack surface.
+    docs_url="/docs" if get_settings().api_docs_enabled else None,
+    redoc_url="/redoc" if get_settings().api_docs_enabled else None,
+    openapi_url="/openapi.json" if get_settings().api_docs_enabled else None,
 )
 
 settings = get_settings()
@@ -115,6 +126,7 @@ app.include_router(demo_router)
 app.include_router(fleet_router)
 app.include_router(platform_router)
 app.include_router(admin_router)
+app.include_router(demo_studio.router)
 
 
 @app.middleware("http")
@@ -162,6 +174,13 @@ async def health(service: CabinService = Depends(get_cabin_service)):
             "vision": vision, "age_classifier": age_status, "database": database, "mqtt": mqtt, "safety_timer": timer_status,
             # Additive and informational: privacy/age never gate readiness, and the
             # preview is withheld (never raw) when privacy is unavailable.
+            "vision_device": getattr(getattr(app.state, "vision_provider", None), "device", None),
+            "vision_resources": (
+                app.state.vision_provider.resources.snapshot()
+                if getattr(getattr(app.state, "vision_provider", None), "resources", None) is not None
+                else None
+            ),
+            "storage": capabilities.storage(settings.cabinsentinel_db_path),
             "capabilities": {
                 "vision_model": capabilities.vision_model(),
                 "privacy_model": capabilities.privacy_model(),

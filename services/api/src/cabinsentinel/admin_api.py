@@ -479,8 +479,14 @@ def system_status(request: Request, grant: Grant = Depends(staff), store: Platfo
                   fleet: Fleet = Depends(get_fleet)) -> dict:
     need(store, grant, "system.read")
     deps = _dependencies(request, fleet)
+    from src.cabinsentinel import capabilities, notify
+    caps = capabilities.snapshot(request.app)
     return {"dependencies": deps, "metrics": metrics.snapshot(), "alerts": metrics.alerts(deps),
-            "env": get_settings().app_env, "commands_enabled": get_settings().commands_enabled}
+            "env": get_settings().app_env, "commands_enabled": get_settings().commands_enabled,
+            "storage": capabilities.storage(get_settings().cabinsentinel_db_path),
+            "models": {"vision": caps["vision_model"], "privacy": caps["privacy_model"], "age": caps["age_classifier"]},
+            "notifications": {**notify.channels(), "recent": notify.recent()[:5]},
+            "demo_studio": get_settings().demo_studio}
 
 
 @router.get("/admin/system/vision")
@@ -488,7 +494,7 @@ def deployment_health(request: Request, grant: Grant = Depends(staff), store: Pl
     """Which model the process actually loaded, next to what the registry says is active."""
     need(store, grant, "system.read")
     from src.cabinsentinel import capabilities
-    return {"loaded": {"vision_model": capabilities.vision_model(), "privacy_model": capabilities.privacy_model(),
-                       "age_classifier": capabilities.age_classifier(),
-                       "provider_ready": getattr(request.app.state, "vision_provider", None) is not None},
+    caps = capabilities.snapshot(request.app)
+    return {"loaded": {"vision_model": caps["vision_model"], "privacy_model": caps["privacy_model"],
+                       "age_classifier": caps["age_classifier"], "provider_ready": caps["provider_ready"]},
             "registry_active": [m for m in store.models() if m["status"] in {"active", "staged"}]}

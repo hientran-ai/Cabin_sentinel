@@ -2,6 +2,7 @@
 
 import hashlib
 import os
+from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
 
@@ -50,20 +51,58 @@ def privacy_model() -> dict:
     }
 
 
+_age_status_source: Callable[[], str | None] | None = None
+
+
+def bind_age_status(source: Callable[[], str | None] | None) -> None:
+    """Let every caller of ``age_classifier()`` see the live provider's state (None unbinds).
+
+    /health passes the provider status explicitly; endpoints that call ``age_classifier()`` without it
+    (/admin/system/vision) would otherwise report only the checkpoint file, contradicting /health.
+    """
+    global _age_status_source
+    _age_status_source = source
+
+
 def age_classifier(status: str | None = None) -> dict:
     """Age is evidence only (never an input to risk or actions); never fabricate a checkpoint.
 
-    ``status`` is the vision provider's own view (ok / load_failed / disabled). Without a provider the checkpoint
-    path from AGE_CLASSIFIER_PATH (or the older AGE_MODEL_PATH) is only reported, not claimed usable.
+    ``status`` is the vision provider's own view (ok / error / load_failed / disabled); when omitted it comes from
+    the provider bound with ``bind_age_status``. Without any provider view the checkpoint path from
+    AGE_CLASSIFIER_PATH (or the older AGE_MODEL_PATH) is only reported, not claimed usable.
     """
+    if status is None and _age_status_source is not None:
+        status = _age_status_source()
     if status == "ok":
         return {"available": True, "reason": None, "role": "EVIDENCE_ONLY"}
     if status == "load_failed":
         return {"available": False, "reason": "load_failed"}
+    if status == "error":
+        return {"available": False, "reason": "inference_error"}
     path = os.environ.get("AGE_CLASSIFIER_PATH") or os.environ.get("AGE_MODEL_PATH", "")
     if not path or not Path(path).is_file():
         return {"available": False, "reason": "checkpoint_unavailable"}
     return {
-        "available": False, "reason": "not_loaded",
+        "available": False, "reason": "disabled" if status == "disabled" else "not_loaded",
         "sha256": file_sha256(path),
     }
+
+
+def storage(db_path: str) -> dict:
+    """Is the database on a volume that survives a restart? A free HF Space or an unmounted container path is not."""
+    from src.config import get_settings
+
+    configured = get_settings().storage_persistent
+    path = Path(db_path).resolve()
+    mounted = any(p != Path("/") and os.path.ismount(p) for p in [path.parent, *path.parent.parents])
+    persistent = configured if configured is not None else mounted
+    return {"persistent": bool(persistent), "path_kind": "volume" if persistent else "ephemeral",
+            "note": None if persistent else "Dữ liệu mất khi dịch vụ khởi động lại. Gắn volume (Docker) hoặc Persistent Storage (HF) và đặt CABINSENTINEL_DB_PATH vào đó."}
+
+
+def snapshot(app) -> dict:
+    """One view of the loaded models, shared by /health and /admin/system so they can never disagree."""
+    provider = getattr(app.state, "vision_provider", None)
+    age_status = getattr(provider, "age_status", "disabled")
+    return {"vision_model": vision_model(), "privacy_model": privacy_model(), "age_classifier": age_classifier(age_status),
+            "provider_ready": provider is not None, "age_status": age_status}

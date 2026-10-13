@@ -1,8 +1,14 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Directory that holds models/ and tmp/: the repo root when the package lives in services/api/src, the app root when
+# it is deployed flat as src/ (the Hugging Face Space ships services/api/src as /app/src).
+_HERE = Path(__file__).resolve()
+APP_ROOT = _HERE.parents[3] if (_HERE.parents[1].name, _HERE.parents[2].name) == ("api", "services") else _HERE.parents[1]
 
 
 class Settings(BaseSettings):
@@ -51,6 +57,17 @@ class Settings(BaseSettings):
     evidence_max_bytes: int = Field(default=2 * 1024 * 1024, ge=1)
     agent_api_enabled: bool | None = None  # None: available outside production, disabled in production
 
+    # Demo studio (admin-triggered, always labelled SIMULATED) and real notification channels
+    demo_studio: bool = False
+    docs_enabled: bool | None = None  # None: API docs only outside production
+    # Both channels are optional and off by default. Messages carry no name, plate or address (see notify.py).
+    ntfy_server: str = "https://ntfy.sh"
+    ntfy_topic: str = ""
+    telegram_bot_token: SecretStr = SecretStr("")
+    telegram_chat_id: str = ""
+    # True when the database directory is a real persistent volume (Docker volume, HF /data). Reported on /health.
+    storage_persistent: bool | None = None
+
     # LLM
     openai_api_key: str = ""
     model_name: str = "gpt-4o-mini"
@@ -62,6 +79,11 @@ class Settings(BaseSettings):
     # Vector Store
     chroma_persist_dir: str = "./data/chroma"
 
+    @field_validator("docs_enabled", "storage_persistent", mode="before")
+    @classmethod
+    def empty_means_auto(cls, value):
+        return None if isinstance(value, str) and not value.strip() else value
+
     @model_validator(mode="after")
     def restrict_production_cors(self):
         origins = [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
@@ -72,6 +94,10 @@ class Settings(BaseSettings):
     @property
     def signup_enabled(self) -> bool:
         return self.allow_signup if self.allow_signup is not None else self.app_env != "production"
+
+    @property
+    def api_docs_enabled(self) -> bool:
+        return self.docs_enabled if self.docs_enabled is not None else self.app_env != "production"
 
     @property
     def commands_enabled(self) -> bool:

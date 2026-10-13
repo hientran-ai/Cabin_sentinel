@@ -1,11 +1,14 @@
 import { useState, type ReactNode, type SVGProps } from 'react'
+import { ApiError } from '@cabinsentinel/api-client'
 import { canAccessPortal, useAuth } from '@cabinsentinel/auth'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { AdminOverview, EvaluationsWorkbench, PlatformPage } from './PlatformPages'
 import { useLocale } from './i18n'
 import { adminDemoEnabled, stopAdminDemo } from './adminDemo'
+import { DemoStudioPage, useDemoStatus } from './DemoStudioPage'
+import { virtualDeviceSession } from './virtualDeviceRuntime'
 
-type IconName = 'grid' | 'pulse' | 'car' | 'cpu' | 'users' | 'layers' | 'rules' | 'audit' | 'system' | 'search' | 'bell' | 'menu' | 'close' | 'arrow' | 'refresh' | 'shield' | 'camera' | 'radar' | 'clock' | 'lock' | 'check' | 'warning' | 'chevron'
+type IconName = 'grid' | 'pulse' | 'car' | 'cpu' | 'users' | 'layers' | 'rules' | 'audit' | 'system' | 'search' | 'bell' | 'menu' | 'close' | 'arrow' | 'refresh' | 'shield' | 'camera' | 'flask' | 'radar' | 'clock' | 'lock' | 'check' | 'warning' | 'chevron'
 const paths: Record<IconName, ReactNode> = {
   grid: <><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></>,
   pulse: <><path d="M3 12h4l2-5 4 10 2-5h6"/><path d="M4 5a10 10 0 0 1 16 0M4 19a10 10 0 0 0 16 0"/></>,
@@ -18,7 +21,7 @@ const paths: Record<IconName, ReactNode> = {
   system: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l-2.83 2.83A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1.4 1.5V21H9v-.1A1.7 1.7 0 0 0 8 19.4a1.7 1.7 0 0 0-1.88.34l-2.83-2.83A1.7 1.7 0 0 0 3.6 15a1.7 1.7 0 0 0-1.5-1H2v-4h.1A1.7 1.7 0 0 0 3.6 9a1.7 1.7 0 0 0-.34-1.88l2.83-2.83A1.7 1.7 0 0 0 8 4.6a1.7 1.7 0 0 0 1-1.5V3h4v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.88-.34l2.83 2.83A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.5 1h.1v4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></>,
   search: <><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></>, bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></>,
   menu: <path d="M4 7h16M4 12h16M4 17h16"/>, close: <path d="m6 6 12 12M18 6 6 18"/>, arrow: <path d="m9 18 6-6-6-6"/>, refresh: <><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></>,
-  shield: <><path d="M12 3 4.5 6v5c0 5 3 8.5 7.5 10 4.5-1.5 7.5-5 7.5-10V6z"/><path d="m9 12 2 2 4-4"/></>, camera: <><path d="M3 7h4l2-2h6l2 2h4v12H3z"/><circle cx="12" cy="13" r="4"/></>, radar: <><circle cx="12" cy="12" r="2"/><path d="M5.6 18.4a9 9 0 0 1 0-12.8M18.4 5.6a9 9 0 0 1 0 12.8M8.5 15.5a5 5 0 0 1 0-7M15.5 8.5a5 5 0 0 1 0 7"/></>, clock: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>, lock: <><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></>, check: <path d="m5 12 4 4L19 6"/>, warning: <><path d="M12 3 2.5 20h19z"/><path d="M12 9v4M12 17h.01"/></>, chevron: <path d="m9 18 6-6-6-6"/>,
+  shield: <><path d="M12 3 4.5 6v5c0 5 3 8.5 7.5 10 4.5-1.5 7.5-5 7.5-10V6z"/><path d="m9 12 2 2 4-4"/></>, camera: <><path d="M3 7h4l2-2h6l2 2h4v12H3z"/><circle cx="12" cy="13" r="4"/></>, flask: <><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M7.5 15h9"/></>, radar: <><circle cx="12" cy="12" r="2"/><path d="M5.6 18.4a9 9 0 0 1 0-12.8M18.4 5.6a9 9 0 0 1 0 12.8M8.5 15.5a5 5 0 0 1 0-7M15.5 8.5a5 5 0 0 1 0 7"/></>, clock: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>, lock: <><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></>, check: <path d="m5 12 4 4L19 6"/>, warning: <><path d="M12 3 2.5 20h19z"/><path d="M12 9v4M12 17h.01"/></>, chevron: <path d="m9 18 6-6-6-6"/>,
 }
 function Icon({ name, ...props }: { name: IconName } & SVGProps<SVGSVGElement>) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>{paths[name]}</svg> }
 
@@ -61,7 +64,7 @@ function OperationsUserMenu() {
     <div><strong>{user.displayName}</strong><small>{user.roles.join(' · ')}</small></div>
     {canAccessPortal(user, 'owner') && <a href={portalUrl('owner')}>{locale === 'vi' ? 'Người dùng' : 'User'}</a>}
     {canAccessPortal(user, 'operations') && <a href={portalUrl('operations')}>{locale === 'vi' ? 'Quản trị' : 'Admin'}</a>}
-    <button onClick={() => void logout()}>{locale === 'vi' ? 'Đăng xuất' : 'Sign out'}</button>
+    <button onClick={() => void virtualDeviceSession.stop().then(() => logout())}>{locale === 'vi' ? 'Đăng xuất' : 'Sign out'}</button>
   </div>
 }
 
@@ -73,8 +76,12 @@ function AdminShell() {
   const { locale, setLocale, t } = useLocale()
   const demoMode = adminDemoEnabled()
   const isAdmin = user?.roles.includes('ADMIN') === true
+  // The studio exists only when the backend says so: a 404 (DEMO_STUDIO off) or any failure hides the entry.
+  const demoProbe = useDemoStatus({ enabled: isAdmin && !demoMode })
+  const studioEnabled = isAdmin && demoProbe.data?.enabled === true && !(demoProbe.error instanceof ApiError && demoProbe.error.status === 404)
   const visibleSections = adminSections.map(section => ({ ...section, items: section.items.filter(item => !item.adminOnly || isAdmin) })).filter(section => section.items.length > 0)
-  const visibleItems = [overviewItem, ...visibleSections.flatMap(section => section.items)]
+  const studioItem: AdminNavItem = { to: '/admin/demo-studio', labelKey: 'demoStudio', icon: 'flask', adminOnly: true }
+  const visibleItems = [overviewItem, ...visibleSections.flatMap(section => section.items), ...(studioEnabled ? [studioItem] : [])]
   const currentItem = visibleItems.find(item => location.pathname === item.to || (item.to !== '/admin' && location.pathname.startsWith(item.to)))
   const current = t(currentItem?.labelKey || 'overview')
   const primaryItems = [
@@ -83,6 +90,7 @@ function AdminShell() {
     { to: '/admin/vehicles', labelKey: 'fleetHub', icon: 'car' as IconName, paths: ['/admin/vehicles', '/admin/devices'] },
     ...(isAdmin ? [{ to: '/admin/tenants', labelKey: 'peopleHub', icon: 'users' as IconName, paths: ['/admin/tenants', '/admin/users'] }] : []),
     { to: isAdmin ? '/admin/models' : '/admin/audit', labelKey: 'systemHub', icon: 'system' as IconName, paths: ['/admin/models', '/admin/rules', '/admin/audit', '/admin/system'] },
+    ...(studioEnabled ? [{ ...studioItem, paths: ['/admin/demo-studio'] }] : []),
   ]
   const activeSection = visibleSections.find(section => section.items.some(item => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)))
   const primaryActive = (paths: string[]) => paths.some(path => path === '/admin' ? location.pathname === path : location.pathname === path || location.pathname.startsWith(`${path}/`))
@@ -107,6 +115,7 @@ function AdminShell() {
         <Route path="/admin/evaluations" element={<EvaluationsWorkbench/>}/>
         <Route path="/admin/evaluations/:revision" element={<Navigate to="/admin/evaluations" replace/>}/>
         {(['incidents','commands','vehicles','devices','audit','system'] as const).map(name => <Route key={name} path={`/admin/${name}`} element={<PlatformPage name={name}/>}/>)}
+        <Route path="/admin/demo-studio" element={demoProbe.isPending && isAdmin && !demoMode ? <div className="table-state"><span className="spinner"/>{t('loading')}</div> : studioEnabled ? <DemoStudioPage/> : <Navigate to={isAdmin ? '/admin' : '/admin/incidents'} replace/>}/>
         {(['tenants','users','models','rules'] as const).map(name => <Route key={name} path={`/admin/${name}`} element={<AdminRoute><PlatformPage name={name}/></AdminRoute>}/>)}
         <Route path="*" element={<Navigate to={isAdmin ? '/admin' : '/admin/incidents'} replace/>}/>
       </Routes></div></main>
