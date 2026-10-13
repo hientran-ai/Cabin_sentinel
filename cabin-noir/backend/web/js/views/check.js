@@ -2,7 +2,7 @@
 // Everything runs on this device. Nothing is sent unless the person chooses to keep a photo (preview first, 30 days, deletable).
 import { api } from "../api.js";
 import { h, icon, toast, busy, sheet } from "../ui.js";
-import { script, ITEM, PET, seatOf, norm } from "./device.js";
+import { loadModel, ITEM, PET, seatOf, norm } from "../detect.js";
 
 const SEAT = { rear_left: "ghế sau trái", rear_mid: "ghế sau giữa", rear_right: "ghế sau phải" };
 const COLOR = { person: "#ff5a4d", pet: "#ff9f0a", item: "#f5c518" };
@@ -73,9 +73,7 @@ export async function render({ S }) {
       video.srcObject = st.stream; await video.play(); st.running = true;
       if (!st.model) {
         result.textContent = "Đang tải mô hình nhận diện (lần đầu mất vài giây)…";
-        await script("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js");
-        await script("https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js");
-        st.model = await window.cocoSsd.load({ base: "lite_mobilenet_v2" });
+        st.model = await loadModel();
       }
       st.timer = setInterval(detect, 500); result.textContent = summary();
       document.getElementById("check-actions").replaceWith(actions());

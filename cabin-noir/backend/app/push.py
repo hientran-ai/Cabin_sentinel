@@ -6,7 +6,7 @@ import secrets
 import urllib.request
 from typing import Any, Callable, Sequence
 
-from . import config, db, telegram, webpush
+from . import config, db, mute, telegram, webpush
 
 Sender = Callable[[str, str, str, int, Sequence[str], str | None], bool]
 
@@ -54,10 +54,30 @@ def _channel(user_id: str) -> str:
     return (db.loads(row["settings"]) if row else {}).get("notify_channel", "auto")
 
 
+def notify_incident(user_id: str, incident_id: str, title: str, message: str, urgent: bool = False, url: str | None = None) -> bool:
+    """Like notify_user, but a Telegram chat gets the incident card (picture drawn from data, buttons, edited in place)."""
+    from . import tgcards
+
+    if mute.active(user_id):
+        return False
+    web_ok = webpush.notify_user(user_id, title, message, urgent=urgent, url=url, tag=url)
+    channel = _channel(user_id)
+    chat = telegram.chat_for(user_id) if config.telegram_configured() else None
+    use_tg = bool(chat) and channel in ("auto", "telegram", "both")
+    ok = tgcards.send(chat, incident_id) if use_tg else False
+    if channel in ("ntfy", "both") or not use_tg or not ok:
+        ok = publish(topic_for(user_id), title, message, priority=5 if urgent else 3,
+                     tags=["rotating_light"] if urgent else ["warning"]) or ok
+    return ok or web_ok
+
+
 def notify_user(user_id: str, title: str, message: str, urgent: bool = False, tags: Sequence[str] = (), click: str | None = None,
-                url: str | None = None) -> bool:
+                url: str | None = None, respect_mute: bool = True) -> bool:
     """Send through the user's channel: Telegram when linked ("auto"), ntfy otherwise. A failed Telegram send falls back to ntfy
-    so an alert is never lost because one channel is down. Browsers with notifications turned on get it as well (Web Push)."""
+    so an alert is never lost because one channel is down. Browsers with notifications turned on get it as well (Web Push).
+    A person who muted their alerts (app or /tamdung) gets nothing until the mute ends; only the "alerts are back" notice ignores it."""
+    if respect_mute and mute.active(user_id):
+        return False
     web_ok = webpush.notify_user(user_id, title, message, urgent=urgent, url=url, tag=url)
     channel = _channel(user_id)
     chat = telegram.chat_for(user_id) if config.telegram_configured() else None

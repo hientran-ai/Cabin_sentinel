@@ -14,7 +14,7 @@ import hashlib
 import sqlite3
 from typing import Callable
 
-LATEST = 7
+LATEST = 9
 
 V1 = """
 CREATE TABLE IF NOT EXISTS users (
@@ -233,7 +233,28 @@ def _m7(conn: sqlite3.Connection) -> None:
     conn.execute("CREATE TABLE IF NOT EXISTS server_keys (name TEXT PRIMARY KEY, value TEXT NOT NULL)")
 
 
-MIGRATIONS: list[tuple[int, Callable[[sqlite3.Connection], None]]] = [(1, _m1), (2, _m2), (3, _m3), (4, _m4), (5, _m5), (6, _m6), (7, _m7)]
+def _m8(conn: sqlite3.Connection) -> None:
+    """Fixed pickup places ("Nhà", "Trường học") saved per person, so a school run can be set up with one tap."""
+    conn.execute("CREATE TABLE IF NOT EXISTS places (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, "
+                 "name TEXT NOT NULL, address TEXT NOT NULL DEFAULT '', lat REAL NOT NULL, lon REAL NOT NULL, radius_m INTEGER NOT NULL DEFAULT 150, "
+                 "created_at REAL NOT NULL)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_places_user ON places(user_id)")
+
+
+def _m9(conn: sqlite3.Connection) -> None:
+    """Telegram alert cards (which message to edit when an incident changes) and the per-vehicle opt-in for alert photos.
+    An alert photo is a frame the in-car device blurred itself; it is kept like other media but only for a day."""
+    conn.execute("CREATE TABLE IF NOT EXISTS tg_alerts (incident_id TEXT NOT NULL REFERENCES incidents(id) ON DELETE CASCADE, "
+                 "chat_id TEXT NOT NULL, message_id INTEGER NOT NULL, level TEXT NOT NULL, created_at REAL NOT NULL, "
+                 "PRIMARY KEY (incident_id, chat_id, message_id))")
+    conn.execute("CREATE TABLE IF NOT EXISTS vehicle_prefs (vehicle_id TEXT PRIMARY KEY REFERENCES vehicles(id) ON DELETE CASCADE, "
+                 "alert_photo INTEGER NOT NULL DEFAULT 0, changed_by TEXT, changed_at REAL)")
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(media)").fetchall()}
+    if "incident_id" not in cols:
+        conn.execute("ALTER TABLE media ADD COLUMN incident_id TEXT")
+
+
+MIGRATIONS: list[tuple[int, Callable[[sqlite3.Connection], None]]] = [(1, _m1), (2, _m2), (3, _m3), (4, _m4), (5, _m5), (6, _m6), (7, _m7), (8, _m8), (9, _m9)]
 
 
 def current(conn: sqlite3.Connection) -> int:

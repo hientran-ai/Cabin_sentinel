@@ -36,6 +36,7 @@ def new_id(prefix: str) -> str:
 
 HOT_C = 35.0
 STALE_AFTER_S = 120
+PAUSE_FOREVER = 4102444800.0      # 2100-01-01: 'until I turn it back on'
 SEATS = ["driver", "passenger", "rear_left", "rear_mid", "rear_right"]
 SEAT_LABEL = {
     "driver": "Ghế lái", "passenger": "Ghế phụ", "rear_left": "Ghế sau trái",
@@ -206,11 +207,15 @@ def evaluate(state: dict[str, Any]) -> dict[str, Any]:
     if state["engine_on"]:
         return {"level": "paused", "title": "Xe đang chạy", "sub": "Tạm dừng giám sát cabin khi có tài xế.", "current": True}
     if state.get("paused_until", 0) > now():
+        if state.get("paused_indefinite"):
+            return {"level": "paused", "title": "Đã tạm dừng giám sát", "sub": "Giám sát không tự bật lại. Bấm Bật lại giám sát khi bạn muốn tiếp tục.",
+                    "current": True, "paused_until": state["paused_until"], "paused_indefinite": True}
         return {"level": "paused", "title": "Đã tạm dừng giám sát", "sub": f"Đến {hms(state['paused_until'])[:5]}, sau đó tự giám sát lại.",
                 "current": True, "paused_until": state["paused_until"]}
     if state["camera"] != "ok":
         return {"level": "notice", "title": "Chưa nhìn được ghế sau",
-                "sub": "Camera đang bị che. Cửa và nhiệt độ vẫn được theo dõi.", "current": True}
+                "sub": "Camera đang bị che nên chưa biết ghế sau có ai không. Không coi là xe trống, hãy kiểm tra xe." if not state.get("lock_known", True)
+                else "Camera đang bị che. Cửa và nhiệt độ vẫn được theo dõi.", "current": True}
     locked = state["doors_locked"]
     if pres and locked:
         seat, info = max(pres, key=lambda p: p[1]["conf"])
@@ -368,6 +373,8 @@ def incident_json(inc: Any, with_detail: bool = False) -> dict[str, Any]:
     if with_detail:
         d["escalation"] = escalation(inc)
         d["events"] = [dict(r) for r in db.all_("SELECT at,kind,title,detail FROM events WHERE incident_id=? ORDER BY id", inc["id"])]
+        d["alert_photos"] = [r["id"] for r in db.all_("SELECT id FROM media WHERE incident_id=? AND kind='alert_photo' AND expires_at>? "
+                                                     "ORDER BY created_at", inc["id"], now())]
     return d
 
 

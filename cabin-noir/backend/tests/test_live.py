@@ -16,7 +16,7 @@ def test_live_view_returns_boxes_and_marks_stale_data(prod):
     h, uid, vid, dh, _ = setup_car(c, sent)
     assert c.post("/v1/device/telemetry", json=person([0.2, 0.3, 0.25, 0.4], items=[{"name": "Cặp sách", "seat": "rear_left", "conf": 0.8, "box": [0.1, 0.5, 0.2, 0.2]}]), headers=dh).status_code == 200
     r = c.get(f"/v1/vehicles/{vid}/live", headers=h).json()
-    assert r["available"] and r["basis"] == "measured" and r["age_s"] < 5 and "không rời thiết bị" in r["note"]
+    assert r["available"] and r["basis"] == "measured" and r["age_s"] < 5 and "không phải video camera" in r["note"]
     assert r["detections"][0]["box"] == [0.2, 0.3, 0.25, 0.4] and r["detections"][0]["age"] == "child" and r["items"][0]["box"] == [0.1, 0.5, 0.2, 0.2]
     clock.t += 300                                                           # the device went quiet
     r = c.get(f"/v1/vehicles/{vid}/live", headers=h).json()

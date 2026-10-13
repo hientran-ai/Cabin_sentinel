@@ -17,7 +17,7 @@ function build() {
   refs.msg = h("div", { class: "banner", hidden: true, role: "status" });
   refs.list = h("div", { class: "small muted" });
   refs.note = h("p", { class: "small muted", style: "margin:0" });
-  node = h("section", { class: "card gap", id: "live" },
+  node = h("section", { class: "card gap", id: "live", "data-keep": "" },
     h("div", { class: "row between" }, h("h3", { style: "margin:0;display:flex;align-items:center;gap:8px" }, icon("cam"), "Xem trực tiếp"), refs.pill),
     refs.msg, refs.canvas, refs.list, refs.note);
 }

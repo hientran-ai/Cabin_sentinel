@@ -1,7 +1,8 @@
 import { scrollTop, scrollToY } from "./frame.js";
-import { auth, get, ApiError } from "./api.js";
-import { h, icon, toast, banner as showBanner, playBeep } from "./ui.js";
-import { listen as listenPush, registration as pushRegistration } from "./webpush.js";
+import { auth, get, del, ApiError } from "./api.js";
+import { h, icon, toast, fmt, morph, banner as showBanner, playBeep } from "./ui.js";
+import { listen as listenPush, registration as pushRegistration, restore as restorePush } from "./webpush.js";
+import { update as updateGuide } from "./guide.js";
 import { bell, stopBell } from "./views/bell.js";
 
 // Shared state. Views read it and call actions; polling keeps it fresh.
@@ -9,12 +10,13 @@ export const S = { cfg: null, me: null, vehicles: [], vid: null, status: null, t
 const root = document.getElementById("app");
 let route = { name: "home", arg: null };
 let view = null;               // current view module
+let painted = null;            // the view currently on screen (a repaint of it is done in place)
 let timer = null;
 let lastIncident = null;
 
 const VIEWS = {
   home: () => import("./views/home.js"), incident: () => import("./views/incident.js"), school: () => import("./views/school.js"),
-  history: () => import("./views/history.js"), check: () => import("./views/check.js"), report: () => import("./views/report.js"), account: () => import("./views/account.js"), device: () => import("./views/device.js"),
+  history: () => import("./views/history.js"), check: () => import("./views/check.js"), report: () => import("./views/report.js"), account: () => import("./views/account.js"),
 };
 const TABS = [["home", "Xe", "car"], ["school", "Đưa đón", "school"], ["history", "Lịch sử", "hist"], ["account", "Tài khoản", "user"]];
 
@@ -31,6 +33,7 @@ export async function refresh(full = true) {
       S.status = st; S.trips = tr;
     } else { S.status = null; S.trips = []; }
     S.error = null; S.loadedAt = Date.now() / 1000;
+    if (!S.meAt || S.loadedAt - S.meAt > 20) { S.me = await get("/v1/me").catch(() => S.me); S.meAt = S.loadedAt; }   // picks up a mute set from Telegram
     announce();
   } catch (e) {
     if (e instanceof ApiError && e.status === 401) return;
@@ -68,6 +71,11 @@ export function rerender() {
 
 function banner() {
   if (S.error) return h("div", { class: "banner red", role: "alert" }, `Mất kết nối máy chủ. Dữ liệu có thể đã cũ. ${S.error}`);
+  const until = S.me && S.me.settings && S.me.settings.mute_until;
+  if (until && until > Date.now() / 1000) {
+    return h("div", { class: "banner", role: "status" }, `Đang tạm tắt thông báo đến ${fmt.clock(until)}. Bạn sẽ không nhận cảnh báo khi có người trong xe. `,
+      h("button", { class: "btn small", on: { click: async () => { try { await del("/v1/me/mute"); S.me.settings.mute_until = 0; rerender(); } catch (e) { toast(e.message, "err"); } } } }, "Bật lại"));
+  }
   return null;
 }
 
@@ -87,14 +95,40 @@ function shell(content) {
         icon(ic), label)))));
 }
 
+// Open/closed state of every <details> ("Dòng thời gian", …). A repaint builds new elements, so remember what the person opened
+// (by its title) and open it again; it closes only when they close it or leave the screen.
+const openDetails = new Set();
+const detailsKey = (d) => { const t = d.querySelector(":scope > summary"); return t ? t.textContent.replace(/\s*\(.*\)\s*$/, "").trim() : null; };
+document.addEventListener("toggle", (e) => {
+  const d = e.target;
+  if (!(d instanceof HTMLDetailsElement)) return;
+  const k = detailsKey(d);
+  if (k) d.open ? openDetails.add(k) : openDetails.delete(k);
+}, true);
+
+// The bottom bar's real height (it grows with the phone's safe area and larger text) so the last content is never underneath it.
+let tabsObserver = null;
+function measureTabs() {
+  const bar = root.querySelector(".tabs");
+  if (!bar) return;
+  document.documentElement.style.setProperty("--tabs-h", `${bar.offsetHeight}px`);
+  if (window.ResizeObserver) { tabsObserver && tabsObserver.disconnect(); tabsObserver = new ResizeObserver(() => measureTabs()); tabsObserver.observe(bar); }
+}
+
 async function paint() {
   const mod = view;
   if (!mod) return;
   const node = await mod.render({ S, go, refresh, rerender: paint, arg: route.arg, vehicle, role });
   if (mod !== view) return;
   const y = scrollTop();
-  root.replaceChildren(shell(node));
+  const next = shell(node), cur = root.firstElementChild;
+  // Same screen: update in place (see morph). A new screen is built from scratch.
+  if (cur && painted === view && root.childElementCount === 1) morph(cur, next); else root.replaceChildren(next);
+  painted = view;
+  root.querySelectorAll("details").forEach((d) => { const k = detailsKey(d); if (k && openDetails.has(k)) d.open = true; });
+  measureTabs();
   scrollToY(y);
+  updateGuide({ route, S, refresh });
 }
 
 async function navigate() {
@@ -102,7 +136,9 @@ async function navigate() {
   if (name === "overview") name = "history";                       // the overview now lives at the top of History
   route = { name: VIEWS[name] ? name : "home", arg: arg ? decodeURIComponent(arg) : null };
   if (view && view.destroy) view.destroy();
+  openDetails.clear();
   view = await VIEWS[route.name]();
+  painted = null;
   scrollToY(0);
   await paint();
 }
@@ -121,13 +157,14 @@ export async function signedIn() {
   if (!location.hash || location.hash === "#/login") location.hash = "#/home";
   await navigate();
   schedule();
+  restorePush();                       // alerts were on in this browser before the last sign-out: turn them back on
 }
 
 export function signedOut() {
   stopBell();
   auth.set(null); Object.assign(S, { me: null, vehicles: [], vid: null, status: null, trips: [], children: [] });
   clearTimeout(timer); view = null;
-  import("./views/login.js").then((m) => root.replaceChildren(m.render({ onDone: signedIn })));
+  import("./views/login.js").then((m) => { root.replaceChildren(m.render({ onDone: signedIn })); updateGuide({ route: { name: "login" }, S, refresh }); });
 }
 
 window.addEventListener("hashchange", () => { if (auth.token) navigate(); });

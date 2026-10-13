@@ -1,8 +1,9 @@
 import { get, post, del, ApiError } from "../api.js";
 import { h, icon, carPic, fmt, toast, sheet, confirmDialog, busy } from "../ui.js";
 import { loadMap } from "./map.js";
+import { addVehicle, setupCard } from "./setup.js";
 
-const LEVEL = { critical: "Nghiêm trọng", warning: "Cảnh báo", ok: "Bình thường", safe: "Bình thường", unknown: "Chưa rõ" };
+const LEVEL = { critical: "Nghiêm trọng", warning: "Cảnh báo", notice: "Lưu ý", paused: "Tạm dừng", ok: "Bình thường", safe: "Bình thường", unknown: "Chưa rõ" };
 
 // Fresh, real data only. "unknown" and stale data are never drawn as safe.
 function fresh(s) { return s && !s.restricted && s.verdict && s.verdict.current !== false && !s.no_real_data && (s.camera || "ok") === "ok" && s.seats; }
@@ -35,12 +36,16 @@ async function act(btn, fn, okMsg) {
 }
 
 export async function render(ctx) {
-  const { S, refresh, go } = ctx;
+  const { S, refresh, go, rerender } = ctx;
   const s = S.status;
   if (!S.vehicles.length) {
-    return h("div", { class: "card gap center" }, h("h2", {}, "Chưa có xe"),
-      h("p", { class: "muted", style: "margin:0" }, "Thêm xe, rồi ghép thiết bị camera trong xe (điện thoại, máy tính hoặc trình duyệt) để bắt đầu giám sát."),
-      h("a", { class: "btn primary", href: "#/account" }, "Thêm xe"));
+    return h("div", { class: "gap" }, h("section", { class: "card gap" }, h("h2", {}, "Bắt đầu với Cabin Noir"),
+      h("div", { class: "list" },
+        h("div", { class: "item" }, h("span", { class: "stepno" }, "1"), h("div", { class: "grow" }, "Thêm xe của bạn")),
+        h("div", { class: "item" }, h("span", { class: "stepno" }, "2"), h("div", { class: "grow" }, "Ghép thiết bị camera trong xe (điện thoại, máy tính hoặc trình duyệt)")),
+        h("div", { class: "item" }, h("span", { class: "stepno" }, "3"), h("div", { class: "grow" }, "Bật thông báo để nhận cảnh báo ngay"))),
+      h("button", { class: "btn primary block", on: { click: () => addVehicle(refresh, rerender) } }, icon("plus"), "Thêm xe"),
+      h("p", { class: "small muted", style: "margin:0" }, "Chưa có xe nghĩa là chưa có dữ liệu: app không hiển thị trạng thái an toàn giả.")));
   }
   if (!s) return h("div", { class: "card center muted" }, "Đang tải…");
   if (s.restricted) return h("div", { class: "card gap" }, h("h2", {}, s.vehicle.name), h("p", { class: "muted", style: "margin:0" }, "Bạn chỉ có quyền Đưa đón với xe này."), h("a", { class: "btn primary", href: "#/school" }, "Mở Đưa đón"));
@@ -55,6 +60,7 @@ export async function render(ctx) {
   // An open incident outranks a calm camera: never show a green "normal" card while someone still has to check the car.
   const pending = inc && !stale && ["safe", "notice"].includes(v.level);
 
+  const setup = setupCard(s, ctx);
   out.push(h("div", { class: `car-stage ${stale ? "stale" : ""}` }, carPic(s.vehicle)));
   out.push(h("section", { class: `verdict ${pending ? "warning" : level}` },
     h("div", { class: "row between" }, h("div", { class: "kicker" }, stale ? "Chưa có dữ liệu mới" : pending ? "Sự cố chưa đóng" : LEVEL[v.level] || v.level), sim && h("span", { class: "pill" }, "MÔ PHỎNG")),
@@ -62,6 +68,7 @@ export async function render(ctx) {
     h("p", { class: "muted", style: "margin:0" }, stale && !s.no_real_data ? "Xe chưa gửi dữ liệu mới hoặc camera không nhìn được ghế sau. Hãy kiểm tra xe." : pending ? "Sự cố vẫn mở cho tới khi có người xác nhận đã tự kiểm tra xe." : v.sub),
     h("p", { class: "small muted", style: "margin:10px 0 0" }, s.last_seen ? `Cập nhật ${fmt.ago(s.last_seen)} · ${s.connection === "online" ? "thiết bị trực tuyến" : "thiết bị ngoại tuyến"}` : "Chưa nhận dữ liệu nào từ thiết bị trong xe")));
 
+  if (setup) out.push(setup);
   out.push(h("div", { class: "chips" },
     h("button", { class: `chip ${c && c.people ? "hot" : ""}`, "aria-label": `Người và thú cưng: ${c ? c.people : "chưa có dữ liệu"}`, on: { click: () => glance(s) } }, icon("child"), c ? c.people : "–", c && c.child && h("span", { class: "small" }, "có thể có trẻ em")),
     h("button", { class: "chip items", "aria-label": `Đồ vật: ${c ? c.items : "chưa có dữ liệu"}`, on: { click: () => glance(s) } }, icon("bag"), c ? c.items : "–")));
@@ -99,16 +106,34 @@ export async function render(ctx) {
       (s.role === "owner" || s.role === "confirm") && h("button", { class: "btn", on: { click: () => camera(s) } }, icon("cam"), "Xem camera"),
       paused ? h("button", { class: "btn", on: { click: (e) => act(e.target, async () => { await del(`/v1/vehicles/${s.vehicle.id}/pause`); await refresh(); }, "Đã bật lại giám sát.") } }, icon("power"), "Bật lại giám sát")
         : (s.role === "owner" || s.role === "confirm") && !inc && h("button", { class: "btn", on: { click: () => pauseSheet(s, refresh) } }, icon("pause"), "Tạm dừng giám sát")),
-    paused && h("div", { class: "banner" }, `Đang tạm dừng giám sát tới ${fmt.clock(s.paused_until)}. Sẽ tự bật lại.`),
+    paused && h("div", { class: "banner" }, s.paused_indefinite ? "Giám sát đang tắt cho đến khi bạn bật lại. Hệ thống không cảnh báo trong lúc này." : `Đang tạm dừng giám sát tới ${fmt.clock(s.paused_until)}. Sẽ tự bật lại.`),
     S.cfg && S.cfg.climate && s.climate && climateRow(s, refresh)));
   if (mapBox) { out.push(h("section", { class: "card gap" }, h("h3", {}, "Vị trí xe"), mapBox, h("p", { class: "small muted", style: "margin:0" }, `${s.location || "Vị trí"} · ${fmt.ago(s.coords.at)} · Bản đồ © OpenStreetMap`))); setTimeout(() => loadMap("home-map", s), 0); }
   if (s.device) out.push(h("p", { class: "small muted center" }, `Thiết bị: ${s.device.label} (${s.device.platform})${s.device.battery != null ? ` · pin ${s.device.battery}%` : ""}`));
   return h("div", { class: "gap" }, out);
 }
 
+// Pausing is a safety decision: the owner picks a length, reads exactly what stops and what keeps running, then confirms.
 function pauseSheet(s, refresh) {
-  return sheet((close) => h("div", { class: "gap" }, h("p", { class: "muted", style: "margin:0" }, "Dùng khi bạn đang ngồi trong xe đỗ. Tự bật lại khi hết giờ và không thể tạm dừng khi có sự cố mở."),
-    h("div", { class: "row wrap" }, [10, 30, 60].map((m) => h("button", { class: "btn grow", on: { click: async () => { try { await post(`/v1/vehicles/${s.vehicle.id}/pause`, { minutes: m }); close(); await refresh(); } catch (e) { toast(e.message, "err"); } } } }, `${m} phút`)))), { title: "Tạm dừng giám sát" });
+  const OPTIONS = [[10, "10 phút"], [30, "30 phút"], [60, "60 phút"], [null, "Cho đến khi tôi bật lại"]];
+  return sheet((close) => {
+    const body = h("div", { class: "gap" });
+    const choose = () => body.replaceChildren(
+      h("p", { class: "muted", style: "margin:0" }, "Dùng khi bạn đang ngồi trong xe đỗ. Không thể tạm dừng khi có sự cố mở."),
+      h("div", { class: "gap-s" }, OPTIONS.map(([m, t]) => h("button", { class: "btn block", on: { click: () => confirmStep(m, t) } }, t))));
+    const confirmStep = (m, label) => body.replaceChildren(
+      h("h3", { style: "margin:0" }, `Tạm dừng giám sát: ${label.toLowerCase()}`),
+      h("div", { class: "banner red", role: "alert" }, "Trong thời gian tạm dừng, hệ thống có thể không phát hiện hoặc cảnh báo khi trẻ em hoặc thú cưng còn trong xe."),
+      h("div", { class: "gap-s" },
+        h("div", {}, h("strong", {}, "Ngừng: "), "đánh giá nguy cơ, mở sự cố, thông báo (Telegram, ntfy, trình duyệt) và SMS leo thang cho xe này."),
+        h("div", {}, h("strong", {}, "Vẫn chạy: "), "camera và cảm biến trên thiết bị vẫn thu thập và gửi dữ liệu về máy chủ để lưu lịch sử. Thiết bị vẫn báo khi mất kết nối hoặc camera không nhìn được."),
+        h("div", {}, h("strong", {}, "Bật lại: "), m == null ? "không tự bật lại. Bạn được nhắc mỗi 6 giờ; bấm “Bật lại giám sát” ở màn hình Xe khi muốn tiếp tục." : `tự bật lại sau ${m} phút, hoặc bấm “Bật lại giám sát” sớm hơn.`)),
+      h("div", { class: "row" },
+        h("button", { class: "btn grow", on: { click: choose } }, "Hủy"),
+        h("button", { class: "btn primary grow", on: { click: (e) => busy(e.target, async () => { try { await post(`/v1/vehicles/${s.vehicle.id}/pause`, m == null ? { until_resumed: true } : { minutes: m }); close(); await refresh(); } catch (er) { toast(er.message, "err"); } }) } }, "Xác nhận tạm dừng")));
+    choose();
+    return body;
+  }, { title: "Tạm dừng giám sát" });
 }
 
 function climateRow(s, refresh) {

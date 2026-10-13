@@ -2,6 +2,7 @@ import { get, post, put, patch, del, api, auth } from "../api.js";
 import { h, icon, carPic, fmt, toast, sheet, confirmDialog, field, switchRow, busy } from "../ui.js";
 import { signedOut } from "../app.js";
 import * as wp from "../webpush.js";
+import { addVehicle, pairCode, openDevice } from "./setup.js";
 
 export const live = false;      // forms live here: repaint only when an action asks for it
 const ROLE = { owner: "Chủ xe", confirm: "Xem và xác nhận", view: "Chỉ xem", school: "Chỉ đưa đón" };
@@ -13,10 +14,11 @@ export async function render(ctx) {
   const { S, refresh, rerender } = ctx;
   const vid = S.vid;
   const owner = S.status && S.status.role === "owner";
-  const [me, tg, push, members, devices, contacts, sessions] = await Promise.all([
+  const [me, tg, push, members, devices, contacts, sessions, alertPhoto] = await Promise.all([
     get("/v1/me"), get("/v1/me/telegram").catch(() => ({ configured: false, linked: false })), get("/v1/me/push").catch(() => null),
     vid ? get(`/v1/vehicles/${vid}/members`).catch(() => []) : [], vid && owner ? get(`/v1/vehicles/${vid}/devices`).catch(() => []) : [],
     get("/v1/contacts").catch(() => []), get("/v1/me/sessions").catch(() => []),
+    vid && owner ? get(`/v1/vehicles/${vid}/alert-photo`).catch(() => null) : null,
   ]);
   S.me = me;
   const st = me.settings;
@@ -33,8 +35,9 @@ export async function render(ctx) {
 
     vid && owner && section("Thiết bị trong xe", list(devices.map((d) => h("div", { class: "item" }, icon(d.platform === "ios" || d.platform === "android" ? "smartphone" : d.platform === "web" ? "cam" : "cpu"), h("div", { class: "grow" }, h("div", {}, `${d.label} (${d.platform})`), h("div", { class: "sub" }, `${d.online ? "Trực tuyến" : "Ngoại tuyến"} · ${fmt.ago(d.last_seen)}${d.info && d.info.battery != null ? ` · pin ${d.info.battery}%` : ""}`)),
       h("button", { class: "btn ghost small", on: { click: async () => { if (await confirmDialog({ title: "Ngắt thiết bị này?", message: "Thiết bị sẽ không gửi dữ liệu được nữa và xe không còn được bảo vệ cho tới khi ghép lại.", ok: "Ngắt", danger: true })) { try { await del(`/v1/vehicles/${vid}/devices/${d.id}`); rerender(); } catch (e) { toast(e.message, "err"); } } } } }, "Ngắt"))),
-      h("button", { class: "item", on: { click: () => pairCode(vid) } }, icon("plus"), "Tạo mã ghép thiết bị"),
-      h("a", { class: "item", href: "#/device", style: "text-decoration:none;color:inherit" }, icon("cam"), h("div", { class: "grow" }, h("div", {}, "Dùng trình duyệt này làm thiết bị trong xe"), h("div", { class: "sub" }, "Webcam nhận diện ngay trên máy, ảnh không gửi đi")), icon("chev")))),
+      h("button", { class: "item", on: { click: () => pairCode(vid, rerender) } }, icon("plus"), "Tạo mã ghép thiết bị"),
+      h("button", { class: "item", on: { click: () => openDevice() } }, icon("cam"), h("div", { class: "grow" }, h("div", {}, "Mở trang thiết bị trong xe"), h("div", { class: "sub" }, alertPhoto && alertPhoto.enabled ? "Tab riêng: giả lập hoặc webcam. Chỉ gửi ảnh đã làm mờ người khi có cảnh báo" : "Tab riêng: giả lập hoặc webcam. Ảnh không gửi đi")), icon("chev")),
+      alertPhoto && alertPhotoRow(vid, alertPhoto, rerender))),
 
     vid && section("Gia đình", list(members.map((m) => h("div", { class: "item" }, icon("user"), h("div", { class: "grow" }, h("div", {}, `${m.name}${m.status === "pending" ? " (chờ đăng nhập)" : ""}`), h("div", { class: "sub" }, `${m.phone} · ${ROLE[m.role] || m.role}`)),
       owner && m.role !== "owner" && [h("button", { class: "btn ghost small", on: { click: () => roleSheet(vid, m, rerender) } }, "Quyền"),
@@ -46,7 +49,7 @@ export async function render(ctx) {
       h("button", { class: "item", on: { click: () => addContact(rerender) } }, icon("plus"), "Thêm người liên hệ")),
       h("p", { class: "small muted", style: "margin:6px 4px 0" }, "Nhận SMS khi sự cố nghiêm trọng không ai xem (cần máy chủ cấu hình SMS). Ứng dụng không tự gọi điện.")),
 
-    section("Thông báo", telegramCard(tg, me, rerender),
+    section("Thông báo", telegramCard(tg, me, rerender), muteCard(me, rerender),
       list(h("label", { class: "switch stack" }, h("div", {}, h("div", {}, "Kênh nhận thông báo"), h("div", { class: "sub" }, "Tự động: Telegram nếu đã liên kết, nếu không dùng ntfy. Lỗi một kênh thì tự chuyển kênh còn lại.")),
         h("select", { "aria-label": "Kênh thông báo", style: "width:auto", on: { change: (e) => save({ notify_channel: e.target.value }) } }, [["auto", "Tự động"], ["telegram", "Telegram"], ["ntfy", "ntfy"], ["both", "Cả hai"]].map(([k, t]) => h("option", { value: k, selected: (st.notify_channel || "auto") === k }, t)))),
         switchRow("Cảnh báo mức Cảnh báo", "Mức Nghiêm trọng luôn được gửi", st.notify_warning, (v) => save({ notify_warning: v })),
@@ -66,9 +69,9 @@ export async function render(ctx) {
     section("Dữ liệu của bạn", list(
       h("button", { class: "item", on: { click: exportData } }, icon("download"), h("div", { class: "grow" }, h("div", {}, "Tải bản sao dữ liệu (JSON)"), h("div", { class: "sub" }, "Hồ sơ, bé, liên hệ, xe của bạn"))),
       h("button", { class: "item", style: "color:var(--red)", on: { click: () => deleteAccount() } }, icon("trash"), h("div", { class: "grow" }, h("div", {}, "Xóa tài khoản và dữ liệu"), h("div", { class: "sub" }, "Xóa luôn các xe bạn là chủ xe và toàn bộ lịch sử, ảnh")))),
-      h("p", { class: "small muted", style: "margin:6px 4px 0" }, "Lịch sử cảm biến và hành trình tự xóa sau 7 ngày, ảnh sau 30 ngày, nhật ký truy cập sau 365 ngày. Ảnh camera gốc không bao giờ rời thiết bị.")),
+      h("p", { class: "small muted", style: "margin:6px 4px 0" }, "Lịch sử cảm biến và hành trình tự xóa sau 7 ngày, ảnh sau 30 ngày, nhật ký truy cập sau 365 ngày. Ảnh camera gốc không rời thiết bị; ảnh kèm cảnh báo (nếu chủ xe bật) đã được làm mờ người và tự xóa sau 24 giờ.")),
 
-    h("button", { class: "btn block", style: "margin-top:18px", on: { click: async (e) => busy(e.target, async () => { try { await wp.disable(); await post("/v1/auth/logout"); } catch { /* token may already be gone */ } signedOut(); }) } }, "Đăng xuất"),
+    h("button", { class: "btn block", style: "margin-top:18px", on: { click: async (e) => busy(e.target, async () => { try { await wp.disable({ keep: true }); await post("/v1/auth/logout"); } catch { /* token may already be gone */ } signedOut(); }) } }, "Đăng xuất"),
     h("p", { class: "small muted center" }, "Cabin Noir chỉ giám sát, không mở khóa hay điều khiển xe và không thể đảm bảo an toàn tuyệt đối. Thấy người trong xe: gọi 112."));
 }
 
@@ -100,26 +103,12 @@ function rename(me, rerender) {
     return h("div", { class: "gap" }, field("Tên", n), h("button", { class: "btn primary block", on: { click: (e) => busy(e.target, async () => { try { await patch("/v1/me", { name: n.value.trim() }); close(true); rerender(); } catch (er) { toast(er.message, "err"); } }) } }, "Lưu")); }, { title: "Đổi tên" });
 }
 
-function addVehicle(refresh, rerender) {
-  return sheet((close) => { const name = h("input", { type: "text", maxLength: 40, placeholder: "Ví dụ: SUV gia đình" }); const model = h("select", {}, ["VinFast VF 8", "VinFast VF 6", "VinFast VF 9", "VinFast VF 3", "Khác"].map((m) => h("option", {}, m)));
-    const plate = h("input", { type: "text", maxLength: 16, placeholder: "30A-123.45" }); const color = h("select", {}, [["white", "Trắng"], ["black", "Đen"], ["red", "Đỏ"]].map(([k, t]) => h("option", { value: k }, t)));
-    return h("div", { class: "gap" }, field("Tên xe", name), field("Dòng xe", model), field("Biển số", plate), field("Màu", color),
-      h("button", { class: "btn primary block", on: { click: (e) => busy(e.target, async () => { try { await post("/v1/vehicles", { name: name.value.trim(), model: model.value, plate: plate.value.trim(), color: color.value }); close(true); toast("Đã thêm xe. Tạo mã ghép để nối thiết bị trong xe.", "ok"); await refresh(); rerender(); } catch (er) { toast(er.message, "err"); } }) } }, "Thêm xe")); }, { title: "Thêm xe" });
-}
-
 function linkVehicle(refresh, rerender) {
   return sheet((close) => { const code = h("input", { type: "text", placeholder: "CS-VF8-2026", maxLength: 24 });
     return h("div", { class: "gap" }, field("Mã thiết bị", code), h("button", { class: "btn primary block", on: { click: (e) => busy(e.target, async () => { try {
       const r = await post("/v1/vehicles/link", { pair_code: code.value.trim() });
       await post("/v1/vehicles/link/confirm", { challenge_id: r.challenge_id, code: r.dev_code || "", name: r.suggested_name || "Xe của tôi" });
       close(true); await refresh(); rerender(); } catch (er) { toast(er.message, "err"); } }) } }, "Liên kết")); }, { title: "Liên kết xe" });
-}
-
-async function pairCode(vid) {
-  try {
-    const r = await post(`/v1/vehicles/${vid}/devices/pairing`);
-    await sheet(() => h("div", { class: "gap center" }, h("p", { class: "muted", style: "margin:0" }, `Nhập mã này trên thiết bị trong xe trong ${Math.round(r.expires_in / 60)} phút. Dùng một lần.`), h("div", { class: "card", style: "font:700 32px ui-monospace,monospace;letter-spacing:.1em" }, r.code)), { title: "Mã ghép thiết bị" });
-  } catch (e) { toast(e.message, "err"); }
 }
 
 function invite(vid, rerender) {
@@ -151,6 +140,45 @@ function deleteAccount() {
   return sheet((close) => { const t = h("input", { type: "text", placeholder: "XOA TAI KHOAN", autocomplete: "off" });
     return h("div", { class: "gap" }, h("p", { style: "margin:0" }, "Việc này xóa vĩnh viễn tài khoản, các xe bạn là chủ xe cùng lịch sử, ảnh và thiết bị đã ghép. Không hoàn tác được."),
       field("Gõ XOA TAI KHOAN để xác nhận", t), h("button", { class: "btn danger block", on: { click: (e) => busy(e.target, async () => { if (t.value.trim() !== "XOA TAI KHOAN") { toast("Chưa gõ đúng dòng xác nhận.", "err"); return; } try { await del("/v1/me", { confirm: "XOA TAI KHOAN" }); close(true); toast("Đã xóa tài khoản.", "ok"); signedOut(); } catch (er) { toast(er.message, "err"); } }) } }, "Xóa vĩnh viễn")); }, { title: "Xóa tài khoản" });
+}
+
+// Temporary mute for this person, on every channel (Telegram, ntfy, this browser). Ends by itself and says so.
+function muteCard(me, rerender) {
+  const until = me && me.settings && me.settings.mute_until;
+  const muted = until && until > Date.now() / 1000;
+  const go = (minutes) => async (e) => busy(e.target, async () => {
+    try { const r = await post("/v1/me/mute", { minutes }); me.settings.mute_until = r.mute_until; toast(`Đã tạm tắt thông báo đến ${fmt.clock(r.mute_until)}.`, "ok"); rerender(); } catch (er) { toast(er.message, "err"); }
+  });
+  return h("section", { class: "card gap" },
+    h("div", {}, h("h3", { style: "margin:0" }, icon("bell"), "Tạm tắt thông báo"),
+      h("div", { class: "small muted" }, muted ? `Đang tắt đến ${fmt.clock(until)}. Sự cố vẫn được ghi lại trong ứng dụng.`
+        : "Dùng khi đang thử nghiệm hoặc thiết bị hay mất mạng. Tối đa 4 giờ, tự bật lại và báo cho bạn. Trong lúc tắt, bạn không nhận cảnh báo có người trong xe.")),
+    h("div", { class: "row wrap" },
+      muted ? h("button", { class: "btn primary grow", on: { click: (e) => busy(e.target, async () => { try { await del("/v1/me/mute"); me.settings.mute_until = 0; toast("Đã bật lại thông báo.", "ok"); rerender(); } catch (er) { toast(er.message, "err"); } }) } }, "Bật lại ngay")
+        : [[30, "30 phút"], [60, "1 giờ"], [240, "4 giờ"]].map(([m, t]) => h("button", { class: "btn grow", on: { click: go(m) } }, t))),
+    h("p", { class: "small muted", style: "margin:0" }, "Telegram: nhắn /tamdung 60 để tạm tắt, /bat để bật lại."));
+}
+
+// Alert photos: off by default, owner only, explicit consent. The in-car device pixelates every person it detects before
+// the frame leaves the phone; Telegram keeps its own copy, which Cabin Noir cannot delete.
+function alertPhotoRow(vid, cur, rerender) {
+  const sub = cur.enabled ? `Đang bật${cur.changed_by ? ` · ${cur.changed_by}` : ""}. Ảnh lưu 24 giờ trong Cabin Noir` : "Tắt: cảnh báo chỉ gửi thẻ vẽ từ dữ liệu, không có ảnh camera";
+  return switchRow("Gửi kèm ảnh camera khi có cảnh báo", sub, cur.enabled, async (v, el) => {
+    el.disabled = true;
+    try {
+      if (v) {
+        const ok = await confirmDialog({ title: "Bật ảnh kèm cảnh báo?", ok: "Tôi đồng ý, bật", message:
+          "Khi thiết bị thấy người trong xe, nó gửi tối đa 1 ảnh mỗi 30 giây kèm cảnh báo. Mọi người được phát hiện sẽ bị làm mờ ngay trên thiết bị trước khi gửi, "
+          + "nhưng người mà mô hình không nhận ra thì không được làm mờ. Ảnh lưu 24 giờ trong Cabin Noir. Nếu bạn nhận qua Telegram, Telegram lưu một bản riêng "
+          + "mà Cabin Noir không xóa được. Ảnh có thể có trẻ em: chỉ bật khi bạn là người giám hộ và đồng ý với điều này." });
+        if (!ok) { el.checked = false; el.disabled = false; return; }
+      }
+      await put(`/v1/vehicles/${vid}/alert-photo`, { enabled: v, consent: v });
+      toast(v ? "Đã bật ảnh kèm cảnh báo." : "Đã tắt. Không gửi ảnh camera nữa.", "ok");
+      rerender();
+    } catch (e) { el.checked = !v; toast(e.message, "err"); }
+    el.disabled = false;
+  });
 }
 
 // System notifications in this browser (Web Push): like the iPhone app, also when the tab is closed.

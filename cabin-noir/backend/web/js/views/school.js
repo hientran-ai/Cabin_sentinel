@@ -15,17 +15,34 @@ export async function render(ctx) {
   out.push(h("p", { class: "small muted", style: "margin:0" }, "Chuyến đi theo dữ liệu từ thiết bị trong xe. Trạng thái chỉ là thông tin, cảnh báo xe vẫn do hệ thống cabin xử lý."));
   if (!S.trips.length) out.push(h("div", { class: "card center gap" }, h("p", { class: "muted", style: "margin:0" }, "Chưa có bé nào được thêm."), owner && h("button", { class: "btn primary", on: { click: () => childForm(null, refresh, S) } }, "Thêm bé")));
   for (const t of S.trips) out.push(tripCard(t, ctx, owner));
+  const places = await get("/v1/places").catch(() => []);
+  out.push(placesCard(places, S.status, ctx));
 
   if (s && s.vehicle) {
     const dest = (s.route && s.route.dest) || s.geofence;
     out.push(h("section", { class: "card gap" }, h("div", { class: "row between" }, h("h2", {}, "Điểm đến và theo dõi xe"),
-      owner && h("button", { class: "btn small", on: { click: () => destinationSheet(s, refresh) } }, icon("pin"), dest ? "Đổi điểm đến" : "Đặt điểm đến")),
+      owner && h("button", { class: "btn small", on: { click: () => destinationSheet(s, refresh, { places }) } }, icon("pin"), dest ? "Đổi điểm đến" : "Đặt điểm đến")),
       dest ? h("p", { style: "margin:0" }, `${dest.name}${s.geofence ? ` · vùng ${s.geofence.radius_m} m` : ""}${s.in_geofence ? " · xe đang trong vùng" : ""}`) : h("p", { class: "muted", style: "margin:0" }, "Chưa đặt điểm đến. Đặt điểm đến để theo dõi xe trên bản đồ và nhận báo khi xe tới nơi."),
       s.coords ? h("div", { class: "map", id: "school-map", role: "img", "aria-label": "Bản đồ theo dõi xe" }) : h("p", { class: "muted small", style: "margin:0" }, "Chưa có vị trí xe. Thiết bị trong xe cần bật định vị."),
       h("p", { class: "small muted", style: "margin:0" }, "Bản đồ © OpenStreetMap. Hành trình lưu 7 ngày rồi tự xóa.")));
     if (s.coords) get(`/v1/vehicles/${s.vehicle.id}/track?hours=6`).then((r) => loadMap("school-map", s, { track: r.points })).catch(() => loadMap("school-map", s));
   }
   return h("div", { class: "gap" }, out);
+}
+
+// Places the family uses every day ("Nhà", "Trường học"), saved to the account so a school run is one tap away.
+function placesCard(places, s, ctx) {
+  const { refresh } = ctx;
+  const canSetDest = s && s.vehicle && s.role === "owner";
+  const row = (p) => h("div", { class: "item", style: "align-items:flex-start" }, icon("pin"),
+    h("div", { class: "grow" }, h("div", { style: "font-weight:600" }, p.name), p.address && h("div", { class: "sub" }, p.address), h("div", { class: "sub" }, `Vùng tới nơi ${p.radius_m} m`),
+      h("div", { class: "row wrap", style: "margin-top:8px" },
+        canSetDest && h("button", { class: "btn small", on: { click: (e) => busy(e.target, async () => { try { await put(`/v1/vehicles/${s.vehicle.id}/geofence`, { name: p.name, lat: p.lat, lon: p.lon, radius_m: p.radius_m }); toast(`Đã đặt ${p.name} làm điểm đến.`, "ok"); await refresh(); } catch (er) { toast(er.message, "err"); } }) } }, "Đặt làm điểm đến"),
+        h("button", { class: "btn small ghost", on: { click: () => destinationSheet(s, refresh, { mode: "place", place: p }) } }, icon("edit"), "Sửa"),
+        h("button", { class: "btn small ghost", "aria-label": `Xóa ${p.name}`, on: { click: async () => { if (await confirmDialog({ title: `Xóa ${p.name}?`, message: "Chỉ xóa điểm đã lưu. Điểm đến đang dùng cho xe không đổi.", ok: "Xóa", danger: true })) { try { await del(`/v1/places/${p.id}`); toast("Đã xóa.", "ok"); await refresh(); } catch (er) { toast(er.message, "err"); } } } } }, icon("trash"), "Xóa"))));
+  return h("section", { class: "card gap" }, h("div", { class: "row between" }, h("h2", {}, "Điểm đón cố định"),
+    h("button", { class: "btn small", on: { click: () => destinationSheet(s, refresh, { mode: "place", place: null }) } }, icon("plus"), "Thêm điểm đón cố định")),
+    places.length ? h("div", { class: "card pad0 list" }, places.map(row)) : h("p", { class: "muted", style: "margin:0" }, "Chưa lưu điểm nào. Thêm Nhà, Trường học… để chọn nhanh khi đặt điểm đến."));
 }
 
 function tripCard(t, ctx, owner) {
@@ -76,10 +93,14 @@ function childForm(child, refresh, S) {
 }
 
 // Pick a destination by searching (OpenStreetMap Nominatim) or clicking the map, then choose the arrival radius.
-function destinationSheet(s, refresh) {
+function destinationSheet(s, refresh, opts = {}) {
+  const isPlace = opts.mode === "place", place = opts.place || null, places = opts.places || [];
   return sheet((close) => {
-    let pick = s.geofence ? { name: s.geofence.name, lat: s.geofence.lat, lon: s.geofence.lon } : null;
-    let radius = s.geofence ? s.geofence.radius_m : 150;
+    const base = isPlace ? place : s && s.geofence;
+    let pick = base ? { name: base.name, lat: base.lat, lon: base.lon } : null;
+    let radius = base ? base.radius_m : 150;
+    const nameIn = h("input", { type: "text", maxLength: 40, value: place ? place.name : "", placeholder: "Tên gợi nhớ: Nhà, Trường học…", "aria-label": "Tên gợi nhớ" });
+    const addrIn = h("input", { type: "text", maxLength: 160, value: place ? place.address : "", placeholder: "Địa chỉ (tự điền khi chọn từ kết quả tìm)", "aria-label": "Địa chỉ" });
     const results = h("div", { class: "card pad0 list", hidden: true });
     const q = h("input", { type: "search", placeholder: "Tìm trường, địa chỉ…", maxLength: 80 });
     const label = h("p", { style: "margin:0" }, pick ? pick.name : "Chưa chọn điểm đến");
@@ -94,15 +115,29 @@ function destinationSheet(s, refresh) {
       try {
         const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=6&countrycodes=vn&accept-language=vi&q=${encodeURIComponent(q.value.trim())}`);
         const list = await r.json();
-        results.replaceChildren(...list.map((x) => h("button", { class: "item", on: { click: () => { setPick({ name: x.display_name.split(",").slice(0, 2).join(",").trim(), lat: +x.lat, lon: +x.lon }); results.hidden = true; } } }, icon("pin"), h("div", { class: "grow" }, x.display_name))));
+        results.replaceChildren(...list.map((x) => h("button", { class: "item", on: { click: () => { setPick({ name: x.display_name.split(",").slice(0, 2).join(",").trim(), lat: +x.lat, lon: +x.lon }); addrIn.value = x.display_name.slice(0, 160); if (isPlace && !nameIn.value.trim()) nameIn.value = pick.name.slice(0, 40); results.hidden = true; } } }, icon("pin"), h("div", { class: "grow" }, x.display_name))));
         results.hidden = !list.length;
       } catch { toast("Không tìm được địa điểm. Bấm lên bản đồ để chọn.", "err"); }
     }, 500); });
-    leaflet().then((Lx) => { L = Lx; map = baseMap(L, mapEl, pick ? [pick.lat, pick.lon] : (s.coords ? [s.coords.lat, s.coords.lon] : [10.7769, 106.7009]), 14);
+    leaflet().then((Lx) => { L = Lx; map = baseMap(L, mapEl, pick ? [pick.lat, pick.lon] : (s && s.coords ? [s.coords.lat, s.coords.lon] : [10.7769, 106.7009]), 14);
       map.on("click", (e) => setPick({ name: `Điểm đã chọn (${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)})`, lat: e.latlng.lat, lon: e.latlng.lng })); if (pick) setPick(pick); }).catch(() => toast("Không tải được bản đồ.", "err"));
-    return h("div", { class: "gap" }, h("p", { class: "small muted", style: "margin:0" }, "Từ khóa tìm kiếm được gửi tới OpenStreetMap (Nominatim) để tìm địa điểm."), q, results, label, mapEl,
+    return h("div", { class: "gap" }, h("p", { class: "small muted", style: "margin:0" }, "Từ khóa tìm kiếm được gửi tới OpenStreetMap (Nominatim) để tìm địa điểm."),
+      isPlace && field("Tên gợi nhớ", nameIn), places.length > 0 && h("div", {}, h("div", { class: "small muted", style: "margin-bottom:6px" }, "Chọn nhanh từ điểm đã lưu"),
+        h("div", { class: "row wrap" }, places.map((p) => h("button", { class: "btn small", on: { click: () => { setPick({ name: p.name, lat: p.lat, lon: p.lon }); radius = p.radius_m; slider.value = radius; rl.textContent = `${radius} m`; circle && circle.setRadius(radius); } } }, p.name)))),
+      q, results, isPlace && field("Địa chỉ", addrIn), label, mapEl,
       h("div", { class: "row between" }, h("span", {}, "Bán kính vùng tới nơi"), rl), slider,
-      h("button", { class: "btn primary block", on: { click: (e) => busy(e.target, async () => { if (!pick) { toast("Chọn điểm đến trước.", "err"); return; } try { await put(`/v1/vehicles/${s.vehicle.id}/geofence`, { name: pick.name.slice(0, 40), lat: pick.lat, lon: pick.lon, radius_m: radius }); close(true); toast("Đã đặt điểm đến.", "ok"); await refresh(); } catch (er) { toast(er.message, "err"); } }) } }, "Lưu điểm đến"),
-      s.geofence && h("button", { class: "btn ghost block", on: { click: async () => { try { await del(`/v1/vehicles/${s.vehicle.id}/geofence`); close(true); await refresh(); } catch (er) { toast(er.message, "err"); } } } }, "Xóa điểm đến"));
-  }, { title: "Điểm đến" });
+      h("button", { class: "btn primary block", on: { click: (e) => busy(e.target, async () => {
+        if (!pick) { toast(isPlace ? "Chọn vị trí trước." : "Chọn điểm đến trước.", "err"); return; }
+        try {
+          if (isPlace) {
+            const name = nameIn.value.trim();
+            if (!name) { toast("Nhập tên gợi nhớ, ví dụ Nhà hoặc Trường học.", "err"); nameIn.focus(); return; }
+            const body = { name, address: addrIn.value.trim(), lat: pick.lat, lon: pick.lon, radius_m: radius };
+            place ? await put(`/v1/places/${place.id}`, body) : await post("/v1/places", body);
+            close(true); toast("Đã lưu điểm đón.", "ok"); await refresh(); return;
+          }
+          await put(`/v1/vehicles/${s.vehicle.id}/geofence`, { name: pick.name.slice(0, 40), lat: pick.lat, lon: pick.lon, radius_m: radius }); close(true); toast("Đã đặt điểm đến.", "ok"); await refresh();
+        } catch (er) { toast(er.message, "err"); } }) } }, isPlace ? "Lưu điểm đón" : "Lưu điểm đến"),
+      !isPlace && s.geofence && h("button", { class: "btn ghost block", on: { click: async () => { try { await del(`/v1/vehicles/${s.vehicle.id}/geofence`); close(true); await refresh(); } catch (er) { toast(er.message, "err"); } } } }, "Xóa điểm đến"));
+  }, { title: isPlace ? (place ? "Sửa điểm đón cố định" : "Thêm điểm đón cố định") : "Điểm đến" });
 }

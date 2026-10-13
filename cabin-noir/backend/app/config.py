@@ -3,10 +3,18 @@ from __future__ import annotations
 
 import os
 import secrets as _secrets
+import time as _time
 
 VERSION = "2.2.0"          # the release this code belongs to (the app and web show 2.2)
 ENV = os.environ.get("CABIN_ENV", "development")
 PRODUCTION = ENV == "production"
+# Every clock time the server writes (status lines, alert cards, Telegram, school-run schedules, "today") is for people in
+# Vietnam, so the process runs on their time whatever the host uses (production containers default to UTC, 7 hours off).
+# CABIN_TZ accepts an IANA name; without the tz database the fixed "<+07>-7" rule is used (Vietnam has no daylight saving).
+TIMEZONE = os.environ.get("CABIN_TZ", "Asia/Ho_Chi_Minh")
+os.environ["TZ"] = TIMEZONE if os.path.exists(f"/usr/share/zoneinfo/{TIMEZONE}") else os.environ.get("CABIN_TZ_FALLBACK", "<+07>-7")
+_time.tzset()
+
 # DEV enables simulator routes, dev OTP echo and demo vehicles. Never on in production.
 DEV = (not PRODUCTION) and os.environ.get("CABIN_DEV", "1") == "1"
 

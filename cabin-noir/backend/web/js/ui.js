@@ -3,13 +3,48 @@ import { portal } from "./frame.js";
 
 const SVG = "http://www.w3.org/2000/svg";
 // Tiny DOM helpers. Text always goes through textContent, never innerHTML, so server data cannot inject markup.
+// Listeners go through one dispatcher per event so morph() can hand an element that stays on screen the handlers of
+// the freshly built one (whose closures hold the newest data).
+function dispatch(e) { const fn = this.__on && this.__on[e.type]; if (fn) return fn.call(this, e); }
+function listen(el, ev, fn) {
+  if (!el.__on) el.__on = {};
+  if (!el.__on[ev]) el.addEventListener(ev, dispatch);
+  el.__on[ev] = fn;
+}
+
+/** Make `cur` look like `next` while keeping every element that is still there, so a repaint every few seconds does not
+ *  replace the button under a finger, drop keyboard focus or make the page jump. Maps are kept as they are (map.js moves
+ *  its own container); canvas, video and iframe are swapped whole because their content is drawn, not described. */
+export function morph(cur, next) {
+  // An element a view keeps across repaints (data-keep) is inserted as it is, never rewritten.
+  if (next.nodeType === 1 && next.hasAttribute("data-keep")) { if (cur !== next) cur.replaceWith(next); return; }
+  if (cur.nodeType !== next.nodeType || cur.nodeName !== next.nodeName) { cur.replaceWith(next); return; }
+  if (cur.nodeType === 3 || cur.nodeType === 8) { if (cur.nodeValue !== next.nodeValue) cur.nodeValue = next.nodeValue; return; }
+  if (cur.nodeType !== 1) return;
+  if (cur.classList.contains("map")) return;
+  if (/^(CANVAS|VIDEO|IFRAME)$/.test(cur.nodeName)) { cur.replaceWith(next); return; }
+  const typing = cur === document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(cur.nodeName);
+  for (const a of [...cur.attributes]) if (!next.hasAttribute(a.name) && !(typing && a.name === "value")) cur.removeAttribute(a.name);
+  for (const a of next.attributes) if (cur.getAttribute(a.name) !== a.value) cur.setAttribute(a.name, a.value);
+  if (/^(INPUT|TEXTAREA|SELECT|OPTION)$/.test(cur.nodeName)) {
+    for (const k of ["checked", "disabled", "selected"]) if (k in next && cur[k] !== next[k]) cur[k] = next[k];
+    if (!typing && "value" in next && cur.value !== next.value) cur.value = next.value;
+  }
+  if (cur.nodeName === "DETAILS") next.open = cur.open;             // what the person opened stays open
+  for (const ev of Object.keys(cur.__on || {})) if (!(next.__on && next.__on[ev])) cur.__on[ev] = null;
+  for (const [ev, fn] of Object.entries(next.__on || {})) listen(cur, ev, fn);
+  const a = [...cur.childNodes], b = [...next.childNodes];
+  for (let i = 0; i < b.length; i++) { if (i < a.length) morph(a[i], b[i]); else cur.append(b[i]); }
+  for (let i = b.length; i < a.length; i++) a[i].remove();
+}
+
 export function h(tag, props, ...kids) {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(props || {})) {
     if (k.startsWith("aria-") && typeof v === "boolean") { el.setAttribute(k, String(v)); continue; }   // ARIA wants "true"/"false", not an empty attribute
     if (v === false || v == null) continue;
     if (k === "class") el.className = v;
-    else if (k === "on") for (const [ev, fn] of Object.entries(v)) el.addEventListener(ev, fn);
+    else if (k === "on") for (const [ev, fn] of Object.entries(v)) listen(el, ev, fn);
     else if (k === "dataset") Object.assign(el.dataset, v);
     else if (k in el && k !== "list") { try { el[k] = v; } catch { el.setAttribute(k, v); } }
     else el.setAttribute(k, v === true ? "" : v);
