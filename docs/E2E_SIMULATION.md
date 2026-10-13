@@ -86,6 +86,29 @@ Mục tiêu: cùng một clip cho **cùng phán quyết theo ghế** ở cả ha
 3. Chỉ số: tỷ lệ giây có trạng thái ghế giống nhau ≥ 95 %; không có giây nào Pi báo có người mà simulator báo SAFE (và ngược lại).
 4. Khác biệt chấp nhận được: model khác (NCNN 320 trên Pi, PyTorch 640 trên máy chủ). Khác biệt phải ghi lại, không được giấu.
 
+### 3.5 Sau khi thêm ảnh tham chiếu, ghế trẻ em quay ngược và quét chi tiết (YOLO26n, đo thật 13/10/2026)
+
+Hai clip của cùng một xe (`child-rear`, `empty-cabin`) được căn về một góc camera như khi bắt vít cố định
+(`embedded/dev/pi_sim/stabilise.py`). Ảnh tham chiếu là khung đầu của clip cabin trống.
+
+| Mẫu | Không có ảnh tham chiếu | Có ảnh tham chiếu |
+|---|---|---|
+| Trẻ ghế sau | SAFE 42/42 (sót) | **WARNING sau 1,9 s**, `rear_right` = `SEAT_CHANGED`, 1 sự cố |
+| Cabin trống | SAFE | SAFE 62/62, 0 báo nhầm |
+| Ghế sau phải khai báo là ghế quay ngược (dùng video cabin trống) | WARNING `BABY_SEAT_UNVERIFIED` từ khung đầu | như cột bên |
+| Người lớn ghế trước | WARNING ngay | (không có ảnh tham chiếu cho xe này) |
+| Trẻ (video do AI tạo) | WARNING ngay | (không có ảnh tham chiếu cho xe này) |
+
+- **Quét chi tiết** (cắt các ghế đánh dấu, chạy detector lần hai) không giúp gì trên các clip này. Không có ảnh tham chiếu thì trẻ ghế sau
+  vẫn bị sót, mà thời gian model mỗi khung tăng từ ~38 ms lên ~80 ms. Lần thử đầu, quét chi tiết còn tạo một khung "person" 0,47
+  giả ở ghế trống. Vì vậy kết quả quét chi tiết giờ chỉ được tính là ứng viên (cần 3/5 khung), và khi có ảnh tham chiếu thì
+  chỉ được tính trên ghế đã khác ảnh trống. Mặc định bật cho hai ghế sau của xe mẫu; tắt được theo từng ghế.
+- Ghế xe hay bị detector gọi là `chair`/`couch`: chỉ hiển thị, không tính là đồ bỏ quên.
+- Giới hạn: ghế `front_right` của clip trẻ có độ giống ảnh trống dao động 0,37–0,62 vì clip quay cầm tay vẫn rung sau khi căn.
+  Camera bắt vít thật sẽ ổn định hơn. Kiểm tra lại ở buổi quay thử (`CAMERA_POSITION_TRIAL.md`).
+- Khi trời nóng, nghi có người (`possible_occupant`) vẫn chỉ ra WARNING. Rules chỉ nâng lên CRITICAL khi chắc chắn có người.
+  Muốn nghi có người cũng được CRITICAL thì phải đổi luật an toàn theo quy trình §5.4.
+
 ## 4. Còn thiếu
 
 - Đo trên HF Space và trên Pi 5 thật; video demo trên Pi (mentor yêu cầu).

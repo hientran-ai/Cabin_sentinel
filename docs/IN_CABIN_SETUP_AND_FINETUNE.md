@@ -37,7 +37,7 @@ và COCO gần như không có ảnh trẻ trong ghế ô tô. Đây là lỗi *
 | Ống kính | Góc rộng 120–140°, lấy nét cố định | Một camera phủ hết cabin; nét cố định thì ảnh ổn định giữa các xe |
 | Ban đêm | Cảm biến không có kính lọc IR (NoIR) + đèn IR 940 nm | Không chói mắt; xe đỗ ban đêm là lúc rủi ro cao |
 | Cố định | Giá bắt vít hoặc keo 3M VHB, không dùng giác hút | Camera xê dịch thì ROI sai (v3 có ước lượng độ lệch nhưng có giới hạn) |
-| Ghế trẻ em quay ngược | Camera phía trước **không thấy mặt trẻ**. Thêm radar 60 GHz (phát hiện nhịp thở qua vỏ ghế) hoặc camera thứ hai ở trần sau | Đúng trường hợp video `child-rear` đang sót. Pipeline v3 đã nhận tín hiệu radar theo từng ghế |
+| Ghế trẻ em quay ngược | Camera phía trước **không thấy em bé**. Khi lắp, khai báo ghế đó là `rear_facing`: hệ thống luôn coi ghế không kiểm được và nhắc kiểm tra (`BABY_SEAT_UNVERIFIED`, WARNING) cho đến khi có người xác nhận. Muốn bỏ lời nhắc an toàn thì thêm radar 60 GHz (nhịp thở qua vỏ ghế) hoặc camera thứ hai ở trần sau | Đã có trong simulator (mẫu "Ghế trẻ em quay ngược"). Pipeline v3 đã nhận tín hiệu radar theo từng ghế. Khi xe đang chạy có tài xế, lời nhắc nên tắt; việc này cần tín hiệu cửa/hành trình, chưa làm |
 | Ảnh tham chiếu cabin trống | Chụp khi lắp, có người xác nhận cabin trống (SR-09) | Dùng để xác minh "ghế trống" bằng bằng chứng dương (SR-01) |
 | Hiệu chỉnh ROI | Đánh dấu từng ghế và từng ô kính cho mỗi dòng xe/vị trí lắp | Mỗi xe có khoang sau khác nhau; loại người đi ngoài đường thấy qua kính |
 

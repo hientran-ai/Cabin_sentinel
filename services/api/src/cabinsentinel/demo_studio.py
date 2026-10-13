@@ -156,10 +156,20 @@ class DemoStudio:
     def set_zones(self, vehicle_id: str, zones: list[video_sim.Zone]) -> None:
         with self._lock:
             if vehicle_id in self.video:
-                self.video[vehicle_id].zones = zones
+                self.video[vehicle_id].set_zones(zones)
+
+    def set_reference(self, vehicle_id: str, gray, meta: dict) -> dict:
+        """The cabin is confirmed empty by a person: compare every seat with this picture from now on (SR-09)."""
+        with self._lock:
+            run = self.video.get(vehicle_id)
+            if run is None or self.scenario.get(vehicle_id) != "VIDEO":
+                raise LookupError(vehicle_id)
+            run.reference = video_sim.EmptyReference(gray, run.seats)
+            run.reference_meta = meta
+            return {"seats": len(run.seats), **meta}
 
     def video_frame(self, vehicle_id: str, sequence: int, detections: list[dict], latency_ms: float | None,
-                    luma: float, digest: str, size: tuple[int, int], now: datetime | None = None) -> dict:
+                    frame: video_sim.Frame, now: datetime | None = None) -> dict:
         """One picture from the simulated camera, through the device ingest path. Nothing of the image is kept."""
         with self._lock:
             run = self.video.get(vehicle_id)
@@ -170,11 +180,13 @@ class DemoStudio:
             run.last_sequence, run.frames = sequence, run.frames + 1
             now = now or self.fleet.clock()
             t = now.timestamp()
-            status = run.gate.check(luma, digest)
+            status = run.gate.check(frame.luma, frame.digest)
             healthy = status == "OK"
-            placed = video_sim.place(detections, run.zones, *size)
-            seats = run.smoother.update(t, placed, healthy)
-            objects = run.smoother.occupants() + run.items(t, placed, healthy) if healthy else []
+            placed = video_sim.place(detections, run.zones, *frame.size)
+            sims = run.similarities(frame.gray) if healthy else {}
+            seats = run.smoother.update(t, placed, healthy, sims, run.seats)
+            objects = run.smoother.occupants(run.seats) + run.items(t, placed, healthy) if healthy else []
+            size = frame.size
             seq = self._next_seq(now)
             started = perf_counter()
             service = self.fleet.service
@@ -190,8 +202,8 @@ class DemoStudio:
             "frame": {"width": size[0], "height": size[1]},
             "detections": [{"class": d.get("class"), "confidence": round(float(d.get("confidence") or 0), 3),
                             "bbox": [round(float(v), 1) for v in d["bbox"]] if d.get("bbox") else None,
-                            "zone": d["zone"], "counted": d["counted"]} for d in placed],
-            "seats": seats, "evidence": objects,
+                            "zone": d["zone"], "counted": d["counted"], "detail": bool(d.get("detail"))} for d in placed],
+            "seats": seats, "evidence": objects, "reference": run.reference_meta,
             "risk_level": state.get("risk_level"), "rule_id": state.get("rule_id"), "reason": state.get("reason"),
             "occupancy_state": state.get("occupancy_state"), "active_incident": summary["active_incident"],
             "timing": {"inference_ms": round(latency_ms, 1) if latency_ms is not None else None,
@@ -312,6 +324,8 @@ class ZoneInput(BaseModel):
     name: str = Field(min_length=1, max_length=32)
     kind: Literal["seat", "exclude"]
     box: list[float] = Field(min_length=4, max_length=4)
+    child_seat: Literal["rear_facing", "forward_facing"] | None = None
+    detail: bool = False
 
 
 class CalibrationInput(BaseModel):
@@ -357,7 +371,7 @@ def put_calibration(vehicle_id: str, payload: CalibrationInput, request: Request
     if vehicle_id not in studio.scenario:
         raise HTTPException(status_code=404, detail="Not a demo vehicle")
     zones = _zones(payload.zones)
-    saved = store.save_calibration(vehicle_id, [{"name": z.name, "kind": z.kind, "box": list(z.box)} for z in zones],
+    saved = store.save_calibration(vehicle_id, [z.as_dict() for z in zones],
                                    grant.subject)
     studio.set_zones(vehicle_id, zones)
     audit(request, store, grant, "vehicle.calibration", vehicle_id, actor=grant.subject, version=saved["version"],
@@ -375,7 +389,7 @@ def video_start(payload: VideoStartInput, request: Request, grant: Grant = Depen
     out = studio.start_video(payload.vehicle_id, payload.temperature, zones, payload.sample)
     audit(request, store, grant, "demo.video_start", payload.vehicle_id, actor=grant.subject, sample=payload.sample,
           temperature=payload.temperature, zones=len(zones), label=LABEL)
-    return {"label": LABEL, **out, "zones": [{"name": z.name, "kind": z.kind, "box": list(z.box)} for z in zones]}
+    return {"label": LABEL, **out, "zones": [z.as_dict() for z in zones]}
 
 
 @router.post("/video/stop")
@@ -404,18 +418,60 @@ async def video_frame(request: Request, vehicle_id: str = Form(..., pattern=r"^[
     provider = getattr(request.app.state, "vision_provider", None)
     if provider is None:
         raise HTTPException(status_code=503, detail="Vision model unavailable")
+    run = studio.video.get(vehicle_id)
     try:
-        luma, digest, size = video_sim.frame_stats(data)
-        frame = await run_in_threadpool(provider.infer, data)
+        decoded, bgr = video_sim.decode(data)
+        result = await run_in_threadpool(provider.infer, data)
+        detections = list(result.get("detections") or [])
+        latency = result.get("latency_ms")
+        # Detail scan: the seats marked at calibration again, enlarged, so a small or half-hidden occupant has more pixels.
+        crop = video_sim.detail_crop(bgr, run.zones) if run is not None else None
+        if crop is not None:
+            extra = await run_in_threadpool(provider.infer, crop[0])
+            ox, oy = crop[1]
+            for d in extra.get("detections") or []:
+                if d.get("bbox"):
+                    b = d["bbox"]
+                    detections.append({**d, "bbox": [b[0] + ox, b[1] + oy, b[2] + ox, b[3] + oy], "detail": True})
+            if latency is not None and extra.get("latency_ms") is not None:
+                latency += extra["latency_ms"]
     except Exception as exc:
         logger.warning("Video frame could not be processed (%s)", type(exc).__name__)
         raise HTTPException(status_code=422, detail="Frame cannot be decoded") from exc
     try:
-        out = studio.video_frame(vehicle_id, sequence, list(frame.get("detections") or []), frame.get("latency_ms"),
-                                 luma, digest, size)
+        out = studio.video_frame(vehicle_id, sequence, detections, latency, decoded)
     except LookupError as exc:
         raise HTTPException(status_code=409, detail="No video is running for this vehicle") from exc
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     out["timing"]["server_ms"] = round((perf_counter() - received) * 1000, 1)
     return out
+
+
+@router.post("/video/reference")
+async def video_reference(request: Request, vehicle_id: str = Form(..., pattern=r"^[A-Za-z0-9_-]{1,64}$"),
+                          confirm_empty: bool = Form(...), source: Literal["sample", "frame"] = Form(...),
+                          image: UploadFile = File(...), grant: Grant = Depends(studio_admin),
+                          store: PlatformStore = Depends(get_platform)) -> dict:
+    """Take the verified-empty reference for this run. A person must confirm the cabin is empty (SR-09): an occupant
+    captured in the reference would make that seat read as empty. Kept in memory for the run only."""
+    if confirm_empty is not True:
+        raise HTTPException(status_code=422, detail="Confirm that the cabin is empty before taking the reference")
+    if image.content_type not in VIDEO_IMAGE_TYPES:
+        raise HTTPException(status_code=415, detail="Only JPEG and PNG frames are supported")
+    data = await image.read(MAX_VIDEO_FRAME_BYTES + 1)
+    if not data or len(data) > MAX_VIDEO_FRAME_BYTES:
+        raise HTTPException(status_code=413, detail="Frame is empty or too large")
+    try:
+        decoded, _ = video_sim.decode(data)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="Frame cannot be decoded") from exc
+    if decoded.luma < video_sim.DARK_LUMA:
+        raise HTTPException(status_code=422, detail="The picture is too dark to serve as the empty-cabin reference")
+    meta = {"confirmed_by": grant.subject, "confirmed_at": require_studio().fleet.clock().isoformat(), "source": source}
+    try:
+        out = require_studio().set_reference(vehicle_id, decoded.gray, meta)
+    except LookupError as exc:
+        raise HTTPException(status_code=409, detail="No video is running for this vehicle") from exc
+    audit(request, store, grant, "demo.empty_reference", vehicle_id, actor=grant.subject, source=source, label=LABEL)
+    return {"label": LABEL, "vehicle_id": vehicle_id, "reference": out}

@@ -71,6 +71,6 @@ Kết quả khi chạy cả chuỗi qua simulator (backend YOLO26n, localhost):
 - **YOLO26n không giải quyết được trẻ ngồi ghế sau.** Cả hai model đều 0/21 khung. Trên Pi, trường hợp này vẫn an toàn
   nhờ so sánh với ảnh tham chiếu cabin trống (kịch bản B báo sau 0,83 s). Backend demo và simulator **chưa có** bước này, nên vẫn báo SAFE.
   Việc tiếp theo: (1) finetune từ `yolo26n.pt` trên dữ liệu cabin (`IN_CABIN_SETUP_AND_FINETUNE.md`);
-  (2) đưa bước so ảnh tham chiếu vào simulator; (3) sửa SR-01 trong `rules.py` theo quy trình §5.4.
+  (2) ~~đưa bước so ảnh tham chiếu vào simulator~~ đã làm: video trẻ ghế sau báo sau 1,9 s (`E2E_SIMULATION.md` §3.5); (3) sửa SR-01 trong `rules.py` theo quy trình §5.4.
 - Người lớn được nhận chậm hơn một chút (14–16/20 khung đạt ≥ 0,40 so với 17/20) nhưng vẫn được báo trong 0,5 s nhờ bước theo dõi 3/5 khung.
 - Còn phải đo trên Pi 5 thật: FPS, p95, nhiệt độ, RAM (theo `YOLO26_MIGRATION_VI.md`).

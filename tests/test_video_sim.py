@@ -187,3 +187,125 @@ def test_unnamed_objects_are_shown_but_not_reported_as_forgotten_items():
     assert [i["class_name"] for i in run.items(0, placed, True)] == ["backpack"]
     assert [i["class_name"] for i in run.items(video_sim.ITEM_HOLD_S - 1, [], True)] == ["backpack"]   # held briefly
     assert run.items(video_sim.ITEM_HOLD_S + 1, [], True) == []
+
+
+# -- verified-empty reference, rear-facing child seats, detail scan -------------------------------------------------
+REF_SEATS = [{"name": "rear_right", "kind": "seat", "box": [0.55, 0.40, 0.90, 1.0], "detail": True},
+             {"name": "rear_left", "kind": "seat", "box": [0.10, 0.40, 0.45, 1.0]}]
+
+
+def cabin(occupied=False, w=320, h=180):
+    """A textured empty cabin; 'occupied' paints a different texture over the rear-right seat."""
+    import numpy as np
+    rng = np.random.default_rng(1)
+    img = (rng.integers(40, 200, (h, w, 3))).astype("uint8")
+    img = np.repeat(np.repeat(img[::8, ::8], 8, axis=0), 8, axis=1)[:h, :w]
+    if occupied:
+        x1, y1 = int(0.62 * w), int(0.5 * h)
+        img[y1:int(0.95 * h), x1:int(0.85 * w)] = np.random.default_rng(7).integers(0, 255, (int(0.95 * h) - y1, int(0.85 * w) - x1, 3))
+    return img
+
+
+def jpg(img):
+    import cv2
+    return cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 95])[1].tobytes()
+
+
+def test_a_seat_that_stops_looking_empty_is_a_possible_occupant_even_unseen_by_the_detector():
+    zones = video_sim.parse_zones(REF_SEATS)
+    ref_frame, _ = video_sim.decode(jpg(cabin()))
+    run = video_sim.VideoRun("V", 30.0, zones)
+    run.reference = video_sim.EmptyReference(ref_frame.gray, run.seats)
+    empty, _ = video_sim.decode(jpg(cabin()))
+    child, _ = video_sim.decode(jpg(cabin(occupied=True)))
+    sims = run.similarities(empty.gray)
+    assert sims["rear_right"] > 0.9
+    for t in range(6):
+        states = run.smoother.update(float(t), [], True, run.similarities(empty.gray), run.seats)
+    assert states["rear_right"]["state"] == "EMPTY_VERIFIED"
+    assert run.similarities(child.gray)["rear_right"] < video_sim.REF_MATCH
+    states = [run.smoother.update(10.0 + t, [], True, run.similarities(child.gray), run.seats)["rear_right"]["state"] for t in range(3)]
+    assert states == ["PENDING_EMPTY", "PENDING_EMPTY", "SEAT_CHANGED"]       # three frames in a row, like v3
+    assert {"detection_id": "seat-rear_right-changed", "class_name": "possible_occupant", "confidence": 0.5} in run.smoother.occupants(run.seats)
+    # Still differs from empty: never released, however long the detector sees nothing.
+    assert run.smoother.update(100.0, [], True, run.similarities(child.gray), run.seats)["rear_right"]["state"] == "SEAT_CHANGED"
+
+
+def test_with_a_reference_weak_hits_on_a_seat_that_still_looks_empty_do_not_count():
+    zones = video_sim.parse_zones(REF_SEATS)
+    s = video_sim.SeatSmoother()
+    weak = [{"class": "person", "confidence": 0.25, "zone": "rear_left", "counted": True}]
+    states = [s.update(float(t), weak, True, {"rear_left": 0.9, "rear_right": 0.9}, zones)["rear_left"]["state"] for t in range(6)]
+    assert "OCCUPIED" not in states
+    s2 = video_sim.SeatSmoother()   # same weak hits on a seat that differs from its reference: 3 of 5
+    states = [s2.update(float(t), weak, True, {"rear_left": 0.3, "rear_right": 0.9}, zones)["rear_left"]["state"] for t in range(5)]
+    assert states[-1] == "OCCUPIED"
+
+
+def test_a_rear_facing_child_seat_is_always_unverifiable_and_reported_as_a_baby_seat():
+    zones = video_sim.parse_zones([{**REF_SEATS[0], "child_seat": "rear_facing"}, REF_SEATS[1]])
+    s = video_sim.SeatSmoother()
+    out = s.update(0.0, [], True, {"rear_right": 0.99, "rear_left": 0.99}, zones)
+    assert out["rear_right"]["state"] == "REAR_FACING_UNVERIFIABLE" and out["rear_right"]["child_seat"] == "rear_facing"
+    assert {"detection_id": "seat-rear_right-rear-facing", "class_name": "baby seat", "confidence": 1.0} in s.occupants(zones)
+    with pytest.raises(video_sim.CalibrationError, match="only seats"):
+        video_sim.parse_zones([REF_SEATS[0], {"name": "g", "kind": "exclude", "box": [0, 0, 0.1, 0.1], "child_seat": "rear_facing"}])
+
+
+def test_detail_crop_covers_the_marked_seats_only():
+    zones = video_sim.parse_zones(REF_SEATS)
+    _, bgr = video_sim.decode(jpg(cabin(w=640, h=360)))
+    data, (ox, oy) = video_sim.detail_crop(bgr, zones)
+    crop, _ = video_sim.decode(data)
+    assert (ox, oy) == (352, 144) and crop.size == (640 - 352 - 64, 360 - 144)
+
+
+def test_reference_needs_a_confirmed_empty_cabin_and_then_finds_the_hidden_child(env, studio):
+    _, provider = studio
+    provider.next = []
+    admin = make_admin(env)
+    env.client.post("/api/v1/admin/demo/video/start", json={"vehicle_id": VEHICLE, "zones": REF_SEATS}, headers=auth(admin))
+    ref = {"vehicle_id": VEHICLE, "source": "sample"}
+    files = {"image": ("r.jpg", jpg(cabin(w=640, h=360)), "image/jpeg")}
+    assert env.client.post("/api/v1/admin/demo/video/reference", data={**ref, "confirm_empty": "false"}, files=files,
+                           headers=auth(admin)).status_code == 422
+    taken = env.client.post("/api/v1/admin/demo/video/reference", data={**ref, "confirm_empty": "true"}, files=files, headers=auth(admin))
+    assert taken.status_code == 200 and taken.json()["reference"]["confirmed_by"]
+    assert any(r["action"] == "demo.empty_reference" for r in env.store._all("SELECT action FROM audit_log"))
+
+    def send(seq, occupied):
+        env.clock[0] += timedelta(milliseconds=400)
+        return env.client.post("/api/v1/admin/demo/video/frame", data={"vehicle_id": VEHICLE, "sequence": str(seq)},
+                               files={"image": ("f.jpg", jpg(cabin(occupied, 640, 360)), "image/jpeg")}, headers=auth(admin)).json()
+
+    assert send(1, False)["risk_level"] == "SAFE"
+    out = [send(seq, True) for seq in (2, 3, 4)][-1]
+    assert out["seats"]["rear_right"]["state"] == "SEAT_CHANGED"
+    assert out["risk_level"] == "WARNING" and out["occupancy_state"] == "SUSPECTED" and out["active_incident"]
+
+
+def test_rear_facing_child_seat_warns_through_the_existing_baby_seat_rule(env, studio):
+    _, provider = studio
+    provider.next = []
+    admin = make_admin(env)
+    zones = [{**REF_SEATS[0], "child_seat": "rear_facing"}, REF_SEATS[1]]
+    env.client.post("/api/v1/admin/demo/video/start", json={"vehicle_id": VEHICLE, "zones": zones}, headers=auth(admin))
+    out = frame(env, admin, 1).json()
+    assert out["rule_id"] == "BABY_SEAT_UNVERIFIED" and out["risk_level"] == "WARNING"
+
+
+def test_a_detail_scan_hit_is_only_a_candidate_and_needs_a_changed_seat_when_there_is_a_reference():
+    zones = video_sim.parse_zones(REF_SEATS)
+    hit = [{"class": "person", "confidence": 0.47, "zone": "rear_left", "counted": True, "detail": True}]
+    s = video_sim.SeatSmoother()
+    assert s.update(0.0, hit, True, {}, zones)["rear_left"]["state"] == "CANDIDATE"          # not instant, unlike the full frame
+    s2 = video_sim.SeatSmoother()
+    states = [s2.update(float(t), hit, True, {"rear_left": 0.96, "rear_right": 0.96}, zones)["rear_left"]["state"] for t in range(6)]
+    assert "OCCUPIED" not in states                                                      # seat still looks empty
+
+
+def test_car_seats_detected_as_chairs_are_not_forgotten_items():
+    run = video_sim.VideoRun("V", 30.0, [])
+    placed = [{"class": "chair", "confidence": 0.7, "zone": None, "counted": True},
+              {"class": "couch", "confidence": 0.6, "zone": None, "counted": True}]
+    assert run.items(0, placed, True) == []
