@@ -185,6 +185,7 @@ class DemoStudio:
             placed = video_sim.place(detections, run.zones, *frame.size)
             sims = run.similarities(frame.gray) if healthy else {}
             seats = run.smoother.update(t, placed, healthy, sims, run.seats)
+            run.last_seats = seats
             objects = run.smoother.occupants(run.seats) + run.items(t, placed, healthy) if healthy else []
             size = frame.size
             seq = self._next_seq(now)
@@ -356,6 +357,31 @@ def _saved_zones(store: PlatformStore, vehicle_id: str) -> list[video_sim.Zone]:
     return video_sim.parse_zones(saved["zones"]) if saved else []
 
 
+class AlertPhotoInput(BaseModel):
+    enabled: bool
+    consent: bool = False
+
+
+@router.get("/alert-photo/{vehicle_id}")
+def get_alert_photo(vehicle_id: str, grant: Grant = Depends(studio_admin), store: PlatformStore = Depends(get_platform)) -> dict:
+    if vehicle_id not in require_studio().scenario:
+        raise HTTPException(status_code=404, detail="Not a demo vehicle")
+    return {"vehicle_id": vehicle_id, **store.alert_photo(vehicle_id)}
+
+
+@router.put("/alert-photo/{vehicle_id}")
+def put_alert_photo(vehicle_id: str, payload: AlertPhotoInput, request: Request, grant: Grant = Depends(studio_admin),
+                    store: PlatformStore = Depends(get_platform)) -> dict:
+    """Off by default. Turning it on needs explicit consent: Telegram keeps its own copy of the (pixelated) photo."""
+    if vehicle_id not in require_studio().scenario:
+        raise HTTPException(status_code=404, detail="Not a demo vehicle")
+    if payload.enabled and not payload.consent:
+        raise HTTPException(status_code=422, detail="Consent is required to send alert photos")
+    out = store.set_alert_photo(vehicle_id, payload.enabled, grant.subject)
+    audit(request, store, grant, "vehicle.alert_photo", vehicle_id, actor=grant.subject, enabled=payload.enabled, label=LABEL)
+    return {"vehicle_id": vehicle_id, **out}
+
+
 @router.get("/calibration/{vehicle_id}")
 def get_calibration(vehicle_id: str, grant: Grant = Depends(studio_admin), store: PlatformStore = Depends(get_platform)) -> dict:
     if vehicle_id not in require_studio().scenario:
@@ -445,7 +471,26 @@ async def video_frame(request: Request, vehicle_id: str = Form(..., pattern=r"^[
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     out["timing"]["server_ms"] = round((perf_counter() - received) * 1000, 1)
+    out["alert_photo"] = _maybe_alert_photo(request, vehicle_id, out, bgr, detections)
     return out
+
+
+def _maybe_alert_photo(request: Request, vehicle_id: str, out: dict, bgr, detections: list[dict]) -> str | None:
+    """Opt-in: the first frame of each incident, pixelated (people and every seat not verified empty), to Telegram."""
+    from src.cabinsentinel import alert_card
+
+    incident = out.get("active_incident")
+    store = getattr(require_studio(), "store", None)
+    run = require_studio().video.get(vehicle_id)
+    if not incident or store is None or run is None or incident in run.photo_sent_for or out["camera_status"] != "OK":
+        return None
+    if not store.alert_photo(vehicle_id)["enabled"] or not notify.channels()["telegram"]:
+        return None
+    run.photo_sent_for.add(incident)
+    jpeg = alert_card.blurred_frame(bgr, detections, run.zones, out["seats"])
+    caption = (f"CabinSentinel SIMULATED · {vehicle_id} · {out.get('risk_level')} {out.get('rule_id')}\n"
+               "Ảnh từ camera mô phỏng. Người và mọi ghế chưa xác minh trống đã được làm mờ.")
+    return "queued" if notify.deliver_photo_async(jpeg, caption) else None
 
 
 @router.post("/video/reference")

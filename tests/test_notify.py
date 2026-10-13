@@ -63,7 +63,7 @@ def test_plain_http_ntfy_is_refused_except_on_localhost(monkeypatch):
 def test_notification_tool_dispatches_and_sms_stays_honest(monkeypatch):
     configure(monkeypatch, ntfy_server="https://ntfy.example", ntfy_topic="t")
     sent = []
-    monkeypatch.setattr(notify, "deliver_async", lambda title, body, urgent=False: sent.append((title, body)) or True)
+    monkeypatch.setattr(notify, "deliver_async", lambda title, body, urgent=False, card_for=None: sent.append((title, body)) or True)
     channel = actions.build_actions()
     assert isinstance(channel, actions.ChannelActions)
     n = channel.execute("send_notification", "VF8-DEMO-01")

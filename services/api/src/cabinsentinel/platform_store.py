@@ -110,6 +110,8 @@ CREATE TABLE IF NOT EXISTS audit_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL, actor TEXT NOT NULL, actor_role TEXT,
   tenant_id TEXT, action TEXT NOT NULL, target TEXT, correlation_id TEXT, outcome TEXT NOT NULL, detail_json TEXT);
 CREATE INDEX IF NOT EXISTS audit_ts ON audit_log(ts);
+CREATE TABLE IF NOT EXISTS alert_photo_prefs (
+  vehicle_id TEXT PRIMARY KEY, enabled INTEGER NOT NULL DEFAULT 0, changed_by TEXT NOT NULL, changed_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS cabin_calibration (
   vehicle_id TEXT PRIMARY KEY, zones_json TEXT NOT NULL, version INTEGER NOT NULL, updated_by TEXT NOT NULL,
   updated_at TEXT NOT NULL);
@@ -702,6 +704,18 @@ class PlatformStore:
         """Demo reset: drop operator work (assignments, notes, commands) and samples of one vehicle."""
         for table in ("incident_ops", "commands", "samples"):
             self._run(f"DELETE FROM {table} WHERE vehicle_id=?", (vehicle_id,))  # noqa: S608 - fixed names
+
+    # -- alert photos (opt-in) ----------------------------------------------
+    def alert_photo(self, vehicle_id: str) -> dict:
+        row = self._one("SELECT * FROM alert_photo_prefs WHERE vehicle_id=?", (vehicle_id,))
+        return {"enabled": bool(row and row["enabled"]), "changed_by": row["changed_by"] if row else None,
+                "changed_at": row["changed_at"] if row else None}
+
+    def set_alert_photo(self, vehicle_id: str, enabled: bool, actor: str) -> dict:
+        self._run("INSERT INTO alert_photo_prefs(vehicle_id, enabled, changed_by, changed_at) VALUES (?,?,?,?) "
+                  "ON CONFLICT(vehicle_id) DO UPDATE SET enabled=excluded.enabled, changed_by=excluded.changed_by, "
+                  "changed_at=excluded.changed_at", (vehicle_id, int(enabled), actor, self.clock().isoformat()))
+        return self.alert_photo(vehicle_id)
 
     # -- cabin calibration --------------------------------------------------
     def calibration(self, vehicle_id: str) -> dict | None:

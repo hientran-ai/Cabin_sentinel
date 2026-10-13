@@ -398,6 +398,8 @@ class VideoRun:
     items_seen: dict = field(default_factory=dict)   # label -> (confidence, t)
     reference: EmptyReference | None = None
     reference_meta: dict | None = None               # who confirmed the cabin was empty, when, from what
+    last_seats: dict = field(default_factory=dict)   # latest per-seat states, for the alert card
+    photo_sent_for: set = field(default_factory=set)  # incidents that already got their opt-in alert photo
 
     @property
     def seats(self) -> list[Zone]:
