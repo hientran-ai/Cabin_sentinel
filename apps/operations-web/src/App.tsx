@@ -93,9 +93,9 @@ function AdminShell() {
       <div className="workspace"><small>{locale === 'vi' ? 'Không gian làm việc' : 'Workspace'}</small><strong>{isAdmin ? t('platformControl') : t('safetyOperations')}</strong><span>{isAdmin ? t('administratorScope') : t('operatorScope')}</span></div>
       <nav className="primary-nav" aria-label="Operations navigation">
         <small>{t('mainNavigation')}</small>
-        {primaryItems.map(item => <NavLink className={primaryActive(item.paths) ? 'active' : undefined} end={item.to === '/admin'} key={item.labelKey} to={item.to} onClick={() => setOpen(false)}><Icon name={item.icon}/><span>{t(item.labelKey)}</span>{item.labelKey === 'operationsHub' && <i/>}</NavLink>)}
+        {primaryItems.map(item => <NavLink className={primaryActive(item.paths) ? 'active' : undefined} data-label={t(item.labelKey)} aria-label={t(item.labelKey)} end={item.to === '/admin'} key={item.labelKey} to={item.to} onClick={() => setOpen(false)}><Icon name={item.icon}/><span>{t(item.labelKey)}</span>{item.labelKey === 'operationsHub' && <i/>}</NavLink>)}
       </nav>
-      <div className="sidebar-foot"><span>{user?.displayName.slice(0, 2).toUpperCase() || 'CS'}</span><p><strong>{user?.displayName || (locale === 'vi' ? 'Điều phối viên' : 'Authorized operator')}</strong><small>{isAdmin ? (locale === 'vi' ? 'Quản trị viên nền tảng' : 'Platform administrator') : (locale === 'vi' ? 'Điều phối viên an toàn' : 'Safety operator')}</small></p></div>
+      <div className="sidebar-foot" title={user?.displayName || 'CabinSentinel'}><span>{user?.displayName.slice(0, 2).toUpperCase() || 'CS'}</span><p><strong>{user?.displayName || (locale === 'vi' ? 'Điều phối viên' : 'Authorized operator')}</strong><small>{isAdmin ? (locale === 'vi' ? 'Quản trị viên nền tảng' : 'Platform administrator') : (locale === 'vi' ? 'Điều phối viên an toàn' : 'Safety operator')}</small></p></div>
     </aside>
     {open && <button className="scrim" aria-label="Close navigation" onClick={() => setOpen(false)}/>}
     <section className="stage">

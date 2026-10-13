@@ -55,4 +55,4 @@ body{background:radial-gradient(circle at 80% 0,#efe6d8 0,transparent 28rem),var
 @media (prefers-reduced-motion:reduce){.detection-box{transition:none}}
 
 .account-row-actions,.command-row-actions{display:flex;gap:6px;margin-top:7px}.account-row-actions input{width:110px;min-height:32px;border:1px solid var(--line);border-radius:9px;padding:5px 8px}.account-row-actions button,.command-row-actions button,.row-danger{min-height:31px;border:1px solid var(--line);border-radius:9px;background:#fff;padding:0 9px;color:var(--ink);font-size:.6rem;font-weight:850;cursor:pointer}.row-danger{margin-left:auto;color:var(--coral);border-color:#efc6c7}.command-history .command-row-actions{grid-column:1/-1}.backend-action-note{display:grid;gap:3px;margin-top:10px}
-.brand-logo{flex:0 0 42px;width:42px;height:42px;border-radius:15px;object-fit:cover;display:block;box-shadow:0 8px 18px rgba(59,42,30,.24)}
+.brand-logo{flex:0 0 42px;width:42px;height:42px;object-fit:contain;display:block;filter:drop-shadow(0 8px 13px rgba(255,193,7,.22))}
