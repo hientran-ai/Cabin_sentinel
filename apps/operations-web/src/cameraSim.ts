@@ -8,6 +8,10 @@ export const MIN_ZONE = 0.03
 
 export interface SampleVideo {
   id: string
+  /** File under samples/ (several samples may share one clip with a different installation). */
+  video: string
+  /** Verified-empty picture of this car taken at installation (same camera pose), if the team has one. */
+  reference?: string
   title: [vi: string, en: string]
   source: [vi: string, en: string]
   /** What a person checking the cabin by eye would say. The backend never sees this. */
@@ -16,30 +20,42 @@ export interface SampleVideo {
   zones: V1CabinZone[]
 }
 
-const seat = (name: string, box: V1CabinZone['box']): V1CabinZone => ({ name, kind: 'seat', box })
+const seat = (name: string, box: V1CabinZone['box'], extra: Partial<V1CabinZone> = {}): V1CabinZone => ({ name, kind: 'seat', box, ...extra })
 const glass = (name: string, box: V1CabinZone['box']): V1CabinZone => ({ name, kind: 'exclude', box })
 
 /** Each sample is a different car and camera position, so each ships the zones a fitter would mark at installation. */
+// The two team clips of the same car are stabilised onto one camera pose (embedded/dev/pi_sim/stabilise.py), as a
+// bolted camera would see them, so the empty-cabin picture taken at installation lines up with both.
+const SAME_CAR_SEATS = (rearRight: Partial<V1CabinZone> = {}): V1CabinZone[] => [
+  seat('front_left', [0.2, 0.5, 0.4, 1]), seat('rear_left', [0.4, 0.52, 0.55, 0.9], { detail: true }),
+  seat('rear_right', [0.55, 0.58, 0.7, 0.95], { detail: true, ...rearRight }), seat('front_right', [0.7, 0.5, 0.99, 1]),
+  glass('window_left', [0.18, 0.44, 0.32, 0.62]), glass('rear_glass', [0.4, 0.47, 0.66, 0.6]),
+]
+
 export const SAMPLES: SampleVideo[] = [
   {
-    id: 'child-rear', occupant: true,
+    id: 'child-rear', video: 'child-rear', reference: 'empty-cabin-ref.jpg', occupant: true,
     title: ['Trẻ trên ghế an toàn phía sau', 'Child in a rear child seat'],
-    source: ['Nhóm tự quay, mặt đã làm mờ', 'Recorded by the team, face pixelated'],
+    source: ['Nhóm tự quay, mặt đã làm mờ; detector không thấy trẻ', 'Recorded by the team, face pixelated; the detector misses the child'],
     truth: ['Có trẻ ở ghế sau bên phải', 'A child in the rear-right seat'],
-    zones: [seat('front_left', [0.02, 0.5, 0.34, 1]), seat('rear_left', [0.27, 0.52, 0.46, 0.95]), seat('rear_right', [0.45, 0.52, 0.62, 0.98]),
-      seat('front_right', [0.62, 0.5, 0.92, 1]), glass('window_left', [0, 0.38, 0.22, 0.52]), glass('rear_glass', [0.28, 0.47, 0.6, 0.55]),
-      glass('window_right', [0.86, 0.42, 1, 0.75])],
+    zones: SAME_CAR_SEATS({ child_seat: 'forward_facing' }),
   },
   {
-    id: 'empty-cabin', occupant: false,
+    id: 'empty-cabin', video: 'empty-cabin', reference: 'empty-cabin-ref.jpg', occupant: false,
     title: ['Cabin trống', 'Empty cabin'],
     source: ['Nhóm tự quay, cùng xe, ghế trẻ em không có ai', 'Recorded by the team, same car, child seat unoccupied'],
     truth: ['Không có ai', 'Nobody inside'],
-    zones: [seat('front_left', [0.2, 0.5, 0.4, 1]), seat('rear_left', [0.4, 0.52, 0.55, 0.9]), seat('rear_right', [0.55, 0.58, 0.7, 0.95]),
-      seat('front_right', [0.7, 0.5, 0.99, 1]), glass('window_left', [0.18, 0.44, 0.32, 0.62]), glass('rear_glass', [0.4, 0.47, 0.66, 0.6])],
+    zones: SAME_CAR_SEATS({ child_seat: 'forward_facing' }),
   },
   {
-    id: 'adult-front', occupant: true,
+    id: 'rear-facing', video: 'empty-cabin', reference: 'empty-cabin-ref.jpg', occupant: true,
+    title: ['Ghế trẻ em quay ngược', 'Rear-facing child seat'],
+    source: ['Cùng video cabin trống; ghế sau phải khai báo là ghế quay ngược', 'Same empty-cabin clip; rear-right declared as a rear-facing seat'],
+    truth: ['Camera không thể kiểm em bé trong ghế quay ngược: phải nhắc kiểm tra', 'The camera cannot see into a rear-facing seat: a check must be prompted'],
+    zones: SAME_CAR_SEATS({ child_seat: 'rear_facing' }),
+  },
+  {
+    id: 'adult-front', video: 'adult-front', occupant: true,
     title: ['Người lớn ghế trước', 'Adult in the front seat'],
     source: ['Nhóm tự quay, mặt đã làm mờ', 'Recorded by the team, face pixelated'],
     truth: ['Có người lớn ở ghế trước bên trái', 'An adult in the front-left seat'],
@@ -47,7 +63,7 @@ export const SAMPLES: SampleVideo[] = [
       glass('rear_glass', [0.45, 0.03, 0.9, 0.27])],
   },
   {
-    id: 'ai-child', occupant: true,
+    id: 'ai-child', video: 'ai-child', occupant: true,
     title: ['Trẻ ngồi ghế nâng, cửa kính thấy đường', 'Child on a booster, street visible through the glass'],
     source: ['Video do AI tạo (Gemini), không có người thật', 'AI-generated video (Gemini), no real person'],
     truth: ['Có trẻ ở ghế bên phải', 'A child on the right seat'],
@@ -56,8 +72,18 @@ export const SAMPLES: SampleVideo[] = [
   },
 ]
 
-export function sampleUrl(id: string, base: string = import.meta.env.BASE_URL): string {
-  return `${base.endsWith('/') ? base : `${base}/`}samples/${id}.mp4`
+export function sampleUrl(file: string, base: string = import.meta.env.BASE_URL): string {
+  return `${base.endsWith('/') ? base : `${base}/`}samples/${file.includes('.') ? file : `${file}.mp4`}`
+}
+
+export const SEAT_STATE: Record<string, [vi: string, en: string]> = {
+  OCCUPIED: ['có người (detector)', 'occupied (detector)'],
+  SEAT_CHANGED: ['khác ảnh cabin trống: có thể có người', 'differs from the empty cabin: possible occupant'],
+  REAR_FACING_UNVERIFIABLE: ['ghế quay ngược: camera không kiểm được', 'rear-facing seat: camera cannot verify'],
+  EMPTY_VERIFIED: ['trống (khớp ảnh tham chiếu)', 'empty (matches the reference)'],
+  PENDING_EMPTY: ['đang xác minh trống…', 'verifying empty…'],
+  CANDIDATE: ['nghi ngờ (cần 3/5 khung)', 'candidate (needs 3 of 5)'],
+  NO_HIT: ['không thấy (chưa xác minh)', 'nothing seen (not verified)'],
 }
 
 /** A box drawn by dragging, in normalised coordinates; null when it is too small to be meant. */

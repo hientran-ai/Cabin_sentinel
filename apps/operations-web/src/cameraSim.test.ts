@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import type { V1VideoFrameResult } from '@cabinsentinel/contracts'
 import { SAMPLES, boxFromDrag, expectation, nextZoneName, percentile, sampleUrl, summarize } from './cameraSim'
@@ -23,6 +24,15 @@ describe('camera simulator helpers', () => {
       expect(new Set(sample.zones.map(z => z.name)).size).toBe(sample.zones.length)
     }
     expect(sampleUrl('ai-child', '/admin/')).toBe('/admin/samples/ai-child.mp4')
+    expect(sampleUrl('empty-cabin-ref.jpg', '/admin/')).toBe('/admin/samples/empty-cabin-ref.jpg')
+    for (const sample of SAMPLES) {
+      expect(existsSync(`public/samples/${sample.video}.mp4`)).toBe(true)
+      if (sample.reference) expect(existsSync(`public/samples/${sample.reference}`)).toBe(true)
+      expect(sample.zones.every(z => z.kind === 'seat' || (!z.child_seat && !z.detail))).toBe(true)
+    }
+    const rearFacing = SAMPLES.find(s => s.id === 'rear-facing')!
+    expect(rearFacing.occupant).toBe(true)
+    expect(rearFacing.zones.some(z => z.child_seat === 'rear_facing')).toBe(true)
   })
 
   it('turns a drag into an ordered, clamped box and ignores a click', () => {

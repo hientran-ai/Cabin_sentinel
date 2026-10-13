@@ -240,6 +240,15 @@ export class CabinSentinelClient {
     form.set('image', image, 'frame.jpg')
     return this.request<V1VideoFrameResult>('/api/v1/admin/demo/video/frame', { method: 'POST', retry: false, signal, body: form })
   }
+  /** The person confirms the cabin is empty; the backend then compares every seat with this picture (SR-09). */
+  v1AdminDemoVideoReference(vehicleId: string, image: Blob, source: 'sample' | 'frame', signal?: AbortSignal) {
+    const form = new FormData()
+    form.set('vehicle_id', vehicleId)
+    form.set('confirm_empty', 'true')
+    form.set('source', source)
+    form.set('image', image, 'reference.jpg')
+    return this.request<JsonRecord>('/api/v1/admin/demo/video/reference', { method: 'POST', retry: false, signal, body: form })
+  }
   v1AdminDemoCalibration(vehicleId: string, signal?: AbortSignal) {
     return this.request<{ vehicle_id: string; calibration: V1CabinCalibration | null }>(`/api/v1/admin/demo/calibration/${encodeURIComponent(vehicleId)}`, { retry: false, signal })
   }

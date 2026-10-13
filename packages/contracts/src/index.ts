@@ -329,7 +329,15 @@ export interface V1DemoVehicle {
 }
 
 /** Cabin zones fitted per vehicle at installation. Boxes are normalised x1, y1, x2, y2. */
-export interface V1CabinZone { name: string; kind: 'seat' | 'exclude'; box: [number, number, number, number] }
+export interface V1CabinZone {
+  name: string
+  kind: 'seat' | 'exclude'
+  box: [number, number, number, number]
+  /** Seats only, declared at installation. A rear-facing child seat can never be verified empty by the camera. */
+  child_seat?: 'rear_facing' | 'forward_facing' | null
+  /** Seats only: also detect on an enlarged crop of this seat. */
+  detail?: boolean
+}
 export interface V1CabinCalibration { vehicle_id: string; zones: V1CabinZone[]; version: number; updated_by: string; updated_at: string }
 
 export interface V1VideoStart { vehicle_id: string; temperature: number; sample?: string | null; zones?: V1CabinZone[] }
@@ -341,8 +349,16 @@ export interface V1VideoFrameResult {
   sequence: number
   camera_status: 'OK' | 'BLOCKED' | 'ERROR'
   frame: { width: number; height: number }
-  detections: Array<{ class: string; confidence: number; bbox: [number, number, number, number] | null; zone: string | null; counted: boolean }>
-  seats: Record<string, { state: 'OCCUPIED' | 'CANDIDATE' | 'NO_HIT'; label: string | null; confidence: number | null; releases_in_s: number | null }>
+  detections: Array<{ class: string; confidence: number; bbox: [number, number, number, number] | null; zone: string | null; counted: boolean; detail?: boolean }>
+  seats: Record<string, {
+    state: 'OCCUPIED' | 'SEAT_CHANGED' | 'REAR_FACING_UNVERIFIABLE' | 'EMPTY_VERIFIED' | 'PENDING_EMPTY' | 'CANDIDATE' | 'NO_HIT'
+    label: string | null
+    confidence: number | null
+    reference_similarity: number | null
+    child_seat: 'rear_facing' | 'forward_facing' | null
+    releases_in_s: number | null
+  }>
+  reference: { confirmed_by: string; confirmed_at: string; source: 'sample' | 'frame' } | null
   evidence: Array<{ detection_id: string; class_name: string; confidence: number }>
   risk_level: string | null
   rule_id: string | null

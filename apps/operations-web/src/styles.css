@@ -148,3 +148,12 @@ body{background:radial-gradient(circle at 80% 0,#efe6d8 0,transparent 28rem),var
 .sim-metrics dt{color:var(--muted);font-size:13px}.sim-metrics dd{margin:0;font-weight:700;text-align:right}
 .sim-seats{font-size:13px}.sim-seats td{padding:6px 8px}
 @media(max-width:900px){.sim-layout{grid-template-columns:1fr}.sim-faults{margin-left:0}}
+.sim-reference{margin:6px 0 10px;padding:10px 14px;border:1px solid var(--line);border-radius:14px;display:grid;gap:6px;font-size:14px}
+.sim-reference p{margin:0}
+.sim-zone.is-rear_facing{border-color:#ff9f1a;border-style:solid}.sim-zone.is-rear_facing b{background:rgba(170,90,0,.85)}
+.sim-zone.is-forward_facing{border-color:#c48cff}
+.sim-zone-list select{min-height:30px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:12px}
+.sim-inline{display:inline-flex;gap:4px;align-items:center;font-size:12px;color:var(--muted)}
+.sim-seats tr.seat-seat_changed td,.sim-seats tr.seat-rear_facing_unverifiable td{color:var(--amber);font-weight:700}
+.sim-seats tr.seat-occupied td{font-weight:700}.sim-seats tr.seat-empty_verified td{color:var(--green)}
+.sim-zone-list li{flex-wrap:wrap}
