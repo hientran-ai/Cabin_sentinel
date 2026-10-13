@@ -311,7 +311,7 @@ export interface V1VehicleEvents {
 }
 
 /** Demo studio (GET /api/v1/admin/demo/status). Every value it produces is labelled SIMULATED by the backend. */
-export type V1DemoScenarioId = 'SAFE' | 'WARNING' | 'CRITICAL' | 'RAMP' | 'OFFLINE'
+export type V1DemoScenarioId = 'SAFE' | 'WARNING' | 'CRITICAL' | 'RAMP' | 'VIDEO' | 'OFFLINE'
 
 export interface V1DemoScenario { id: V1DemoScenarioId; label: string; description: string }
 
@@ -324,6 +324,32 @@ export interface V1DemoVehicle {
   temperature_c: number | null
   active_incident: string | null
   data_source: string
+  /** Set while a recorded video is this vehicle's camera (camera simulator). */
+  video?: { sample: string | null; frames: number } | null
+}
+
+/** Cabin zones fitted per vehicle at installation. Boxes are normalised x1, y1, x2, y2. */
+export interface V1CabinZone { name: string; kind: 'seat' | 'exclude'; box: [number, number, number, number] }
+export interface V1CabinCalibration { vehicle_id: string; zones: V1CabinZone[]; version: number; updated_by: string; updated_at: string }
+
+export interface V1VideoStart { vehicle_id: string; temperature: number; sample?: string | null; zones?: V1CabinZone[] }
+
+/** One simulated camera frame after detection, zones, per-seat smoothing and the rules (POST /api/v1/admin/demo/video/frame). */
+export interface V1VideoFrameResult {
+  label: 'SIMULATED'
+  vehicle_id: string
+  sequence: number
+  camera_status: 'OK' | 'BLOCKED' | 'ERROR'
+  frame: { width: number; height: number }
+  detections: Array<{ class: string; confidence: number; bbox: [number, number, number, number] | null; zone: string | null; counted: boolean }>
+  seats: Record<string, { state: 'OCCUPIED' | 'CANDIDATE' | 'NO_HIT'; label: string | null; confidence: number | null; releases_in_s: number | null }>
+  evidence: Array<{ detection_id: string; class_name: string; confidence: number }>
+  risk_level: string | null
+  rule_id: string | null
+  reason: string | null
+  occupancy_state: string | null
+  active_incident: string | null
+  timing: { inference_ms: number | null; rules_ms: number; server_ms: number }
 }
 
 export interface V1DemoNotification { at: string; channel: string; ok: boolean; detail: string }

@@ -1,4 +1,4 @@
-import type { ApiErrorEnvelope, Incident, Page, RealtimeEvent, User, V1CabinState, V1DemoLoginResponse, V1DemoRole, V1DemoScenarioId, V1DemoStatus, V1DeviceCommand, V1DeviceHeartbeat, V1DevicePairing, V1FleetVehicleState, V1Health, V1Me, V1SessionResponse, V1VehicleEvents, V1VehicleList, Vehicle, VehicleStatus } from '@cabinsentinel/contracts'
+import type { ApiErrorEnvelope, Incident, Page, RealtimeEvent, User, V1CabinState, V1DemoLoginResponse, V1DemoRole, V1CabinCalibration, V1CabinZone, V1DemoScenarioId, V1DemoStatus, V1VideoFrameResult, V1VideoStart, V1DeviceCommand, V1DeviceHeartbeat, V1DevicePairing, V1FleetVehicleState, V1Health, V1Me, V1SessionResponse, V1VehicleEvents, V1VehicleList, Vehicle, VehicleStatus } from '@cabinsentinel/contracts'
 import { acceptNewerRevision } from '@cabinsentinel/domain'
 
 export class ApiError extends Error {
@@ -226,6 +226,26 @@ export class CabinSentinelClient {
   }
   v1AdminDemoReset(signal?: AbortSignal) { return this.request<JsonRecord>('/api/v1/admin/demo/reset', { method: 'POST', retry: false, signal }) }
   v1AdminDemoNotifyTest(signal?: AbortSignal) { return this.request<JsonRecord>('/api/v1/admin/demo/notify-test', { method: 'POST', retry: false, signal }) }
+  // Camera simulator: a recorded video is the demo vehicle's camera. Frames go through the device ingest path.
+  v1AdminDemoVideoStart(body: V1VideoStart, signal?: AbortSignal) {
+    return this.request<JsonRecord & { zones: V1CabinZone[] }>('/api/v1/admin/demo/video/start', { method: 'POST', retry: false, signal, body: JSON.stringify(body) })
+  }
+  v1AdminDemoVideoStop(vehicleId: string, signal?: AbortSignal) {
+    return this.request<JsonRecord>('/api/v1/admin/demo/video/stop', { method: 'POST', retry: false, signal, body: JSON.stringify({ vehicle_id: vehicleId }) })
+  }
+  v1AdminDemoVideoFrame(vehicleId: string, sequence: number, image: Blob, signal?: AbortSignal) {
+    const form = new FormData()
+    form.set('vehicle_id', vehicleId)
+    form.set('sequence', String(sequence))
+    form.set('image', image, 'frame.jpg')
+    return this.request<V1VideoFrameResult>('/api/v1/admin/demo/video/frame', { method: 'POST', retry: false, signal, body: form })
+  }
+  v1AdminDemoCalibration(vehicleId: string, signal?: AbortSignal) {
+    return this.request<{ vehicle_id: string; calibration: V1CabinCalibration | null }>(`/api/v1/admin/demo/calibration/${encodeURIComponent(vehicleId)}`, { retry: false, signal })
+  }
+  v1AdminDemoSaveCalibration(vehicleId: string, zones: V1CabinZone[], signal?: AbortSignal) {
+    return this.request<{ vehicle_id: string; calibration: V1CabinCalibration }>(`/api/v1/admin/demo/calibration/${encodeURIComponent(vehicleId)}`, { method: 'PUT', retry: false, signal, body: JSON.stringify({ zones }) })
+  }
 
   // Device channel. These calls carry a per-device token, never the user's session: no cookies, no user bearer.
   private deviceRequest<T>(path: string, token: string | undefined, init: RequestOptions = {}) {
