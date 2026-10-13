@@ -8,7 +8,7 @@ const messages: Record<Locale, Messages> = {
   vi: {
     admin: 'Quản trị', operations: 'Vận hành', overview: 'Tổng quan', incidents: 'Sự cố', evaluations: 'Đánh giá an toàn', commands: 'Lệnh điều khiển',
     vehicles: 'Phương tiện', devices: 'Thiết bị', tenants: 'Tổ chức', users: 'Người dùng & quyền', models: 'Mô hình AI', rules: 'Quy tắc an toàn', audit: 'Nhật ký kiểm toán', system: 'Sức khỏe hệ thống',
-    safetyOperations: 'Vận hành an toàn', fleetManagement: 'Quản lý đội xe', platformAdministration: 'Quản trị nền tảng', assurance: 'Giám sát & tuân thủ',
+    safetyOperations: 'Vận hành an toàn', fleetManagement: 'Quản lý đội xe', platformAdministration: 'Quản trị nền tảng', assurance: 'Giám sát & tuân thủ', mainNavigation: 'Menu chính', operationsHub: 'Vận hành', fleetHub: 'Đội xe', peopleHub: 'Người dùng', systemHub: 'Hệ thống',
     platformControl: 'Điều khiển nền tảng', administratorScope: 'Phạm vi quản trị viên', operatorScope: 'Phạm vi điều phối viên', live: 'Trực tuyến V1',
     refresh: 'Làm mới', refreshing: 'Đang làm mới…', search: 'Tìm kiếm', all: 'Tất cả', open: 'Đang mở', resolved: 'Đã giải quyết', unassigned: 'Chưa phân công', escalated: 'Đã chuyển cấp',
     loading: 'Đang tải dữ liệu đã xác minh…', noRecords: 'Không có dữ liệu', backendUnavailable: 'Không thể tải dữ liệu backend', failSafe: 'Không hiển thị dữ liệu giả định là an toàn.',
@@ -24,7 +24,7 @@ const messages: Record<Locale, Messages> = {
   en: {
     admin: 'Admin', operations: 'Operations', overview: 'Overview', incidents: 'Incidents', evaluations: 'Safety evaluations', commands: 'Commands',
     vehicles: 'Vehicles', devices: 'Devices', tenants: 'Tenants', users: 'Users & access', models: 'AI models', rules: 'Safety rules', audit: 'Audit log', system: 'System health',
-    safetyOperations: 'Safety operations', fleetManagement: 'Fleet management', platformAdministration: 'Platform administration', assurance: 'Assurance',
+    safetyOperations: 'Safety operations', fleetManagement: 'Fleet management', platformAdministration: 'Platform administration', assurance: 'Assurance', mainNavigation: 'Main menu', operationsHub: 'Operations', fleetHub: 'Fleet', peopleHub: 'People', systemHub: 'System',
     platformControl: 'Platform control', administratorScope: 'Administrator scope', operatorScope: 'Operator scope', live: 'Live V1',
     refresh: 'Refresh', refreshing: 'Refreshing…', search: 'Search', all: 'All', open: 'Open', resolved: 'Resolved', unassigned: 'Unassigned', escalated: 'Escalated',
     loading: 'Loading verified backend data…', noRecords: 'No records', backendUnavailable: 'Backend data unavailable', failSafe: 'No placeholder or inferred-safe data is shown.',

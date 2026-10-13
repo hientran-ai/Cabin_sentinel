@@ -23,24 +23,25 @@ const paths: Record<IconName, ReactNode> = {
 function Icon({ name, ...props }: { name: IconName } & SVGProps<SVGSVGElement>) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>{paths[name]}</svg> }
 
 type AdminNavItem = { to: string; labelKey: string; icon: IconName; adminOnly?: boolean }
-const adminNavGroups: Array<{ labelKey: string; items: AdminNavItem[] }> = [
-  { labelKey: 'safetyOperations', items: [
-    { to: '/admin', labelKey: 'overview', icon: 'grid' },
+type AdminSection = { labelKey: string; items: AdminNavItem[] }
+const overviewItem: AdminNavItem = { to: '/admin', labelKey: 'overview', icon: 'grid' }
+const adminSections: AdminSection[] = [
+  { labelKey: 'operationsHub', items: [
     { to: '/admin/incidents', labelKey: 'incidents', icon: 'warning' },
     { to: '/admin/evaluations', labelKey: 'evaluations', icon: 'pulse' },
     { to: '/admin/commands', labelKey: 'commands', icon: 'lock' },
   ] },
-  { labelKey: 'fleetManagement', items: [
+  { labelKey: 'fleetHub', items: [
     { to: '/admin/vehicles', labelKey: 'vehicles', icon: 'car' },
     { to: '/admin/devices', labelKey: 'devices', icon: 'cpu' },
   ] },
-  { labelKey: 'platformAdministration', items: [
+  { labelKey: 'peopleHub', items: [
     { to: '/admin/tenants', labelKey: 'tenants', icon: 'layers', adminOnly: true },
     { to: '/admin/users', labelKey: 'users', icon: 'users', adminOnly: true },
+  ] },
+  { labelKey: 'systemHub', items: [
     { to: '/admin/models', labelKey: 'models', icon: 'layers', adminOnly: true },
     { to: '/admin/rules', labelKey: 'rules', icon: 'rules', adminOnly: true },
-  ] },
-  { labelKey: 'assurance', items: [
     { to: '/admin/audit', labelKey: 'audit', icon: 'audit' },
     { to: '/admin/system', labelKey: 'system', icon: 'system' },
   ] },
@@ -72,30 +73,36 @@ function AdminShell() {
   const { locale, setLocale, t } = useLocale()
   const demoMode = adminDemoEnabled()
   const isAdmin = user?.roles.includes('ADMIN') === true
-  const visibleGroups = adminNavGroups.map(group => ({
-    ...group,
-    items: group.items.filter(item => !item.adminOnly || isAdmin),
-  })).filter(group => group.items.length > 0)
-  const visibleItems = visibleGroups.flatMap(group => group.items)
+  const visibleSections = adminSections.map(section => ({ ...section, items: section.items.filter(item => !item.adminOnly || isAdmin) })).filter(section => section.items.length > 0)
+  const visibleItems = [overviewItem, ...visibleSections.flatMap(section => section.items)]
   const currentItem = visibleItems.find(item => location.pathname === item.to || (item.to !== '/admin' && location.pathname.startsWith(item.to)))
   const current = t(currentItem?.labelKey || 'overview')
+  const primaryItems = [
+    { ...overviewItem, paths: ['/admin'] },
+    { to: '/admin/incidents', labelKey: 'operationsHub', icon: 'warning' as IconName, paths: ['/admin/incidents', '/admin/evaluations', '/admin/commands'] },
+    { to: '/admin/vehicles', labelKey: 'fleetHub', icon: 'car' as IconName, paths: ['/admin/vehicles', '/admin/devices'] },
+    ...(isAdmin ? [{ to: '/admin/tenants', labelKey: 'peopleHub', icon: 'users' as IconName, paths: ['/admin/tenants', '/admin/users'] }] : []),
+    { to: isAdmin ? '/admin/models' : '/admin/audit', labelKey: 'systemHub', icon: 'system' as IconName, paths: ['/admin/models', '/admin/rules', '/admin/audit', '/admin/system'] },
+  ]
+  const activeSection = visibleSections.find(section => section.items.some(item => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)))
+  const primaryActive = (paths: string[]) => paths.some(path => path === '/admin' ? location.pathname === path : location.pathname === path || location.pathname.startsWith(`${path}/`))
 
   return <div className="app-shell">
     <aside className={`sidebar ${open ? 'is-open' : ''}`}>
       <div className="brand"><img className="brand-logo" src={`${import.meta.env.BASE_URL}cabinsentinel-logo.png`} alt="CabinSentinel"/><div><strong>CabinSentinel</strong><small>Operations</small></div><b>{isAdmin ? 'ADM' : 'OPS'}</b></div>
       <div className="workspace"><small>{locale === 'vi' ? 'Không gian làm việc' : 'Workspace'}</small><strong>{isAdmin ? t('platformControl') : t('safetyOperations')}</strong><span>{isAdmin ? t('administratorScope') : t('operatorScope')}</span></div>
-      <nav aria-label="Operations navigation">
-        {visibleGroups.map(group => <section className="nav-group" key={group.labelKey}>
-          <small>{t(group.labelKey)}</small>
-          {group.items.map(item => <NavLink end={item.to === '/admin'} key={item.to} to={item.to} onClick={() => setOpen(false)}><Icon name={item.icon}/><span>{t(item.labelKey)}</span>{item.labelKey === 'incidents' && <i/>}</NavLink>)}
-        </section>)}
+      <nav className="primary-nav" aria-label="Operations navigation">
+        <small>{t('mainNavigation')}</small>
+        {primaryItems.map(item => <NavLink className={primaryActive(item.paths) ? 'active' : undefined} end={item.to === '/admin'} key={item.labelKey} to={item.to} onClick={() => setOpen(false)}><Icon name={item.icon}/><span>{t(item.labelKey)}</span>{item.labelKey === 'operationsHub' && <i/>}</NavLink>)}
       </nav>
       <div className="sidebar-foot"><span>{user?.displayName.slice(0, 2).toUpperCase() || 'CS'}</span><p><strong>{user?.displayName || (locale === 'vi' ? 'Điều phối viên' : 'Authorized operator')}</strong><small>{isAdmin ? (locale === 'vi' ? 'Quản trị viên nền tảng' : 'Platform administrator') : (locale === 'vi' ? 'Điều phối viên an toàn' : 'Safety operator')}</small></p></div>
     </aside>
     {open && <button className="scrim" aria-label="Close navigation" onClick={() => setOpen(false)}/>}
     <section className="stage">
       <header className="topbar"><button className="menu-button" onClick={() => setOpen(!open)} aria-label={open ? 'Close navigation' : 'Open navigation'}><Icon name={open ? 'close' : 'menu'}/></button><div className="breadcrumb"><span>{isAdmin ? t('admin') : t('operations')}</span><Icon name="chevron"/><strong>{current}</strong></div><div className="top-actions"><ServiceState>{t('live')}</ServiceState><button className="locale-switch" onClick={() => setLocale(locale === 'vi' ? 'en' : 'vi')} aria-label={locale === 'vi' ? 'Chuyển sang tiếng Anh' : 'Switch to Vietnamese'}><strong>{locale.toUpperCase()}</strong><span>/ {locale === 'vi' ? 'EN' : 'VI'}</span></button><OperationsUserMenu /></div></header>
-      <main>{demoMode && <section className="demo-mode-banner" role="status"><div><strong>{locale === 'vi' ? 'DỮ LIỆU MÔ PHỎNG' : 'SIMULATED DATA'}</strong><span>{locale === 'vi' ? 'Mọi số liệu và thao tác bên dưới chỉ dùng để minh họa, không gửi đến backend thật.' : 'All data and actions below are simulated and are never sent to the live backend.'}</span></div><button onClick={stopAdminDemo}>{locale === 'vi' ? 'Thoát demo' : 'Exit demo'}</button></section>}<Routes>
+      <main>{demoMode && <section className="demo-mode-banner" role="status"><div><strong>{locale === 'vi' ? 'DỮ LIỆU MÔ PHỎNG' : 'SIMULATED DATA'}</strong><span>{locale === 'vi' ? 'Mọi số liệu và thao tác bên dưới chỉ dùng để minh họa, không gửi đến backend thật.' : 'All data and actions below are simulated and are never sent to the live backend.'}</span></div><button onClick={stopAdminDemo}>{locale === 'vi' ? 'Thoát demo' : 'Exit demo'}</button></section>}
+        {activeSection && activeSection.items.length > 1 && <nav className="section-tabs" aria-label={t(activeSection.labelKey)}><div><span>{t(activeSection.labelKey)}</span>{activeSection.items.map(item => <NavLink key={item.to} to={item.to}><Icon name={item.icon}/>{t(item.labelKey)}</NavLink>)}</div></nav>}
+        <Routes>
         <Route path="/admin" element={<AdminOverview/>}/>
         <Route path="/admin/evaluations" element={<EvaluationsWorkbench/>}/>
         <Route path="/admin/evaluations/:revision" element={<Navigate to="/admin/evaluations" replace/>}/>
@@ -105,8 +112,7 @@ function AdminShell() {
       </Routes></main>
       <footer><span>CabinSentinel Operations · {locale === 'vi' ? 'Backend quyết định cuối cùng' : 'Backend-authoritative'}</span><span><i/> {locale === 'vi' ? 'Giao diện điều khiển V1' : 'Control plane UI v1'}</span></footer>
       <nav className="mobile-bottom-nav" aria-label="Mobile operations navigation">
-        {visibleItems.filter(item => ['/admin','/admin/incidents','/admin/evaluations','/admin/vehicles'].includes(item.to)).map(item => <NavLink end={item.to === '/admin'} key={item.to} to={item.to}><Icon name={item.icon}/><span>{t(item.labelKey)}</span></NavLink>)}
-        <button type="button" className={open ? 'active' : ''} onClick={() => setOpen(true)} aria-label={locale === 'vi' ? 'Mở thêm điều hướng' : 'Open more navigation'}><Icon name="menu"/><span>{locale === 'vi' ? 'Thêm' : 'More'}</span></button>
+        {primaryItems.map(item => <NavLink className={primaryActive(item.paths) ? 'active' : undefined} end={item.to === '/admin'} key={item.labelKey} to={item.to}><Icon name={item.icon}/><span>{t(item.labelKey)}</span></NavLink>)}
       </nav>
     </section>
   </div>
