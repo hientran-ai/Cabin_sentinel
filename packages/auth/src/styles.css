@@ -171,3 +171,54 @@
   .auth-showroom .auth-showroom-heading h2{font-size:1.8rem}
   .auth-showroom-stage{inset:18% -1px 15% 0}
 }
+
+/* Operations login uses the same transparent control-room glass as the admin shell. */
+.auth-page.auth-page-showroom{
+  position:relative;
+  background:transparent;
+}
+.auth-page.auth-page-showroom:before{
+  display:none;
+}
+.auth-page-showroom .auth-card,
+.auth-page-showroom .auth-visual{
+  border-color:rgba(255,255,255,.2)!important;
+  box-shadow:0 34px 100px rgba(0,0,0,.46),inset 0 1px rgba(255,255,255,.1);
+  backdrop-filter:blur(10px) saturate(118%);
+  -webkit-backdrop-filter:blur(10px) saturate(118%);
+}
+.auth-page-showroom .auth-card{
+  background:linear-gradient(145deg,rgba(47,46,44,.26),rgba(20,20,20,.36));
+}
+.auth-page-showroom .auth-showroom{
+  background:
+    radial-gradient(circle at 72% 48%,rgba(245,197,66,.12),transparent 31%),
+    linear-gradient(145deg,rgba(52,51,48,.14),rgba(15,15,14,.25))!important;
+}
+.auth-page-showroom .auth-role-picker>div,
+.auth-page-showroom .auth-form input{
+  background:rgba(12,13,14,.3);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+}
+.auth-page-showroom .auth-form input:focus{background:rgba(12,13,14,.64)}
+.auth-page-showroom .auth-showroom-meta{
+  background:linear-gradient(90deg,rgba(10,10,9,.34),rgba(10,10,9,.08))!important;
+}
+@media(min-width:921px){
+  .auth-page.auth-page-showroom{animation:auth-glass-enter .55s cubic-bezier(.2,.8,.2,1) both}
+  .auth-page-showroom .auth-showroom-stage img{animation:auth-car-float 6s ease-in-out infinite}
+}
+@keyframes auth-glass-enter{from{opacity:0;transform:translateY(16px) scale(.99)}to{opacity:1;transform:none}}
+@keyframes auth-car-float{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-5px,0)}}
+@media(max-width:920px){
+  .auth-page.auth-page-showroom{padding:14px!important;background:linear-gradient(rgba(7,7,6,.32),rgba(7,7,7,.56)),url('/admin/images/admin-automotive-lab-bg.png') 62% center/cover fixed}
+  .auth-page-showroom .auth-card{min-height:calc(100svh - 28px);border:1px solid rgba(255,255,255,.18)!important;border-radius:26px!important;background:linear-gradient(145deg,rgba(48,47,44,.72),rgba(20,20,20,.82))}
+}
+@media(max-width:560px){
+  .auth-page.auth-page-showroom{padding:10px!important}
+  .auth-page-showroom .auth-card{min-height:calc(100svh - 20px);padding:24px 18px;border-radius:22px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .auth-page.auth-page-showroom,.auth-page-showroom .auth-showroom-stage img{animation:none!important}
+}
