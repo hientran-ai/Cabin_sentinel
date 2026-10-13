@@ -95,3 +95,15 @@ def test_storage_report_says_when_data_would_not_survive_a_restart(tmp_path, mon
     assert ephemeral["persistent"] is False and "Persistent Storage" in ephemeral["note"]
     monkeypatch.setattr(get_settings(), "storage_persistent", True)
     assert capabilities.storage(str(tmp_path / "x.db")) == {"persistent": True, "path_kind": "volume", "note": None}
+
+
+def test_status_survives_a_video_stopped_while_it_is_read(studio):
+    class StoppedMidRead(dict):  # the run is there for the membership test, popped before the item is read
+        def __contains__(self, key):
+            return True
+
+        def __getitem__(self, key):
+            raise KeyError(key)
+
+    studio.video = StoppedMidRead()
+    assert studio.vehicle_status(VEHICLE)["video"] is None

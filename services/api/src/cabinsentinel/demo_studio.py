@@ -226,11 +226,11 @@ class DemoStudio:
 
     def vehicle_status(self, vehicle_id: str) -> dict:
         summary = self.fleet.summary(vehicle_id)
+        run = self.video.get(vehicle_id)  # read once: this runs without the lock and stop_video may pop it meanwhile
         return {"vehicle_id": vehicle_id, "name": summary["vehicle_name"], "scenario": self.scenario[vehicle_id],
                 "risk_level": summary["risk_level"], "online": summary["online"], "temperature_c": summary["temperature_c"],
                 "active_incident": summary["active_incident"], "data_source": summary["data_source"],
-                "video": ({"sample": self.video[vehicle_id].sample, "frames": self.video[vehicle_id].frames}
-                          if vehicle_id in self.video else None)}
+                "video": {"sample": run.sample, "frames": run.frames} if run is not None else None}
 
     def status(self) -> dict:
         return {"enabled": True, "label": LABEL,
