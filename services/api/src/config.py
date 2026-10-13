@@ -1,8 +1,14 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Directory that holds models/ and tmp/: the repo root when the package lives in services/api/src, the app root when
+# it is deployed flat as src/ (the Hugging Face Space ships services/api/src as /app/src).
+_HERE = Path(__file__).resolve()
+APP_ROOT = _HERE.parents[3] if (_HERE.parents[1].name, _HERE.parents[2].name) == ("api", "services") else _HERE.parents[1]
 
 
 class Settings(BaseSettings):

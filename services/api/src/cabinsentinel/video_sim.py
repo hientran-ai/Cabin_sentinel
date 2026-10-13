@@ -37,7 +37,10 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from src.vision.labels import GENERIC_OBJECT
+try:
+    from src.vision.labels import GENERIC_OBJECT
+except ImportError:  # detectors without the labels module never emit the catch-all class; keep its name for filtering
+    GENERIC_OBJECT = "object"
 
 if TYPE_CHECKING:
     import numpy as np

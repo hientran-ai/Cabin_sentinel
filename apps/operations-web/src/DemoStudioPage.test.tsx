@@ -23,10 +23,10 @@ const status: V1DemoStatus = {
   last_error: null,
 }
 
-function render(data: V1DemoStatus | undefined, locale?: 'en') {
+function render(data: V1DemoStatus | undefined, locale: 'vi' | 'en' = 'vi') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   if (data) queryClient.setQueryData(DEMO_STATUS_KEY, data)
-  vi.stubGlobal('localStorage', storage(locale ?? null))
+  vi.stubGlobal('localStorage', storage(locale))  // the default locale follows the browser, so pin it
   const html = renderToString(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter><AuthProvider config={{ apiBaseUrl: 'http://x', mode: 'mock', ownerUrl: 'https://cabin.example/overview', operationsUrl: 'https://cabin.example/admin' }}>
