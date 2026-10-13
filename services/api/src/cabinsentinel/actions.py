@@ -46,15 +46,11 @@ class ChannelActions(MockActions):
 
 
 def card_for(vehicle_id: str) -> bytes:
-    """The alert card for the current state of this vehicle, with the camera simulator's seats when it is running."""
-    from src.cabinsentinel import alert_card, demo_studio
+    """The alert card for the current state of this vehicle: drawn from data, never a camera frame."""
+    from src.cabinsentinel import alert_card
     from src.cabinsentinel.api import get_cabin_service
 
-    state = get_cabin_service().get_state_with_freshness(vehicle_id) or {}
-    studio = demo_studio.get_studio()
-    run = studio.video.get(vehicle_id) if studio is not None else None
-    seats = run.last_seats if run is not None else None
-    return alert_card.render(vehicle_id, state, seats, label="SIMULATED" if run is not None else None)
+    return alert_card.render(vehicle_id, get_cabin_service().get_state_with_freshness(vehicle_id) or {})
 
 
 def build_actions() -> MockActions:
