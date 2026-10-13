@@ -429,10 +429,10 @@ export function LoginPage({ portal, showroomImage }: { portal: Portal; showroomI
     </section>
     <aside className={`auth-visual${showroomImage ? ' auth-showroom' : ''}`}>
       {showroomImage ? <>
-        <span>CabinSentinel / VF 9</span>
+        <span>CabinSentinel</span>
         <div className="auth-showroom-heading">
-          <small>SMART CABIN PROTECTION</small>
-          <h2>{copy.adminHero}</h2>
+          <small>INTELLIGENT SAFETY MONITORING</small>
+          <h2>No one<br/>left behind.</h2>
         </div>
         <div className="auth-showroom-stage" aria-hidden="true">
           <span className="auth-showroom-halo"/>
