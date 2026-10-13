@@ -42,6 +42,8 @@ data/
 *.pth
 *.onnx
 models/
+# Python package (schemas), not model weights
+!services/api/src/models/
 
 # Logs
 logs/
