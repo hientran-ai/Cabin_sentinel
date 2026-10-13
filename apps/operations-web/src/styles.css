@@ -157,3 +157,8 @@ body{background:radial-gradient(circle at 80% 0,#efe6d8 0,transparent 28rem),var
 .sim-seats tr.seat-seat_changed td,.sim-seats tr.seat-rear_facing_unverifiable td{color:var(--amber);font-weight:700}
 .sim-seats tr.seat-occupied td{font-weight:700}.sim-seats tr.seat-empty_verified td{color:var(--green)}
 .sim-zone-list li{flex-wrap:wrap}
+
+/* Camera simulator: native file pickers in the glass theme */
+.studio-card input[type="file"] { color: var(--cs-ink-2); font: inherit; font-size: 13px; max-width: 100%; }
+.studio-card input[type="file"]::file-selector-button { margin-right: 10px; padding: 7px 14px; border: 1px solid var(--cs-line-strong); border-radius: var(--cs-radius-pill); background: var(--cs-surface-2); color: var(--cs-ink); font: inherit; font-weight: 600; cursor: pointer; }
+.studio-card input[type="file"]::file-selector-button:hover { border-color: var(--cs-accent); }

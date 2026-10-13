@@ -21,7 +21,9 @@ if [ "$actual" != "$YUNET_SHA256" ]; then
 fi
 
 cp "$HERE"/{app.py,routing.py,requirements.txt,packages.txt,README.md} "$STAGE"/
-rsync -a --exclude __pycache__ "$REPO/src" "$STAGE"/
+# The backend lives in services/api/src; the repo-root src/ is only an import shim pointing there. The Space has no
+# services/ tree, so the real package is published as src/.
+rsync -a --exclude __pycache__ "$REPO/services/api/src/" "$STAGE/src/"
 mkdir -p "$STAGE/models"
 cp "$YUNET" "$REPO/models/YUNET-LICENSE" "$STAGE/models/"
 # Never ignore models/: the Hub silently drops ignored files, the YuNet model then never reaches the Space and
