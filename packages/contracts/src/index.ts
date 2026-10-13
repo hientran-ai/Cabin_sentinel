@@ -366,7 +366,11 @@ export interface V1VideoFrameResult {
   occupancy_state: string | null
   active_incident: string | null
   timing: { inference_ms: number | null; rules_ms: number; server_ms: number }
+  /** "queued" when this frame became the incident's opt-in alert photo (pixelated) on Telegram. */
+  alert_photo?: 'queued' | null
 }
+
+export interface V1AlertPhotoPref { vehicle_id: string; enabled: boolean; changed_by: string | null; changed_at: string | null }
 
 export interface V1DemoNotification { at: string; channel: string; ok: boolean; detail: string }
 

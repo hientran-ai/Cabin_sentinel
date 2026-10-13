@@ -1,4 +1,4 @@
-import type { ApiErrorEnvelope, Incident, Page, RealtimeEvent, User, V1CabinState, V1DemoLoginResponse, V1DemoRole, V1CabinCalibration, V1CabinZone, V1DemoScenarioId, V1DemoStatus, V1VideoFrameResult, V1VideoStart, V1DeviceCommand, V1DeviceHeartbeat, V1DevicePairing, V1FleetVehicleState, V1Health, V1Me, V1SessionResponse, V1VehicleEvents, V1VehicleList, Vehicle, VehicleStatus } from '@cabinsentinel/contracts'
+import type { ApiErrorEnvelope, Incident, Page, RealtimeEvent, User, V1CabinState, V1DemoLoginResponse, V1DemoRole, V1AlertPhotoPref, V1CabinCalibration, V1CabinZone, V1DemoScenarioId, V1DemoStatus, V1VideoFrameResult, V1VideoStart, V1DeviceCommand, V1DeviceHeartbeat, V1DevicePairing, V1FleetVehicleState, V1Health, V1Me, V1SessionResponse, V1VehicleEvents, V1VehicleList, Vehicle, VehicleStatus } from '@cabinsentinel/contracts'
 import { acceptNewerRevision } from '@cabinsentinel/domain'
 
 export class ApiError extends Error {
@@ -248,6 +248,13 @@ export class CabinSentinelClient {
     form.set('source', source)
     form.set('image', image, 'reference.jpg')
     return this.request<JsonRecord>('/api/v1/admin/demo/video/reference', { method: 'POST', retry: false, signal, body: form })
+  }
+  v1AdminDemoAlertPhoto(vehicleId: string, signal?: AbortSignal) {
+    return this.request<V1AlertPhotoPref>(`/api/v1/admin/demo/alert-photo/${encodeURIComponent(vehicleId)}`, { retry: false, signal })
+  }
+  /** Off by default; turning it on needs the person's consent (Telegram keeps its own copy of the pixelated photo). */
+  v1AdminDemoSetAlertPhoto(vehicleId: string, enabled: boolean, consent: boolean, signal?: AbortSignal) {
+    return this.request<V1AlertPhotoPref>(`/api/v1/admin/demo/alert-photo/${encodeURIComponent(vehicleId)}`, { method: 'PUT', retry: false, signal, body: JSON.stringify({ enabled, consent }) })
   }
   v1AdminDemoCalibration(vehicleId: string, signal?: AbortSignal) {
     return this.request<{ vehicle_id: string; calibration: V1CabinCalibration | null }>(`/api/v1/admin/demo/calibration/${encodeURIComponent(vehicleId)}`, { retry: false, signal })

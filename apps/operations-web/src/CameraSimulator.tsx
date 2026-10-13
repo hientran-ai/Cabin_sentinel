@@ -67,8 +67,17 @@ export function CameraSimulator({ vehicles }: { vehicles: V1DemoVehicle[] }) {
   const [confirmEmpty, setConfirmEmpty] = useState(false)
   const [referenceFile, setReferenceFile] = useState<File>()
   const [referenceFileConfirmed, setReferenceFileConfirmed] = useState(false)
+  const [alertPhoto, setAlertPhoto] = useState<boolean>()
+  const [photoConsent, setPhotoConsent] = useState(false)
+  const [photoSent, setPhotoSent] = useState(0)
 
   const vehicle = vehicleId || vehicles[0]?.vehicle_id || ''
+  useEffect(() => {
+    if (!vehicle) return
+    let live = true
+    platformClient.v1AdminDemoAlertPhoto(vehicle).then(pref => { if (live) setAlertPhoto(pref.enabled) }).catch(() => { if (live) setAlertPhoto(undefined) })
+    return () => { live = false }
+  }, [vehicle])
   const sample = source.kind === 'sample' ? SAMPLES.find(item => item.id === source.id) : undefined
   const videoUrl = source.kind === 'sample' ? sampleUrl(sample?.video ?? source.id) : source.url
   faultRef.current = fault
@@ -161,6 +170,7 @@ export function CameraSimulator({ vehicles }: { vehicles: V1DemoVehicle[] }) {
           applied = seq
           setResult(out)
           setError(undefined)
+          if (out.alert_photo === 'queued') setPhotoSent(count => count + 1)
           if (isAlert(out.risk_level)) setFirstAlertAt(current => current ?? Date.now())
         }
       } catch (reason) {
@@ -221,6 +231,16 @@ export function CameraSimulator({ vehicles }: { vehicles: V1DemoVehicle[] }) {
       setNotice(bi('Đã lấy ảnh tham chiếu cabin trống (ghi nhật ký người xác nhận).', 'Empty-cabin reference taken (the confirming person is audited).'))
     } catch (reason) {
       setError(errorText(reason, bi('Backend từ chối ảnh tham chiếu.', 'The backend rejected the reference.')))
+    } finally { setBusy(false) }
+  }
+
+  const toggleAlertPhoto = async (enabled: boolean) => {
+    setBusy(true); setError(undefined)
+    try {
+      const pref = await platformClient.v1AdminDemoSetAlertPhoto(vehicle, enabled, enabled && photoConsent)
+      setAlertPhoto(pref.enabled); setPhotoConsent(false)
+    } catch (reason) {
+      setError(errorText(reason, bi('Backend từ chối thay đổi.', 'The backend rejected the change.')))
     } finally { setBusy(false) }
   }
 
@@ -294,6 +314,14 @@ export function CameraSimulator({ vehicles }: { vehicles: V1DemoVehicle[] }) {
           {sample?.reference && <label className="sim-consent"><input type="checkbox" checked={useSampleReference} disabled={running} onChange={event => setUseSampleReference(event.target.checked)}/><span>{bi('Dùng ảnh cabin trống mà nhóm đã xác nhận khi lắp xe mẫu này', 'Use the empty-cabin picture the team confirmed when fitting this sample car')}</span></label>}
           {running && <div className="sim-row"><label className="sim-consent"><input type="checkbox" checked={confirmEmpty} onChange={event => setConfirmEmpty(event.target.checked)}/><span>{bi('Tôi xác nhận lúc này cabin trống', 'I confirm the cabin is empty right now')}</span></label>
             <button type="button" disabled={!confirmEmpty || busy} onClick={() => void takeReference()}>{bi('Chụp khung hiện tại làm tham chiếu', 'Use the current frame as the reference')}</button></div>}
+        </div>
+
+        <div className="sim-reference">
+          <strong>{bi('Cảnh báo Telegram', 'Telegram alerts')}</strong>
+          <p className="studio-muted">{bi('Mỗi sự cố gửi một thẻ vẽ từ dữ liệu (mức rủi ro, ghế, nhiệt độ), không có ảnh camera. Ảnh camera chỉ gửi khi bật bên dưới: một ảnh mỗi sự cố, người và mọi ghế chưa xác minh trống đã được làm mờ.', 'Each incident sends a card drawn from data (risk, seats, temperature), no camera image. A camera photo is sent only when turned on below: one per incident, with people and every seat not verified empty pixelated.')}</p>
+          {alertPhoto ? <p><span className="data-pill studio-pill studio-pill-warn">{bi('Ảnh kèm cảnh báo: BẬT', 'Alert photo: ON')}</span> {photoSent > 0 && bi(`· đã gửi ${photoSent} ảnh`, `· ${photoSent} sent`)} <button type="button" disabled={busy} onClick={() => void toggleAlertPhoto(false)}>{bi('Tắt', 'Turn off')}</button></p>
+            : <div className="sim-row"><label className="sim-consent"><input type="checkbox" checked={photoConsent} onChange={event => setPhotoConsent(event.target.checked)}/><span>{bi('Tôi đồng ý gửi ảnh đã làm mờ lên Telegram; Telegram tự lưu một bản mà hệ thống không xóa được. Người mà mô hình không nhận ra vẫn được che nếu nằm trên ghế chưa xác minh trống.', 'I agree to send pixelated photos to Telegram; Telegram keeps its own copy the system cannot delete. People the model misses are still hidden when they sit on a seat not verified empty.')}</span></label>
+              <button type="button" disabled={!photoConsent || busy || alertPhoto === undefined} onClick={() => void toggleAlertPhoto(true)}>{bi('Bật ảnh kèm cảnh báo', 'Turn on alert photos')}</button></div>}
         </div>
 
         <details className="sim-calibration" open={drawKind !== null || zoneOrigin === 'none'}>
