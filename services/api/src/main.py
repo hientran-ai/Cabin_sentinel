@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from src.api.routes import router
-from src.cabinsentinel import capabilities, demo_studio, fleet_api
+from src.cabinsentinel import capabilities, fleet_api
 from src.cabinsentinel.admin_api import router as admin_router
 from src.cabinsentinel.api import get_cabin_service
 from src.cabinsentinel.api import router as cabin_router
@@ -65,8 +65,6 @@ async def lifespan(app: FastAPI):
         logger.warning("MODEL_PATH is unset; Vision demo endpoint unavailable")
     if any(getattr(settings, name, "") for name in ("bootstrap_admin_email", "bootstrap_owner_email")):
         ensure_bootstrap_accounts(get_store(), settings)
-    if getattr(settings, "demo_studio", False):
-        demo_studio.start_studio(fleet_api.get_fleet(), get_store())
     # Same source /health uses, so /admin/system/vision cannot report a different classifier state.
     capabilities.bind_age_status(
         lambda: getattr(getattr(app.state, "vision_provider", None), "age_status", "disabled"))
@@ -86,7 +84,6 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         try:
-            demo_studio.stop_studio()
             if subscriber is not None:
                 subscriber.stop()
         finally:
@@ -126,7 +123,6 @@ app.include_router(demo_router)
 app.include_router(fleet_router)
 app.include_router(platform_router)
 app.include_router(admin_router)
-app.include_router(demo_studio.router)
 
 
 @app.middleware("http")

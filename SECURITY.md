@@ -42,7 +42,6 @@ Ngoài phạm vi: lỗi của dịch vụ bên thứ ba (Cloudflare, Hugging Fac
 - Số liệu giám sát nằm trong bộ nhớ tiến trình, mất khi khởi động lại.
 - SQLite một nút. Dữ liệu chỉ bền khi database nằm trên volume (Docker `/app/data`) hoặc Persistent Storage của Hugging Face (`/data`); `/health` báo `storage.persistent`.
 - Mô hình thị giác (YOLOv8n) chưa được đánh giá riêng cho trẻ em trong cabin; tuổi chỉ là bằng chứng, không đi vào luật rủi ro.
-- Chế độ Demo studio (`DEMO_STUDIO=true`) tạo dữ liệu **mô phỏng** có nhãn SIMULATED. Chỉ bật trên môi trường demo, không bật trên hệ thống phục vụ xe thật.
 
 ## Cấu hình bí mật
 

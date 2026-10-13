@@ -58,62 +58,6 @@ describe('CabinSentinelClient', () => {
   })
 })
 
-describe('demo studio and device channel', () => {
-  const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
-
-  it('talks to the demo endpoints with the admin session', async () => {
-    const fetcher = vi.fn().mockImplementation(async () => json({ ok: true }))
-    const client = new CabinSentinelClient({ baseUrl: 'https://example.test', fetch: fetcher, getAccessToken: async () => 'admin-token' })
-    await client.v1AdminDemoStatus()
-    await client.v1AdminDemoRun('VF8-DEMO-01', 'CRITICAL')
-    await client.v1AdminDemoReset()
-    await client.v1AdminDemoNotifyTest()
-    const calls = fetcher.mock.calls as Array<[string, RequestInit]>
-    expect(calls.map(([url, init]) => `${init.method ?? 'GET'} ${new URL(url).pathname}`)).toEqual([
-      'GET /api/v1/admin/demo/status', 'POST /api/v1/admin/demo/run', 'POST /api/v1/admin/demo/reset', 'POST /api/v1/admin/demo/notify-test',
-    ])
-    expect(JSON.parse(String(calls[1]![1].body))).toEqual({ vehicle_id: 'VF8-DEMO-01', scenario: 'CRITICAL' })
-    expect(new Headers(calls[0]![1].headers).get('Authorization')).toBe('Bearer admin-token')
-  })
-
-  it('does not retry the status probe, so a disabled studio (404) is reported at once', async () => {
-    const fetcher = vi.fn().mockImplementation(async () => json({ detail: 'Demo studio is disabled' }, 404))
-    const client = new CabinSentinelClient({ baseUrl: 'https://example.test', fetch: fetcher })
-    await expect(client.v1AdminDemoStatus()).rejects.toMatchObject({ status: 404 })
-    expect(fetcher).toHaveBeenCalledTimes(1)
-  })
-
-  it('sends device calls with the device token only: no user bearer, no cookies', async () => {
-    const fetcher = vi.fn().mockImplementation(async () => json({ commands: [] }))
-    const getAccessToken = vi.fn().mockResolvedValue('user-token')
-    const client = new CabinSentinelClient({ baseUrl: 'https://example.test', fetch: fetcher, getAccessToken, credentials: 'include' })
-    await client.v1DeviceHeartbeat('dev-token', { firmware: 'virtual-web-1.0', battery_pct: 90, rssi_dbm: -60, status: 'OK' })
-    await client.v1DeviceIngest('dev-token', 'VIRT-1', 'sensors', { sequence: 1 })
-    await client.v1DeviceCommands('dev-token')
-    await client.v1DeviceAck('dev-token', 'c-1', true, 'done')
-    const calls = fetcher.mock.calls as Array<[string, RequestInit]>
-    expect(calls.map(([url]) => new URL(url).pathname)).toEqual([
-      '/api/v1/device/heartbeat', '/api/v1/vehicles/VIRT-1/sensors', '/api/v1/device/commands', '/api/v1/device/commands/c-1/ack',
-    ])
-    for (const [, init] of calls) {
-      expect(new Headers(init.headers).get('Authorization')).toBe('Bearer dev-token')
-      expect(init.credentials).toBe('omit')
-    }
-    expect(getAccessToken).not.toHaveBeenCalled()
-  })
-
-  it('pairs without any Authorization header', async () => {
-    const fetcher = vi.fn().mockImplementation(async () => json({ device_id: 'd', vehicle_id: 'VIRT-1', device_token: 't' }, 201))
-    const client = new CabinSentinelClient({ baseUrl: 'https://example.test', fetch: fetcher, getAccessToken: async () => 'user-token' })
-    const paired = await client.v1DevicePair('ABCD1234', 'virtual-web-x', 'virtual-web-1.0')
-    const [url, init] = fetcher.mock.calls[0] as [string, RequestInit]
-    expect(new URL(url).pathname).toBe('/api/v1/devices/pair')
-    expect(new Headers(init.headers).has('Authorization')).toBe(false)
-    expect(JSON.parse(String(init.body))).toEqual({ pairing_code: 'ABCD1234', serial: 'virtual-web-x', firmware: 'virtual-web-1.0' })
-    expect(paired.device_token).toBe('t')
-  })
-})
-
 describe('revision updates', () => {
   const event = (revision: number) => ({ id: String(revision), type: 'incident.updated' as const, revision, occurredAt: '', data: { revision } })
   it('never replaces newer cached data', () => {

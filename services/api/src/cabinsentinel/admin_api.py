@@ -485,8 +485,7 @@ def system_status(request: Request, grant: Grant = Depends(staff), store: Platfo
             "env": get_settings().app_env, "commands_enabled": get_settings().commands_enabled,
             "storage": capabilities.storage(get_settings().cabinsentinel_db_path),
             "models": {"vision": caps["vision_model"], "privacy": caps["privacy_model"], "age": caps["age_classifier"]},
-            "notifications": {**notify.channels(), "recent": notify.recent()[:5]},
-            "demo_studio": get_settings().demo_studio}
+            "notifications": {**notify.channels(), "recent": notify.recent()[:5]}}
 
 
 @router.get("/admin/system/vision")

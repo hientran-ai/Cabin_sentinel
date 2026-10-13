@@ -57,8 +57,7 @@ class Settings(BaseSettings):
     evidence_max_bytes: int = Field(default=2 * 1024 * 1024, ge=1)
     agent_api_enabled: bool | None = None  # None: available outside production, disabled in production
 
-    # Demo studio (admin-triggered, always labelled SIMULATED) and real notification channels
-    demo_studio: bool = False
+    # Real notification channels
     docs_enabled: bool | None = None  # None: API docs only outside production
     # Both channels are optional and off by default. Messages carry no name, plate or address (see notify.py).
     ntfy_server: str = "https://ntfy.sh"

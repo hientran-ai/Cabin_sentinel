@@ -1,7 +1,7 @@
 """Alert card: a picture of a decision, drawn from data only, sent with Telegram alerts.
 
-It shows the risk level, the vehicle code, the rule that fired, the cabin temperature and, when the camera simulator is
-the vehicle's camera, the state of every calibrated seat. No pixel comes from a camera, so the card can go to a foreign
+It shows the risk level, the vehicle code, the rule that fired, the cabin temperature and, when known, the state of
+every seat. No pixel comes from a camera, so the card can go to a foreign
 messaging service under the same rule as the text alert (notify.py): no names, plates, places or images.
 """
 
@@ -76,37 +76,3 @@ def render(vehicle_id: str, state: dict, seats: dict[str, dict] | None = None, *
     img.save(out, "PNG", optimize=True)
     return out.getvalue()
 
-
-def blurred_frame(bgr, detections: list[dict], zones: list, seats: dict[str, dict]) -> bytes:
-    """Opt-in alert photo from the camera simulator: every person box AND every seat that is not verified empty is
-    pixelated, so a child the detector missed (the case the empty-cabin reference catches) is hidden too. 640 px JPEG."""
-    import cv2
-
-    h, w = bgr.shape[:2]
-    scale = min(1.0, 640 / w)
-    img = cv2.resize(bgr, (round(w * scale), round(h * scale)), interpolation=cv2.INTER_AREA) if scale < 1 else bgr.copy()
-    ih, iw = img.shape[:2]
-
-    def pixelate(x1, y1, x2, y2):
-        x1, y1, x2, y2 = max(0, int(x1)), max(0, int(y1)), min(iw, int(x2)), min(ih, int(y2))
-        if x2 - x1 < 2 or y2 - y1 < 2:
-            return
-        region = img[y1:y2, x1:x2]
-        bw, bh = max(1, (x2 - x1) // 14), max(1, (y2 - y1) // 14)
-        img[y1:y2, x1:x2] = cv2.resize(cv2.resize(region, (bw, bh), interpolation=cv2.INTER_AREA), (x2 - x1, y2 - y1),
-                                       interpolation=cv2.INTER_NEAREST)
-
-    for z in zones:
-        if z.kind == "seat" and (seats.get(z.name) or {}).get("state") != "EMPTY_VERIFIED":
-            pixelate(z.box[0] * iw, z.box[1] * ih, z.box[2] * iw, z.box[3] * ih)
-    for det in detections:
-        if det.get("class") == "person" and det.get("bbox"):
-            b = [v * scale for v in det["bbox"]]
-            pad_x, pad_y = (b[2] - b[0]) * 0.1, (b[3] - b[1]) * 0.1
-            pixelate(b[0] - pad_x, b[1] - pad_y, b[2] + pad_x, b[3] + pad_y)
-            cv2.rectangle(img, (int(b[0]), int(b[1])), (int(b[2]), int(b[3])), (77, 77, 255), 2)
-    cv2.rectangle(img, (0, ih - 22), (iw, ih), (0, 0, 0), -1)
-    cv2.putText(img, "CabinSentinel SIMULATED - people and unverified seats pixelated", (8, ih - 7),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1, cv2.LINE_AA)
-    ok, buf = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 72])
-    return buf.tobytes() if ok else b""
