@@ -68,6 +68,7 @@
   background:radial-gradient(circle at 8% 8%,rgba(245,197,66,.1),transparent 28%),linear-gradient(145deg,#07090c,#0c1016 58%,#080a0d);
   color:var(--auth-text);color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
+.auth-page,.auth-page *{box-sizing:border-box}
 .auth-card,.auth-visual{border-color:var(--auth-line);border-radius:clamp(22px,3vw,32px);padding:clamp(28px,5vw,68px)}
 .auth-card{background:rgba(15,18,23,.97);box-shadow:0 28px 80px rgba(0,0,0,.38)}
 .auth-brand{display:grid;grid-template-columns:46px minmax(0,1fr) auto;align-items:center;gap:12px}
@@ -95,8 +96,8 @@
 .auth-visual:before{border-color:rgba(245,197,66,.18);box-shadow:0 0 0 58px rgba(245,197,66,.035),0 0 0 116px rgba(245,197,66,.018)}
 .auth-visual>span,.auth-visual b{color:var(--auth-yellow)}.auth-visual small{color:#b8bdc7}
 .auth-loading,.auth-message{background:#080a0d;color:#a7adb8;color-scheme:dark}.auth-loading span{background:#f5c542}.auth-message h1{color:#fff}.auth-message a{color:#f5c542}
-@media(max-width:920px){.auth-page{grid-template-columns:1fr!important}.auth-card{min-height:calc(100vh - 28px)}.auth-visual{display:none}}
-@media(max-width:560px){.auth-page{width:100%!important;max-width:100%!important;padding:0!important;overflow-x:hidden}.auth-card{width:100%;max-width:100%;min-width:0;min-height:100vh;padding:24px 18px;border:0;border-radius:0;overflow:hidden}.auth-card>*{width:100%;max-width:100%;min-width:0}.auth-brand{grid-template-columns:42px minmax(0,1fr) auto;margin-bottom:30px}.auth-brand>span{width:42px;height:42px}.auth-brand small{display:none}.auth-language{width:auto;min-height:34px;padding:0 10px}.auth-copy{overflow:hidden}.auth-copy p{overflow-wrap:anywhere}.auth-role-picker,.auth-role-picker>div{width:100%;max-width:100%;min-width:0}.auth-role-picker>div{grid-template-columns:repeat(2,minmax(0,1fr))!important}.auth-role-picker button{width:100%;max-width:100%;min-width:0;min-height:96px;padding:10px 6px;overflow:hidden}.auth-role-picker button>span:nth-child(2){width:100%;min-width:0}.auth-role-picker button strong,.auth-role-picker button small{max-width:100%;overflow:hidden;text-overflow:ellipsis}.auth-role-picker button small{font-size:.58rem}.auth-demo-hint{overflow-wrap:anywhere}}
+@media(max-width:920px){.auth-page{grid-template-columns:minmax(0,1fr)!important}.auth-card{min-height:calc(100vh - 28px);min-width:0}.auth-visual{display:none}}
+@media(max-width:560px){.auth-page{width:100%!important;max-width:100%!important;padding:0!important;overflow-x:hidden}.auth-card{width:auto!important;max-width:none!important;min-width:0;min-height:100vh;padding:24px 18px;border:0;border-radius:0;overflow:hidden}.auth-card>*{width:100%;max-width:100%;min-width:0}.auth-brand{grid-template-columns:42px minmax(0,1fr) auto;margin-bottom:30px}.auth-brand>span{width:42px;height:42px}.auth-brand small{display:none}.auth-language{width:auto;min-height:34px;padding:0 10px}.auth-copy{overflow:hidden}.auth-copy p{overflow-wrap:anywhere}.auth-role-picker,.auth-role-picker>div{width:100%;max-width:100%;min-width:0}.auth-role-picker>div{grid-template-columns:repeat(2,minmax(0,1fr))!important}.auth-role-picker button{width:100%;max-width:100%;min-width:0;min-height:96px;padding:10px 6px;overflow:hidden}.auth-role-picker button>span:nth-child(2){width:100%;min-width:0}.auth-role-picker button strong,.auth-role-picker button small{max-width:100%;overflow:hidden;text-overflow:ellipsis}.auth-role-picker button small{font-size:.58rem}.auth-demo-hint{overflow-wrap:anywhere}}
 @media(prefers-reduced-motion:reduce){.auth-page *,.auth-loading *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
 /* "User" choice: hand off to the Cabin Noir mobile web (phone number sign-in). Inherits colours so it reads on light and dark themes. */
@@ -141,3 +142,32 @@
 .auth-visual-signal{position:absolute!important;right:2%;bottom:9%;min-width:190px;display:grid!important;grid-template-columns:10px 1fr!important;gap:4px 9px!important;padding:14px 16px!important;border:1px solid rgba(255,255,255,.13)!important;border-radius:16px!important;background:rgba(28,28,30,.8)!important;box-shadow:0 18px 48px rgba(0,0,0,.38);backdrop-filter:blur(24px)!important}.auth-visual-signal i{grid-row:1/3;align-self:center;width:9px;height:9px;border-radius:50%;background:#30d158;box-shadow:0 0 0 5px rgba(48,209,88,.12)}.auth-visual-signal span{color:#aeb4bf;font-size:.58rem}.auth-visual-signal b{color:#fff!important;font-size:1rem}
 .auth-visual>div:not(.auth-visual-art){z-index:3;padding:14px 0;background:linear-gradient(90deg,rgba(9,11,15,.88),rgba(9,11,15,.34));border-top-color:rgba(255,255,255,.12)}
 @media(max-height:780px) and (min-width:921px){.auth-brand{margin-bottom:24px}.auth-copy h1{font-size:2.5rem}.auth-copy p{line-height:1.5}.auth-role-picker{margin-top:16px}.auth-role-picker button{min-height:68px}.auth-visual>div:not(.auth-visual-art){padding:10px 0}.auth-visual h2{font-size:3rem}.auth-visual-art{inset:14% 4% 32% 16%}}
+
+/* Operations showroom login: VF 9 presentation on the left, focused access panel on the right. */
+@media(min-width:921px){
+  .auth-page.auth-page-showroom{grid-template-columns:minmax(340px,1fr) minmax(620px,2fr)}
+  .auth-page-showroom .auth-visual{order:1;border-right:0!important;border-radius:34px 0 0 34px!important;padding:clamp(30px,3.4vw,52px)!important}
+  .auth-page-showroom .auth-card{order:2;align-items:center;border-right:1px solid var(--auth-line)!important;border-left:0!important;border-radius:0 34px 34px 0!important}
+  .auth-page-showroom .auth-card:before{left:auto;right:0}
+  .auth-page-showroom .auth-card>*{width:min(100%,700px)}
+}
+.auth-showroom{justify-content:space-between!important;background:radial-gradient(circle at 72% 48%,rgba(245,197,66,.19),transparent 30%),linear-gradient(145deg,#15191f,#07090c 72%)!important}
+.auth-showroom:before{width:300px;height:300px;right:-118px;top:18%;border-color:rgba(245,197,66,.13);box-shadow:0 0 0 44px rgba(245,197,66,.025),0 0 0 88px rgba(245,197,66,.012)}
+.auth-showroom:after{background:linear-gradient(118deg,transparent 0 48%,rgba(255,255,255,.045) 48.2% 48.45%,transparent 48.7%),linear-gradient(0deg,rgba(0,0,0,.36),transparent 38%)!important}
+.auth-showroom-heading,.auth-showroom-stage,.auth-showroom-meta{border:0!important;background:none!important;backdrop-filter:none!important}
+.auth-showroom-heading{position:relative;z-index:3;display:block!important;grid-template-columns:none!important;margin-top:54px;padding:0!important}
+.auth-showroom-heading small{color:var(--auth-yellow)!important;font-size:.58rem;letter-spacing:.16em;font-weight:850}
+.auth-showroom .auth-showroom-heading h2{max-width:13ch;margin:10px 0 0;font-size:clamp(1.55rem,2.2vw,2.45rem);line-height:1.08;letter-spacing:-.035em}
+.auth-showroom-stage{position:absolute!important;z-index:2!important;inset:19% -1px 18% 0;display:block!important;padding:0!important;overflow:hidden;pointer-events:none}
+.auth-showroom-stage:after{content:"";position:absolute;left:4%;right:2%;bottom:10%;height:15%;border-radius:50%;background:rgba(0,0,0,.58);filter:blur(22px)}
+.auth-showroom-stage img{position:absolute;z-index:2;width:152%;max-width:none;left:-39%;bottom:8%;filter:drop-shadow(0 28px 34px rgba(0,0,0,.56));transform:translateZ(0)}
+.auth-showroom-halo{position:absolute;width:80%;aspect-ratio:1;right:-20%;top:13%;border:1px solid rgba(245,197,66,.18);border-radius:50%;box-shadow:0 0 70px rgba(245,197,66,.08),inset 0 0 70px rgba(245,197,66,.035)}
+.auth-showroom-meta{position:relative;z-index:4;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;padding:14px 0 0!important;border-top:1px solid rgba(255,255,255,.13)!important}
+.auth-showroom-meta p{display:grid;margin:0;gap:3px}
+.auth-showroom-meta b{font-size:.74rem;letter-spacing:.05em}
+.auth-showroom-meta small{font-size:.52rem;line-height:1.35;color:#9299a5!important}
+@media(max-height:780px) and (min-width:921px){
+  .auth-showroom-heading{margin-top:40px}
+  .auth-showroom .auth-showroom-heading h2{font-size:1.8rem}
+  .auth-showroom-stage{inset:18% -1px 15% 0}
+}
