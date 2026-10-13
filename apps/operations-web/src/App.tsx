@@ -99,17 +99,17 @@ function AdminShell() {
     </aside>
     {open && <button className="scrim" aria-label="Close navigation" onClick={() => setOpen(false)}/>}
     <section className="stage">
-      <header className="topbar"><button className="menu-button" onClick={() => setOpen(!open)} aria-label={open ? 'Close navigation' : 'Open navigation'}><Icon name={open ? 'close' : 'menu'}/></button><div className="breadcrumb"><span>{isAdmin ? t('admin') : t('operations')}</span><Icon name="chevron"/><strong>{current}</strong></div><div className="top-actions"><ServiceState>{t('live')}</ServiceState><button className="locale-switch" onClick={() => setLocale(locale === 'vi' ? 'en' : 'vi')} aria-label={locale === 'vi' ? 'Chuyển sang tiếng Anh' : 'Switch to Vietnamese'}><strong>{locale.toUpperCase()}</strong><span>/ {locale === 'vi' ? 'EN' : 'VI'}</span></button><OperationsUserMenu /></div></header>
+      <header className="topbar"><button className="menu-button" onClick={() => setOpen(!open)} aria-label={open ? 'Close navigation' : 'Open navigation'}><Icon name={open ? 'close' : 'menu'}/></button><div className="breadcrumb"><span>{isAdmin ? t('admin') : t('operations')}</span><Icon name="chevron"/><strong>{current}</strong></div><nav className="top-module-nav" aria-label={t('mainNavigation')}>{primaryItems.map(item => <NavLink className={primaryActive(item.paths) ? 'active' : undefined} end={item.to === '/admin'} key={item.labelKey} to={item.to}><Icon name={item.icon}/><span>{t(item.labelKey)}</span></NavLink>)}</nav><div className="top-actions"><ServiceState>{t('live')}</ServiceState><button className="locale-switch" onClick={() => setLocale(locale === 'vi' ? 'en' : 'vi')} aria-label={locale === 'vi' ? 'Chuyển sang tiếng Anh' : 'Switch to Vietnamese'}><strong>{locale.toUpperCase()}</strong><span>/ {locale === 'vi' ? 'EN' : 'VI'}</span></button><OperationsUserMenu /></div></header>
       <main>{demoMode && <section className="demo-mode-banner" role="status"><div><strong>{locale === 'vi' ? 'DỮ LIỆU MÔ PHỎNG' : 'SIMULATED DATA'}</strong><span>{locale === 'vi' ? 'Mọi số liệu và thao tác bên dưới chỉ dùng để minh họa, không gửi đến backend thật.' : 'All data and actions below are simulated and are never sent to the live backend.'}</span></div><button onClick={stopAdminDemo}>{locale === 'vi' ? 'Thoát demo' : 'Exit demo'}</button></section>}
         {activeSection && activeSection.items.length > 1 && <nav className="section-tabs" aria-label={t(activeSection.labelKey)}><div><span>{t(activeSection.labelKey)}</span>{activeSection.items.map(item => <NavLink key={item.to} to={item.to}><Icon name={item.icon}/>{t(item.labelKey)}</NavLink>)}</div></nav>}
-        <Routes>
+        <div className="route-view" key={location.pathname}><Routes>
         <Route path="/admin" element={<AdminOverview/>}/>
         <Route path="/admin/evaluations" element={<EvaluationsWorkbench/>}/>
         <Route path="/admin/evaluations/:revision" element={<Navigate to="/admin/evaluations" replace/>}/>
         {(['incidents','commands','vehicles','devices','audit','system'] as const).map(name => <Route key={name} path={`/admin/${name}`} element={<PlatformPage name={name}/>}/>)}
         {(['tenants','users','models','rules'] as const).map(name => <Route key={name} path={`/admin/${name}`} element={<AdminRoute><PlatformPage name={name}/></AdminRoute>}/>)}
         <Route path="*" element={<Navigate to={isAdmin ? '/admin' : '/admin/incidents'} replace/>}/>
-      </Routes></main>
+      </Routes></div></main>
       <footer><span>CabinSentinel Operations · {locale === 'vi' ? 'Backend quyết định cuối cùng' : 'Backend-authoritative'}</span><span><i/> {locale === 'vi' ? 'Giao diện điều khiển V1' : 'Control plane UI v1'}</span></footer>
       <nav className="mobile-bottom-nav" aria-label="Mobile operations navigation">
         {primaryItems.map(item => <NavLink className={primaryActive(item.paths) ? 'active' : undefined} end={item.to === '/admin'} key={item.labelKey} to={item.to}><Icon name={item.icon}/><span>{t(item.labelKey)}</span></NavLink>)}

@@ -126,3 +126,49 @@ html[lang="vi"] .sidebar nav{font-size:.96em}.sidebar nav{min-height:0;flex:1;pa
   .section-tabs a{min-height:43px;border-radius:999px}
   .section-tabs a.active{box-shadow:0 9px 24px rgba(244,194,13,.2)}
 }
+
+/* Immersive floating control center, inspired by a physical glass dashboard. */
+.top-module-nav{display:none}
+.route-view{min-width:0;animation:cs-route-in .42s cubic-bezier(.22,.8,.24,1) both}
+@keyframes cs-route-in{from{opacity:0;transform:translateY(12px) scale(.992);filter:blur(5px)}to{opacity:1;transform:none;filter:none}}
+@keyframes cs-live-pulse{0%,100%{box-shadow:0 0 0 0 rgba(48,209,88,.3)}50%{box-shadow:0 0 0 7px rgba(48,209,88,0)}}
+@keyframes cs-scan{0%{transform:translateY(-22px);opacity:0}20%,75%{opacity:1}100%{transform:translateY(32px);opacity:0}}
+@media(min-width:821px){
+  body{background-color:#171713;background-image:linear-gradient(rgba(8,8,7,.28),rgba(8,8,8,.52)),url('/admin/images/admin-automotive-lab-bg.png');background-size:cover;background-position:center;background-attachment:fixed}
+  body:before{content:"";position:fixed;z-index:0;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 48%,transparent 15%,rgba(0,0,0,.24) 72%),linear-gradient(90deg,rgba(0,0,0,.2),transparent 22% 78%,rgba(0,0,0,.18))}
+  #root{position:relative;z-index:1;background:transparent}
+  .app-shell{width:min(1390px,100%);min-height:100vh;margin:0 auto;padding:104px 28px 34px 112px;display:block;background:transparent}
+  .sidebar{position:fixed;left:max(22px,calc(50vw - 690px));top:50%;width:70px;height:520px;max-height:calc(100vh - 36px);margin:0;padding:12px 8px;transform:translateY(-50%);border-color:rgba(255,255,255,.2);border-radius:32px;background:linear-gradient(160deg,rgba(70,67,63,.74),rgba(28,28,28,.8));box-shadow:0 28px 80px rgba(0,0,0,.5),inset 0 1px rgba(255,255,255,.11);backdrop-filter:blur(34px) saturate(145%)}
+  .brand{height:64px}.primary-nav{gap:7px}.primary-nav a{width:50px;min-height:50px;height:50px;flex-basis:50px;border-radius:17px}.sidebar-foot{min-height:58px;padding-top:10px}
+  .stage{position:relative;width:100%;min-height:calc(100vh - 138px);overflow:visible;border:1px solid rgba(255,255,255,.2);border-radius:34px;background:linear-gradient(145deg,rgba(70,68,64,.76),rgba(35,34,33,.79));box-shadow:0 34px 100px rgba(0,0,0,.48),0 0 0 10px rgba(30,29,28,.74),inset 0 1px rgba(255,255,255,.1);backdrop-filter:blur(34px) saturate(132%);animation:cs-shell-in .55s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes cs-shell-in{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+  .topbar{position:absolute;z-index:60;top:-77px;left:50%;width:min(940px,calc(100% - 100px));height:56px;padding:5px 7px 5px 9px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;transform:translateX(-50%);border:1px solid rgba(255,255,255,.2);border-radius:999px;background:rgba(67,65,61,.78);box-shadow:0 18px 46px rgba(0,0,0,.33),inset 0 1px rgba(255,255,255,.12);backdrop-filter:blur(30px) saturate(150%)}
+  .topbar .menu-button,.topbar .breadcrumb{display:none}
+  .top-module-nav{min-width:0;display:flex;align-items:center;gap:4px;overflow-x:auto;scrollbar-width:none}.top-module-nav::-webkit-scrollbar{display:none}
+  .top-module-nav a{min-height:44px;padding:0 14px;display:inline-flex;align-items:center;gap:8px;border:1px solid transparent;border-radius:999px;color:rgba(255,255,255,.62);text-decoration:none;font-size:.68rem;font-weight:760;white-space:nowrap}
+  .top-module-nav a svg{width:15px;height:15px}.top-module-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+  .top-module-nav a.active{color:#201b0c;background:linear-gradient(145deg,#fff1a4,#f4c20d);border-color:rgba(255,255,255,.4);box-shadow:0 8px 22px rgba(0,0,0,.2)}
+  .top-actions{gap:5px}.top-actions>.service-state{display:none}.top-actions>.locale-switch{min-width:58px;height:44px;border-radius:999px;background:rgba(20,20,20,.26)}.top-actions>.locale-switch span{display:none}
+  .operations-user-menu>div,.operations-user-menu>a{display:none!important}.operations-user-menu>span{width:40px;height:40px;flex-basis:40px;border-radius:50%}.operations-user-menu button{width:40px;min-width:40px;height:40px;padding:0!important;border-radius:50%;font-size:0}.operations-user-menu button:after{content:"↗";font-size:.9rem;font-weight:900}
+  main{width:100%;max-width:none;min-height:calc(100vh - 205px);padding:24px;overflow:hidden}
+  footer{height:42px;padding:0 24px;background:rgba(10,10,10,.14);border-radius:0 0 34px 34px}
+  .demo-mode-banner{margin-bottom:14px;border-radius:18px;background:rgba(45,37,7,.62);backdrop-filter:blur(16px)}
+  .section-tabs{position:relative;top:auto;margin:0 0 16px}.section-tabs>div{background:rgba(30,29,28,.64)}
+  .overview-command-center{display:grid;grid-template-columns:minmax(0,.92fr) minmax(420px,1.08fr);grid-template-areas:"hero metrics" "dashboard dashboard";gap:12px}
+  .overview-command-center>.overview-hero{grid-area:hero;min-height:330px;margin:0;padding:26px;display:block;overflow:hidden;border-radius:24px;background:linear-gradient(180deg,rgba(18,18,18,.14),rgba(12,12,12,.68)),radial-gradient(circle at 82% 30%,rgba(244,194,13,.14),transparent 33%);box-shadow:inset 0 1px rgba(255,255,255,.07)}
+  .overview-command-center>.overview-hero .overview-hero-copy{position:relative;z-index:4;width:60%}.overview-command-center>.overview-hero h1{font-size:clamp(1.75rem,2.7vw,2.75rem)}.overview-command-center>.overview-hero-copy>p:last-of-type{max-width:38ch;font-size:.76rem}
+  .overview-command-center .overview-vehicle{position:absolute;z-index:2;right:-10%;bottom:-3%;width:68%;height:62%;opacity:.9}.overview-command-center .overview-vehicle img{max-height:220px}
+  .overview-command-center .vehicle-scan-line{animation:cs-scan 3.6s ease-in-out infinite}
+  .overview-command-center .hero-refresh{top:18px;right:18px;width:42px;min-width:42px;padding:0;border-radius:50%;font-size:0}.overview-command-center .hero-refresh:after{content:"↻";font-size:1rem}
+  .overview-command-center>.metric-grid{grid-area:metrics;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .overview-command-center .metric-card{min-height:159px;padding:20px;border-radius:24px;background:linear-gradient(145deg,rgba(85,82,78,.68),rgba(39,38,37,.74));box-shadow:inset 0 1px rgba(255,255,255,.08);backdrop-filter:blur(22px)}
+  .overview-command-center .metric-card:nth-child(1){background:radial-gradient(circle at 85% 18%,rgba(255,91,82,.27),transparent 42%),linear-gradient(145deg,rgba(87,69,67,.72),rgba(38,36,35,.76))}.overview-command-center .metric-card:nth-child(2){background:radial-gradient(circle at 85% 18%,rgba(255,180,65,.3),transparent 42%),linear-gradient(145deg,rgba(83,74,59,.74),rgba(38,36,34,.76))}.overview-command-center .metric-card:nth-child(3){background:radial-gradient(circle at 85% 18%,rgba(115,164,255,.24),transparent 42%),linear-gradient(145deg,rgba(57,67,80,.74),rgba(35,36,38,.78))}.overview-command-center .metric-card:nth-child(4){background:radial-gradient(circle at 85% 18%,rgba(244,194,13,.27),transparent 42%),linear-gradient(145deg,rgba(78,72,50,.74),rgba(38,37,34,.78))}
+  .overview-command-center .metric-card strong{font-size:2.35rem}.overview-command-center .metric-card:hover,.overview-command-center .surface:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.28);box-shadow:0 18px 42px rgba(0,0,0,.22),inset 0 1px rgba(255,255,255,.1)}
+  .overview-command-center>.dashboard-grid{grid-area:dashboard;grid-template-columns:minmax(0,1.2fr) minmax(360px,.8fr);gap:12px}.overview-command-center .stream-card,.overview-command-center .health-card,.overview-command-center .scope-card{background:linear-gradient(145deg,rgba(65,63,61,.64),rgba(32,31,31,.72));border-color:rgba(255,255,255,.14);backdrop-filter:blur(24px)}
+  .overview-command-center .right-rail{gap:12px}.overview-command-center .scope-card{background:radial-gradient(circle at 95% 12%,rgba(244,194,13,.18),transparent 42%),linear-gradient(145deg,rgba(67,64,57,.7),rgba(35,34,32,.74))}
+  .surface,.metric-card,.record-card,.role-card,.mini-metrics article{transition:transform .28s cubic-bezier(.2,.8,.2,1),box-shadow .28s ease,border-color .28s ease,background-color .28s ease}
+  .service-state i,.hero-live i{animation:cs-live-pulse 2s ease-in-out infinite}
+}
+@media(max-width:1100px) and (min-width:821px){.app-shell{padding-left:104px;padding-right:20px}.overview-command-center{grid-template-columns:1fr;grid-template-areas:"hero" "metrics" "dashboard"}.overview-command-center>.overview-hero{min-height:300px}.top-module-nav a{padding-inline:11px}.top-module-nav a span{display:none}.topbar{width:min(650px,calc(100% - 60px))}}
+@media(max-width:820px){.route-view{animation-duration:.28s}}
+@media(prefers-reduced-motion:reduce){.route-view,.stage,.vehicle-scan-line,.service-state i,.hero-live i{animation:none!important}.surface,.metric-card,.record-card,.role-card{transition:none!important}}
