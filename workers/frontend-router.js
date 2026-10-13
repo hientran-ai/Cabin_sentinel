@@ -73,6 +73,8 @@ export default {
     if (pathname === '/admin' || pathname.startsWith('/admin/')) {
       return env.ASSETS.fetch(adminAssetRequest(request, pathname))
     }
-    return env.ASSETS.fetch(request)
+    // The owner web application was retired in favor of Cabin Noir. Any
+    // non-admin frontend route now belongs to the family/mobile product.
+    return mobileAppRedirect(env) || unifiedLoginRedirect(request)
   },
 }

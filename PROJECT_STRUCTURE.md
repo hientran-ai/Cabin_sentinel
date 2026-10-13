@@ -9,9 +9,8 @@ Repository này được tổ chức theo mô hình monorepo: sản phẩm có t
 ```text
 .
 ├── apps/                    # Frontend applications / Các ứng dụng frontend
-│   ├── operations-web/      # Admin & operations portal
-│   ├── owner-web/           # Owner portal
-│   └── mobile/              # Mobile application
+│   └── operations-web/      # Admin & operations portal
+├── cabin-noir/              # Owner/caregiver web, iOS and mobile backend
 ├── services/                # Backend services / Các dịch vụ backend
 │   └── api/
 │       └── src/             # FastAPI source code

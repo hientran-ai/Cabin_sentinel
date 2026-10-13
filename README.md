@@ -4,9 +4,12 @@
 
 Pinned YuNet is bundled; YOLO weights have checksum-verified setup; latest BaoTam offline inference source is included. The trained age-router checkpoint is still missing. [Artifact inventory, setup and limitations](docs/BAOTAM_MODEL_PACKAGE.md).
 
-## BUILD_PHASE frontend integration (2026-10-02)
+## Product applications
 
-Dashboard and Owner Web now use the verified V1 demo session API. Run instructions, source/deployment mismatches, screen/API matrix and test evidence: [integration report](docs/BUILD_PHASE_INTEGRATION_2026-10-02.md), [Owner README](apps/owner-web/README.md), [dashboard README](frontend/README.md). Backend source bundled upstream is historical; the audited live snapshot is recorded in the report. Operations/mobile runtime integration remains unverified.
+`apps/operations-web` is the Admin and Operations portal. Owner, caregiver,
+mobile web and iOS experiences are provided by `cabin-noir`. The retired React
+Owner Web and Expo scaffold have been removed so Cabin Noir is the only
+user-facing product.
 
 # CabinSentinel — Backend & Sensor Sprint 0
 
@@ -171,8 +174,7 @@ Swagger UI ở <http://localhost:8000/docs>. Hoặc dùng `make run`, `make test
 ```text
 apps/                 Frontend applications
   operations-web/     Admin & Operations portal
-  owner-web/          Owner portal
-  mobile/             Mobile application
+cabin-noir/            Owner/caregiver web, iOS and mobile backend
 services/
   api/src/            FastAPI backend source
 packages/             Shared frontend packages

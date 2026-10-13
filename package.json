@@ -4,23 +4,16 @@
   "version": "0.1.0",
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev:owner": "npm run dev --workspace @cabinsentinel/owner-web",
     "dev:operations": "npm run dev --workspace @cabinsentinel/operations-web",
     "build": "npm run build:web",
     "build:web": "node scripts/build-web-production.mjs",
     "deploy:web": "wrangler deploy",
     "preview:web": "wrangler dev",
-    "start:mobile": "npm run start --workspace @cabinsentinel/mobile",
-    "typecheck:mobile": "npm run typecheck --workspace @cabinsentinel/mobile",
-    "build:mobile:preview:android": "npm run eas:preview:android --workspace @cabinsentinel/mobile",
-    "build:mobile:preview:ios": "npm run eas:preview:ios --workspace @cabinsentinel/mobile",
-    "build:mobile:production:android": "npm run eas:production:android --workspace @cabinsentinel/mobile",
-    "build:mobile:production:ios": "npm run eas:production:ios --workspace @cabinsentinel/mobile",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspace @cabinsentinel/api-client --workspace @cabinsentinel/auth --workspace @cabinsentinel/domain --workspace @cabinsentinel/mobile --workspace @cabinsentinel/owner-web --workspace @cabinsentinel/operations-web && npm run test:worker",
+    "test": "npm run test --workspace @cabinsentinel/api-client --workspace @cabinsentinel/auth --workspace @cabinsentinel/domain --workspace @cabinsentinel/operations-web && npm run test:worker",
     "test:worker": "vitest run workers/frontend-router.test.js",
     "lint": "oxlint apps packages",
-    "validate:frontend": "npm run typecheck --workspace @cabinsentinel/owner-web --workspace @cabinsentinel/operations-web --workspace @cabinsentinel/auth && npm run test --workspace @cabinsentinel/auth --workspace @cabinsentinel/owner-web --workspace @cabinsentinel/operations-web && npm run test:worker && npm run build:web"
+    "validate:frontend": "npm run typecheck --workspace @cabinsentinel/operations-web --workspace @cabinsentinel/auth && npm run test --workspace @cabinsentinel/auth --workspace @cabinsentinel/operations-web && npm run test:worker && npm run build:web"
   },
   "devDependencies": { "oxlint": "^1.81.0", "wrangler": "^4.146.0" },
   "engines": { "node": ">=22.12" }

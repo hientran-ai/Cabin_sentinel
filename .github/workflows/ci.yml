@@ -21,7 +21,7 @@ jobs:
         run: npm run typecheck
       - name: Test workspace
         run: npm test
-      - name: Build web applications
+      - name: Build Admin web application
         run: npm run build
         env:
           VITE_MOBILE_APP_URL: ${{ vars.VITE_MOBILE_APP_URL }}

@@ -9,7 +9,7 @@ const productionEnv = {
   VITE_CAMERA_API_BASE_URL: process.env.VITE_CAMERA_API_BASE_URL || '',
   VITE_MOBILE_APP_URL: process.env.VITE_MOBILE_APP_URL || 'https://cabin-noir.duckdns.org/app/',
   VITE_AUTH_MODE: 'session',
-  VITE_OWNER_WEB_URL: '',
+  VITE_OWNER_WEB_URL: process.env.VITE_MOBILE_APP_URL || 'https://cabin-noir.duckdns.org/app/',
   VITE_OPERATIONS_WEB_URL: '',
 }
 
@@ -22,6 +22,5 @@ function run(args) {
   if (result.status !== 0) process.exit(result.status ?? 1)
 }
 
-run(['run', 'build', '--workspace', '@cabinsentinel/owner-web'])
 run(['run', 'build', '--workspace', '@cabinsentinel/operations-web'])
 await import('./assemble-web.mjs')

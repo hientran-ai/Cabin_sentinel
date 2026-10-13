@@ -16,7 +16,7 @@ const demoMode = adminDemoEnabled()
 const authConfig: AuthConfig = {
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8000' : window.location.origin),
   mode: demoMode || import.meta.env.VITE_AUTH_MODE === 'mock' ? 'mock' : import.meta.env.VITE_AUTH_MODE === 'session' ? 'session' : import.meta.env.VITE_AUTH_MODE === 'v1-demo' || import.meta.env.DEV ? 'v1-demo' : 'session',
-  ownerUrl: import.meta.env.VITE_OWNER_WEB_URL || `${window.location.origin}/overview`,
+  ownerUrl: import.meta.env.VITE_OWNER_WEB_URL || import.meta.env.VITE_MOBILE_APP_URL || DEFAULT_MOBILE_APP_URL,
   operationsUrl: import.meta.env.VITE_OPERATIONS_WEB_URL || `${window.location.origin}/admin`,
   mobileAppUrl: import.meta.env.VITE_MOBILE_APP_URL || DEFAULT_MOBILE_APP_URL,
 }

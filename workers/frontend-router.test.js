@@ -59,4 +59,14 @@ describe('Cloudflare frontend router', () => {
     expect(response.status).toBe(302)
     expect(response.headers.get('location')).toBe('https://cabin-noir.duckdns.org/app/')
   })
+
+  it('redirects retired owner routes to Cabin Noir', async () => {
+    const response = await router.fetch(new Request('https://frontend.example/vehicles/VF8'), {
+      MOBILE_APP_URL: 'https://cabin-noir.duckdns.org/app/',
+      ASSETS: { fetch: () => Promise.reject(new Error('assets should not be called')) },
+    })
+
+    expect(response.status).toBe(302)
+    expect(response.headers.get('location')).toBe('https://cabin-noir.duckdns.org/app/')
+  })
 })
