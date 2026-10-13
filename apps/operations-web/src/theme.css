@@ -66,3 +66,29 @@ html[lang="vi"] .sidebar nav{font-size:.96em}.sidebar nav{min-height:0;flex:1;pa
 @media(max-width:620px){.overview-hero{min-height:360px;padding:20px;border-radius:22px}.overview-hero h1{font-size:2.15rem;max-width:11ch}.overview-hero-copy{padding-right:0}.overview-hero-copy>p:last-of-type{font-size:.82rem;max-width:88%}.hero-status-row{max-width:80%;margin-top:16px}.hero-status-row>span{font-size:.58rem}.overview-vehicle{width:72%;height:42%;right:-54px;opacity:.62}.hero-refresh{top:18px;right:18px;width:44px!important;min-width:44px;padding:0;font-size:0}.hero-refresh:after{content:"↻";font-size:1.15rem}.top-actions>.locale-switch{min-width:58px;padding-inline:9px}.locale-switch span{display:none}.metric-card:hover{transform:none}.auth-copy h1{font-size:clamp(2rem,11vw,3rem);overflow-wrap:normal}.auth-card{padding:24px!important}.auth-form button{white-space:normal;line-height:1.25;padding:10px 14px}}
 @media(prefers-reduced-motion:reduce){.table-state{animation:none}.overview-hero:hover .overview-vehicle img{transform:translateY(5px)}}
 .brand-logo{width:42px;height:42px;border-radius:14px;object-fit:cover;display:block;box-shadow:0 8px 24px rgba(244,194,13,.18)}
+
+/* Reference-led admin shell: floating navigation, compact dashboard rhythm, vivid status cards. */
+@media(min-width:821px){
+  .app-shell{gap:14px;padding:14px 14px 14px 0;background:radial-gradient(circle at 74% 0,rgba(244,194,13,.07),transparent 30rem),#050506}
+  .sidebar{top:0;height:calc(100vh - 28px);margin:0 0 0 14px;border-radius:30px}
+  .stage{min-height:calc(100vh - 28px);overflow:hidden;border:1px solid var(--cs-line);border-radius:30px;background:rgba(14,14,16,.88);box-shadow:0 30px 90px rgba(0,0,0,.42)}
+  .topbar{border-radius:30px 30px 0 0}
+  main{width:100%}
+}
+.overview-hero{min-height:224px;border-radius:24px;background:linear-gradient(115deg,rgba(34,34,37,.98),rgba(24,24,26,.91) 55%,rgba(244,194,13,.11));box-shadow:0 16px 48px rgba(0,0,0,.3)}
+.overview-hero h1{font-size:clamp(2rem,3vw,3.15rem)}
+.overview-vehicle img{max-height:205px}
+.metric-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.metric-card{position:relative;isolation:isolate;min-height:148px;border-radius:22px;box-shadow:none}
+.metric-card:before{content:"";position:absolute;z-index:-1;inset:0;opacity:.75;background:radial-gradient(circle at 100% 0,rgba(255,255,255,.1),transparent 48%)}
+.metric-card:nth-child(1){background:linear-gradient(145deg,rgba(255,69,58,.18),rgba(28,28,30,.86));border-color:rgba(255,69,58,.22)}
+.metric-card:nth-child(2){background:linear-gradient(145deg,rgba(255,159,10,.18),rgba(28,28,30,.86));border-color:rgba(255,159,10,.22)}
+.metric-card:nth-child(3){background:linear-gradient(145deg,rgba(10,132,255,.16),rgba(28,28,30,.86));border-color:rgba(10,132,255,.2)}
+.metric-card:nth-child(4){background:linear-gradient(145deg,rgba(244,194,13,.18),rgba(28,28,30,.86));border-color:rgba(244,194,13,.22)}
+.metric-card:after{width:36px;background:var(--cs-accent)}
+.dashboard-grid{gap:14px}.stream-card,.health-card,.scope-card{border-radius:22px}
+.compact-resource{min-height:58px;padding:10px 12px;border:1px solid transparent}.compact-resource:hover{border-color:var(--cs-line);background:rgba(255,255,255,.045)}
+.topbar{height:70px}.sidebar nav a{min-height:40px}.workspace{padding-block:10px}.nav-group{margin-bottom:6px}
+@media(max-width:1180px){.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.stage,main{width:100%;max-width:100%;min-width:0;overflow-x:hidden}.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-card{min-width:0;min-height:136px;padding:16px}.metric-card p{overflow-wrap:anywhere}.overview-hero{max-width:100%}}
+@media(max-width:420px){.metric-grid{grid-template-columns:1fr}}

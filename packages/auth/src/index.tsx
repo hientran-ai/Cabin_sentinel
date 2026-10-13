@@ -392,7 +392,7 @@ export function LoginPage({ portal }: { portal: Portal }) {
 
   return <main className="auth-page">
     <section className="auth-card">
-      <div className="auth-brand"><img className="brand-logo" src="/cabinsentinel-logo.png" alt="CabinSentinel"/><div><strong>CabinSentinel</strong><small>{copy.brand}</small></div><button className="auth-language" type="button" onClick={() => setLocale(value => value === 'vi' ? 'en' : 'vi')} aria-label={copy.language}>{copy.language}</button></div>
+      <div className="auth-brand"><img className="brand-logo" src="cabinsentinel-logo.png" alt="CabinSentinel"/><div><strong>CabinSentinel</strong><small>{copy.brand}</small></div><button className="auth-language" type="button" onClick={() => setLocale(value => value === 'vi' ? 'en' : 'vi')} aria-label={copy.language}>{copy.language}</button></div>
       <div className="auth-copy">
         <span className="auth-eyebrow">{copy.eyebrow}</span>
         <h1>{copy.title}</h1>
@@ -428,7 +428,20 @@ export function LoginPage({ portal }: { portal: Portal }) {
       <div className="auth-trust"><span><Shield/></span><p><strong>{config.mode === 'v1-demo' ? copy.demoSafe : copy.sessionSafe}</strong><small>{config.mode === 'v1-demo' ? copy.demoSafeDetail : copy.sessionSafeDetail}</small></p></div>
     </section>
     <aside className="auth-visual">
-      <span>CabinSentinel</span><h2>{copy.hero}</h2>
+      <span>CabinSentinel</span>
+      <div className="auth-visual-art" aria-hidden="true">
+        <i className="auth-orbit auth-orbit-one"/>
+        <i className="auth-orbit auth-orbit-two"/>
+        <div className="auth-visual-console">
+          <header><span/><span/><span/><b>LIVE</b></header>
+          <div className="auth-console-grid">
+            <i/><i/><i/>
+          </div>
+          <div className="auth-console-chart"><span/><span/><span/><span/><span/><span/></div>
+        </div>
+        <div className="auth-visual-signal"><i/><span>Cabin protected</span><b>99.9%</b></div>
+      </div>
+      <h2>{copy.hero}</h2>
       <div><b>01</b><p><strong>{copy.admin}</strong><small>{copy.adminHero}</small></p></div>
       <div><b>02</b><p><strong>{copy.user}</strong><small>{copy.userHero}</small></p></div>
       <div><b>03</b><p><strong>{copy.rbac}</strong><small>{copy.rbacHero}</small></p></div>
