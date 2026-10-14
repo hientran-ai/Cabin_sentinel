@@ -15,17 +15,17 @@ import time
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.datastructures import MutableHeaders
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from . import alerts as alert_worker
-from . import cabinlog, config, db, logic, notifications, otp, push, sms, telegram, webpush
+from . import alertcard, cabinlog, config, db, logic, mute, notifications, otp, push, sms, telegram, webpush
 from . import history as hist
 from .logic import SEAT_LABEL, now
 
 DEV = config.DEV
 PRODUCTION = config.PRODUCTION
 PHONE_RE = re.compile(r"^0\d{9}$")
-DEFAULT_SETTINGS = {"purpose": "both", "notify_warning": True, "notify_info": True, "exit_reminder": True,
+DEFAULT_SETTINGS = {"mute_until": 0, "purpose": "both", "notify_warning": True, "notify_info": True, "exit_reminder": True,
                     "auto_cool": False, "demo_mode": not config.PRODUCTION, "notify_channel": "auto"}
 CHILD_SEATS = {"left": "rear_left", "mid": "rear_mid", "right": "rear_right"}
 
@@ -72,8 +72,8 @@ app.add_middleware(CORSMiddleware, allow_origins=config.CORS_ORIGINS, allow_orig
 from starlette.middleware.gzip import GZipMiddleware
 
 WEB_CSP = ("default-src 'self'; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://cdnjs.cloudflare.com; "
-           "script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
-           "connect-src 'self' https://nominatim.openstreetmap.org https://cdn.jsdelivr.net https://storage.googleapis.com https://tfhub.dev https://www.kaggle.com; "
+           "script-src 'self' https://cdnjs.cloudflare.com 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
+           "connect-src 'self' https://nominatim.openstreetmap.org; "
            "media-src 'self' blob:; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
 SEC_HEADERS = {"X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "X-Frame-Options": "DENY",
                "Permissions-Policy": "camera=(self), geolocation=(self), microphone=()", "Cross-Origin-Opener-Policy": "same-origin"}
@@ -137,7 +137,7 @@ class GuardMiddleware:
         headers = dict(scope["headers"])
         cl = headers.get(b"content-length", b"")
         size = int(cl) if cl.isdigit() else 0
-        if size > (config.MAX_PHOTO_BODY_BYTES if path == "/v1/media/photo" else config.MAX_BODY_BYTES):
+        if size > (config.MAX_PHOTO_BODY_BYTES if path in ("/v1/media/photo", "/v1/device/alert-photo") else config.MAX_BODY_BYTES):
             await self._reject(send, 413, "too_large", "Yêu cầu quá lớn.")
             return
         if path.startswith("/v1/") and path != "/v1/config":
@@ -381,6 +381,22 @@ def put_settings(body: SettingsIn, user: User = Depends(current_user)) -> dict[s
     return cur
 
 
+class MuteIn(BaseModel):
+    minutes: int = Field(mute.DEFAULT_MINUTES, ge=mute.MIN_MINUTES, le=mute.MAX_MINUTES)
+
+
+@app.post("/v1/me/mute")
+def mute_me(body: MuteIn, user: User = Depends(current_user)) -> dict[str, Any]:
+    """Silence this person's pushes for a while. It ends by itself and says so; incidents are still recorded in the app."""
+    return {"mute_until": mute.start(user.id, body.minutes)}
+
+
+@app.delete("/v1/me/mute")
+def unmute_me(user: User = Depends(current_user)) -> dict[str, Any]:
+    mute.stop(user.id)
+    return {"mute_until": 0}
+
+
 # ---------------------------------------------------------------- vehicles & membership
 
 def role_of(vehicle_id: str, user: User) -> str:
@@ -485,7 +501,7 @@ def status_json(vehicle_id: str, role: str) -> dict[str, Any]:
         # A real device that has gone quiet is offline, whatever the last message said (same rule as the device list).
         "connection": "offline" if state.get("source") in logic.REAL_SOURCES and now() - (state["last_seen"] or 0) > logic.STALE_AFTER_S else state["connection"],
         "last_seen": state["last_seen"],
-        "source": state.get("source", "sim"), "detector": state.get("detector"), "device": state.get("device"), "paused_until": state.get("paused_until") if state.get("paused_until", 0) > now() else None, "coords": state.get("coords"),
+        "source": state.get("source", "sim"), "detector": state.get("detector"), "device": state.get("device"), "paused_until": state.get("paused_until") if state.get("paused_until", 0) > now() else None, "paused_indefinite": bool(state.get("paused_indefinite")) and state.get("paused_until", 0) > now(), "coords": state.get("coords"),
         "geofence": state.get("geofence"), "in_geofence": state.get("in_geofence", False),
         "route": ({"dest": state["route"]["dest"], "progress": (state.get("coords") or {}).get("progress", 0)} if state.get("route") else None),
         "incident": logic.incident_json(inc, with_detail=True) if inc else None,
@@ -601,6 +617,43 @@ def get_incident(incident_id: str, user: User = Depends(current_user)) -> dict[s
     inc, _ = incident_for(incident_id, user)
     refresh(inc["vehicle_id"])
     return logic.incident_json(db.one("SELECT * FROM incidents WHERE id=?", incident_id), with_detail=True)
+
+
+@app.get("/v1/incidents/{incident_id}/card")
+def incident_card(incident_id: str, user: User = Depends(current_user)) -> Response:
+    """The alert card Telegram gets, drawn from data. Same picture in the app."""
+    inc, _ = incident_for(incident_id, user)
+    v = db.one("SELECT name, plate FROM vehicles WHERE id=?", inc["vehicle_id"])
+    png = alertcard.render(dict(v) if v else {}, dict(inc), logic.load_state(inc["vehicle_id"]).get("seats") or {})
+    return Response(png, media_type="image/png", headers={"Cache-Control": "no-store"})
+
+
+class AlertPhotoIn(BaseModel):
+    enabled: bool
+    consent: bool = False
+
+
+@app.get("/v1/vehicles/{vehicle_id}/alert-photo")
+def get_alert_photo(vehicle_id: str, user: User = Depends(current_user)) -> dict[str, Any]:
+    role_of(vehicle_id, user)
+    row = db.one("SELECT * FROM vehicle_prefs WHERE vehicle_id=?", vehicle_id)
+    return {"enabled": bool(row and row["alert_photo"]), "changed_by": row["changed_by"] if row else None,
+            "changed_at": row["changed_at"] if row else None}
+
+
+@app.put("/v1/vehicles/{vehicle_id}/alert-photo")
+def put_alert_photo(vehicle_id: str, body: AlertPhotoIn, user: User = Depends(current_user)) -> dict[str, Any]:
+    """Owner only. Turning it on needs explicit consent: the photos (people blurred) are also stored by Telegram."""
+    require(role_of(vehicle_id, user), ("owner",), "bật hoặc tắt ảnh kèm cảnh báo")
+    if body.enabled and not body.consent:
+        raise err(422, "consent_required", "Cần đồng ý trước khi bật gửi ảnh kèm cảnh báo.")
+    with db.tx() as conn:
+        conn.execute("INSERT INTO vehicle_prefs(vehicle_id, alert_photo, changed_by, changed_at) VALUES(?,?,?,?) "
+                     "ON CONFLICT(vehicle_id) DO UPDATE SET alert_photo=excluded.alert_photo, changed_by=excluded.changed_by, "
+                     "changed_at=excluded.changed_at", (vehicle_id, int(body.enabled), user.name, now()))
+        logic.add_event(conn, vehicle_id, None, "settings", f"{user.name} đã {'bật' if body.enabled else 'tắt'} ảnh kèm cảnh báo",
+                        "Ảnh do thiết bị trong xe làm mờ người trước khi gửi" if body.enabled else "")
+    return get_alert_photo(vehicle_id, user)
 
 
 @app.post("/v1/incidents/{incident_id}/view")
@@ -778,7 +831,7 @@ def camera(vehicle_id: str, user: User = Depends(current_user)) -> dict[str, Any
             "items": state["items"]}
 
 
-LIVE_NOTE = ("Hình trực tiếp được vẽ từ kết quả nhận diện (vị trí và nhãn). Ảnh chụp từ camera không rời thiết bị trong xe. "
+LIVE_NOTE = ("Hình trực tiếp được vẽ từ kết quả nhận diện (vị trí và nhãn), không phải video camera. "
              "Không thấy gì không có nghĩa là xe trống.")
 LIVE_EVENT_GAP_S = 300
 
@@ -1262,6 +1315,67 @@ def telemetry_stop(vehicle_id: str, user: User = Depends(current_user)) -> dict[
     return status_json(vehicle_id, role)
 
 
+# ---------------------------------------------------------------- saved pickup places
+
+MAX_PLACES = 20
+
+
+class PlaceIn(BaseModel):
+    name: str = Field(min_length=1, max_length=40)
+    address: str = Field("", max_length=160)
+    lat: float = Field(ge=-90, le=90)
+    lon: float = Field(ge=-180, le=180)
+    radius_m: int = Field(150, ge=30, le=1000)
+
+    @field_validator("name", "address")
+    @classmethod
+    def _tidy(cls, v: str) -> str:
+        return v.strip()
+
+
+def _place(row: Any) -> dict[str, Any]:
+    return {k: row[k] for k in ("id", "name", "address", "lat", "lon", "radius_m")}
+
+
+@app.get("/v1/places")
+def list_places(user: User = Depends(current_user)) -> list[dict[str, Any]]:
+    return [_place(r) for r in db.all_("SELECT * FROM places WHERE user_id=? ORDER BY created_at", user.id)]
+
+
+@app.post("/v1/places", status_code=201)
+def add_place(body: PlaceIn, user: User = Depends(current_user)) -> dict[str, Any]:
+    if not body.name:
+        raise err(422, "name_required", "Nhập tên gợi nhớ, ví dụ Nhà hoặc Trường học.")
+    if db.one("SELECT COUNT(*) AS n FROM places WHERE user_id=?", user.id)["n"] >= MAX_PLACES:
+        raise err(409, "too_many_places", f"Tối đa {MAX_PLACES} điểm đón. Xóa bớt một điểm rồi thêm lại.")
+    pid = "pl_" + secrets.token_hex(6)
+    with db.tx() as conn:
+        conn.execute("INSERT INTO places(id,user_id,name,address,lat,lon,radius_m,created_at) VALUES(?,?,?,?,?,?,?,?)",
+                     (pid, user.id, body.name, body.address, body.lat, body.lon, body.radius_m, now()))
+    return _place(db.one("SELECT * FROM places WHERE id=?", pid))
+
+
+@app.put("/v1/places/{place_id}")
+def edit_place(place_id: str, body: PlaceIn, user: User = Depends(current_user)) -> dict[str, Any]:
+    if not body.name:
+        raise err(422, "name_required", "Nhập tên gợi nhớ, ví dụ Nhà hoặc Trường học.")
+    with db.tx() as conn:
+        n = conn.execute("UPDATE places SET name=?, address=?, lat=?, lon=?, radius_m=? WHERE id=? AND user_id=?",
+                         (body.name, body.address, body.lat, body.lon, body.radius_m, place_id, user.id)).rowcount
+    if not n:
+        raise err(404, "place_not_found", "Không tìm thấy điểm đón này.")
+    return _place(db.one("SELECT * FROM places WHERE id=?", place_id))
+
+
+@app.delete("/v1/places/{place_id}")
+def delete_place(place_id: str, user: User = Depends(current_user)) -> dict[str, Any]:
+    with db.tx() as conn:
+        n = conn.execute("DELETE FROM places WHERE id=? AND user_id=?", (place_id, user.id)).rowcount
+    if not n:
+        raise err(404, "place_not_found", "Không tìm thấy điểm đón này.")
+    return {"deleted": place_id}
+
+
 class GeofenceIn(BaseModel):
     name: str = Field(min_length=1, max_length=40)
     lat: float = Field(ge=-90, le=90)
@@ -1629,8 +1743,40 @@ def device_telemetry(body: DeviceTelemetryIn, device: dict[str, Any] = Depends(c
         logic.save_state(conn, vid, state)
         hist.record_heartbeat(conn, device["id"], device["platform"], body.battery_pct, body.charging, body.thermal)
     state = logic.load_state(vid)
-    return {"ok": True, "server_time": now(), "vehicle": vehicle_row(vid),
-            "paused_until": state.get("paused_until") if state.get("paused_until", 0) > now() else None}
+    return {"ok": True, "server_time": now(), "vehicle": vehicle_row(vid), "alert_photo": hist.alert_photo_enabled(vid),
+            "paused_until": state.get("paused_until") if state.get("paused_until", 0) > now() else None,
+            "paused_indefinite": bool(state.get("paused_indefinite")) and state.get("paused_until", 0) > now()}
+
+
+ALERT_PHOTO_MAX_BYTES = 400 * 1024
+ALERT_PHOTO_MIN_GAP_S = 30
+
+
+@app.post("/v1/device/alert-photo")
+async def device_alert_photo(request: Request, device: dict[str, Any] = Depends(current_device)) -> dict[str, Any]:
+    """A frame the device sends with an alert, only when the owner turned alert photos on. The device blurs every
+    person in it before it leaves the phone and says so; a frame without that promise is refused. Kept 24 hours."""
+    vid = device["vehicle_id"]
+    if not hist.alert_photo_enabled(vid):
+        raise err(403, "alert_photo_off", "Chủ xe chưa bật gửi ảnh kèm cảnh báo.")
+    if request.headers.get("x-cabin-blurred") != "people":
+        raise err(422, "not_blurred", "Ảnh phải được làm mờ người ngay trên thiết bị trước khi gửi.")
+    data = await request.body()
+    if not data or len(data) > ALERT_PHOTO_MAX_BYTES or not data.startswith(b"\xff\xd8"):
+        raise err(422, "bad_photo", "Ảnh cảnh báo phải là JPEG, tối đa 400 KB.")
+    last = db.one("SELECT MAX(created_at) AS t FROM media WHERE vehicle_id=? AND kind='alert_photo'", vid)
+    if last and last["t"] and now() - last["t"] < ALERT_PHOTO_MIN_GAP_S:
+        raise err(429, "too_soon", "Đã có ảnh cảnh báo vừa gửi.")
+    inc = db.one("SELECT id FROM incidents WHERE vehicle_id=? AND status='open' ORDER BY created_at DESC LIMIT 1", vid)
+    pid = "img_" + secrets.token_hex(8)
+    os.makedirs(MEDIA_DIR, exist_ok=True)
+    with open(os.path.join(MEDIA_DIR, f"{vid}__{pid}.jpg"), "wb") as f:
+        f.write(data)
+    with db.tx() as conn:
+        hist.add_media(conn, pid, vid, "jpg", data, None, kind="alert_photo", incident_id=inc["id"] if inc else None)
+        logic.add_event(conn, vid, inc["id"] if inc else None, "photo", "Thiết bị gửi ảnh cảnh báo",
+                        "Người trong ảnh đã được làm mờ trên thiết bị · xóa sau 24 giờ")
+    return {"ok": True, "id": pid}
 
 
 @app.delete("/v1/device")
@@ -1666,7 +1812,14 @@ def revoke_device(vehicle_id: str, device_id: str, user: User = Depends(current_
 
 
 class PauseIn(BaseModel):
-    minutes: int = Field(ge=1, le=config.PAUSE_MAX_MIN)
+    minutes: Optional[int] = Field(None, ge=1, le=config.PAUSE_MAX_MIN)
+    until_resumed: bool = False       # stays off until the owner turns it back on; reminded every few hours
+
+    @model_validator(mode="after")
+    def _one_choice(self):
+        if self.until_resumed == (self.minutes is not None):
+            raise ValueError("Chọn số phút hoặc 'cho đến khi tôi bật lại', không chọn cả hai.")
+        return self
 
 
 @app.post("/v1/vehicles/{vehicle_id}/pause")
@@ -1678,9 +1831,14 @@ def pause_monitoring(vehicle_id: str, body: PauseIn, user: User = Depends(curren
         raise err(409, "incident_open", "Đang có sự cố mở. Xử lý sự cố trước, không thể tạm dừng giám sát.")
     with db.tx() as conn:
         state = logic.load_state(vehicle_id)
-        state["paused_until"] = now() + body.minutes * 60
+        if body.until_resumed:
+            state["paused_until"], state["paused_indefinite"] = logic.PAUSE_FOREVER, True
+            what, note = f"{user.name} tạm dừng giám sát cho đến khi bật lại", "Không tự bật lại. Camera và cảm biến vẫn gửi dữ liệu nhưng hệ thống không cảnh báo"
+        else:
+            state["paused_until"], state["paused_indefinite"] = now() + body.minutes * 60, False
+            what, note = f"{user.name} tạm dừng giám sát {body.minutes} phút", "Tự giám sát lại khi hết giờ"
         logic.save_state(conn, vehicle_id, state)
-        logic.add_event(conn, vehicle_id, None, "pause", f"{user.name} tạm dừng giám sát {body.minutes} phút", "Tự giám sát lại khi hết giờ")
+        logic.add_event(conn, vehicle_id, None, "pause", what, note)
     return status_json(vehicle_id, role)
 
 
@@ -1690,6 +1848,7 @@ def resume_monitoring(vehicle_id: str, user: User = Depends(current_user)) -> di
     require(role, ("owner", "confirm"), "bật lại giám sát")
     with db.tx() as conn:
         state = logic.load_state(vehicle_id)
+        state.pop("paused_indefinite", None)
         if state.pop("paused_until", None):
             logic.add_event(conn, vehicle_id, None, "pause", f"{user.name} bật lại giám sát", "")
         logic.save_state(conn, vehicle_id, state)

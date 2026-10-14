@@ -15,6 +15,9 @@ const W = 393, H = 852, BEZEL = 12;                       // iPhone 15 Pro scree
 
 let screenEl = null;
 
+/** Side panels next to the phone (guide on the left, live help on the right). Null when the window is too narrow or not framed. */
+export const side = { left: null, right: null };
+
 /** Where floating UI (toasts, sheets) is attached: inside the phone screen when framed, otherwise the page. */
 export const portal = () => screenEl || document.body;
 
@@ -48,8 +51,25 @@ function fit(device) {
   const vv = window.visualViewport;
   const w = vv ? vv.width : innerWidth, h = vv ? vv.height : innerHeight;
   const room = Math.min(48, h * 0.05);
-  const s = Math.min((h - 2 * room) / (H + 2 * BEZEL), (w - 2 * room) / (W + 2 * BEZEL));
-  device.style.setProperty("--s", String(Math.max(0.25, Math.min(2.5, s))));
+  const unit = W + 2 * BEZEL;
+  const fitS = Math.min((h - 2 * room) / (H + 2 * BEZEL), (w - 2 * room) / unit);
+  // Prefer showing the side panels: give them at least 230px each, as long as the phone stays at 80% of its natural size or more.
+  const widthForPanels = (w - 2 * (230 + 24 + 28)) / unit;
+  const show = widthForPanels >= 0.8;
+  const s = Math.max(0.25, Math.min(2.5, show ? Math.min(fitS, widthForPanels) : fitS));
+  device.style.setProperty("--s", String(s));
+  const dw = unit * s, pw = Math.min(360, (w - dw) / 2 - 24 - 28);
+  const stage = device.parentElement;
+  stage.style.setProperty("--dw", `${dw}px`); stage.style.setProperty("--pw", `${Math.max(0, pw)}px`);
+  stage.classList.toggle("with-panels", show);
+  // Trust what is really on screen, not the arithmetic: once the phone has its scale, measure it and keep the side panels clear
+  // of it. If there is no room (a zoomed or resized window that fit() has not caught up with), hide them instead of overlapping.
+  requestAnimationFrame(() => {
+    const r = device.getBoundingClientRect();
+    const free = Math.min(r.left, innerWidth - r.right) - 28 - 12;
+    if (!show || free < 200) { stage.classList.remove("with-panels"); return; }
+    stage.style.setProperty("--dw", `${r.width}px`); stage.style.setProperty("--pw", `${Math.min(360, free)}px`);
+  });
 }
 
 function setPref(v) { try { localStorage.setItem(KEY, v); } catch { /* ignore */ } location.reload(); }
@@ -69,7 +89,10 @@ function build() {
   device.append(screenEl);
   const off = el("button", "frame-toggle", icon("maximize"), "Xem toàn màn hình");
   off.type = "button"; off.addEventListener("click", () => setPref("0"));
-  stage.append(device, off);
+  const left = el("aside", "side-panel left"), right = el("aside", "side-panel right");
+  left.setAttribute("aria-label", "Hướng dẫn thử nhanh"); right.setAttribute("aria-label", "Hướng dẫn màn hình đang xem");
+  side.left = left; side.right = right;
+  stage.append(left, device, right, off);
   document.documentElement.classList.add("framed");
   clock(time);
   fit(device);
@@ -87,4 +110,4 @@ function offerFrame() {
   document.body.append(on);
 }
 
-if (wanted()) build(); else offerFrame();
+if (document.body.hasAttribute("data-phone-frame")) { if (wanted()) build(); else offerFrame(); }

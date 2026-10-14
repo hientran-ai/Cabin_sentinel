@@ -1,7 +1,9 @@
 """Telegram delivery (Bot API) for the web app and the mobile app, replacing ntfy when a user links a chat.
 
-Privacy: a message holds only the vehicle name, plate and what the system saw (no phone numbers, no photos). A chat is
-linked only when the signed-in user opens a one-time link and presses Start; /stop in the chat unlinks it. Private chats only.
+Privacy: a message holds only the vehicle name, plate and what the system saw (no phone numbers). Incident alerts are a
+card drawn from data (tgcards.py); a camera frame is sent only when the vehicle's owner turned alert photos on, and only
+after the in-car device blurred every person in it. A chat is linked only when the signed-in user opens a one-time link
+and presses Start; /stop in the chat unlinks it. Private chats only.
 """
 from __future__ import annotations
 
@@ -11,7 +13,7 @@ import secrets
 import urllib.request
 from typing import Any, Callable
 
-from . import config, db, otp
+from . import config, db, mute, otp
 from .logic import now
 
 CODE_TTL_S = 600
@@ -84,7 +86,7 @@ def unlink(user_id: str) -> None:
 def notify(chat_id: str, title: str, message: str, urgent: bool, click: str | None = None) -> bool:
     head = ("🚨 " if urgent else "ℹ️ ") + title
     foot = "\n\nChỉ giám sát, không điều khiển xe. Thấy người trong xe: gọi 112." if urgent else ""
-    return _sender(chat_id, f"{head}\n{message}{foot}", click)
+    return _sender(chat_id, f"{head}\n{message}{foot}\n\nTạm tắt thông báo: /tamdung 60", click)
 
 
 LOGIN_PREFIX = "login_"
@@ -156,13 +158,59 @@ def _login_contact(chat_id: str, from_id: Any, contact: dict[str, Any]) -> None:
                      "Sau khi đăng nhập, cảnh báo xe cũng sẽ gửi tới đây.", None, NO_KEYBOARD)
 
 
+def user_for_chat(chat_id: str) -> str | None:
+    row = db.one("SELECT user_id FROM telegram_links WHERE chat_id=?", chat_id)
+    return row["user_id"] if row else None
+
+
 HELP = ("Cabin Noir gửi cảnh báo xe tới đây.\n"
+        "/tamdung [phút]: tạm tắt thông báo (mặc định 60, tối đa 240), /bat: bật lại, /trangthai: xem đang tắt hay bật\n"
         "/start <mã>: liên kết (lấy mã trong web hoặc app, mục Thông báo)\n"
         "Đăng nhập: bấm Gửi mã đăng nhập trong Cabin Noir, rồi mở liên kết tới bot này.\n"
         "/stop: ngừng nhận thông báo ở cuộc trò chuyện này")
 
 
+def _callback(cq: dict[str, Any]) -> None:
+    """Buttons under an alert card. Only the linked person, only for a vehicle they are a member of."""
+    from . import tgcards
+
+    cid = str(cq.get("id") or "")
+    chat = ((cq.get("message") or {}).get("chat") or {})
+    if chat.get("type") != "private":
+        return
+    uid = user_for_chat(str(chat.get("id")))
+    if uid is None:
+        tgcards.answer(cid, "Chưa liên kết tài khoản Cabin Noir.")
+        return
+    action, _, arg = str(cq.get("data") or "").partition(":")
+    if action == "mute":
+        end = mute.start(uid, 60)
+        tgcards.answer(cid, f"Đã tạm tắt thông báo đến {_hm(end)}. Nhắn /bat để bật lại.")
+    elif action == "ack":
+        inc = db.one("SELECT * FROM incidents WHERE id=?", arg)
+        member = inc and db.one("SELECT role FROM members WHERE vehicle_id=? AND user_id=? AND status='active' AND role IN ('owner','confirm','view')",
+                                inc["vehicle_id"], uid)
+        if not member:
+            tgcards.answer(cid, "Không tìm thấy sự cố hoặc bạn không còn quyền xem xe này.")
+            return
+        user = db.one("SELECT name FROM users WHERE id=?", uid)
+        name = f"{user['name'] if user else 'Một người'} (Telegram)"
+        if inc["status"] == "open" and inc["viewed_at"] is None:
+            from . import logic
+            with db.tx() as conn:
+                conn.execute("UPDATE incidents SET viewed_at=?, viewed_by=? WHERE id=? AND viewed_at IS NULL", (now(), name, arg))
+                logic.add_event(conn, inc["vehicle_id"], arg, "ack", f"{name} đã xem",
+                                "Sự cố vẫn mở cho tới khi có người xác nhận đã kiểm tra xe")
+        tgcards.answer(cid, "Đã ghi nhận bạn đã xem. Nhớ kiểm tra xe và xác nhận trong ứng dụng.")
+        tgcards.refresh(arg)
+    else:
+        tgcards.answer(cid, "Nút này không còn dùng được.")
+
+
 def handle_update(update: dict[str, Any]) -> None:
+    if update.get("callback_query"):
+        _callback(update["callback_query"])
+        return
     msg = update.get("message") or {}
     chat = msg.get("chat") or {}
     text = (msg.get("text") or "").strip()
@@ -187,6 +235,20 @@ def handle_update(update: dict[str, Any]) -> None:
                          (row["user_id"], chat_id, now()))
             conn.execute("DELETE FROM telegram_codes WHERE code=?", (row["code"],))
         _sender(chat_id, "Đã liên kết. Cảnh báo xe sẽ gửi tới đây. Nhắn /stop để ngừng.", None)
+    elif cmd in ("/tamdung", "/mute", "/pause"):
+        _mute_command(chat_id, arg)
+    elif cmd in ("/bat", "/unmute", "/resume"):
+        uid = user_for_chat(chat_id)
+        if uid is None:
+            _sender(chat_id, "Chưa liên kết tài khoản. Lấy mã trong mục Thông báo của Cabin Noir rồi nhắn /start <mã>.", None)
+            return
+        mute.stop(uid)
+        _sender(chat_id, "Đã bật lại thông báo. Cảnh báo xe sẽ gửi tới đây như bình thường.", None)
+    elif cmd in ("/trangthai", "/status"):
+        uid = user_for_chat(chat_id)
+        t = mute.until(uid) if uid else 0
+        _sender(chat_id, (f"Đang tạm tắt thông báo đến {_hm(t)}. Nhắn /bat để bật lại." if t else
+                          "Thông báo đang bật." if uid else "Chưa liên kết tài khoản."), None)
     elif cmd == "/stop":
         with db.tx() as conn:
             conn.execute("DELETE FROM telegram_links WHERE chat_id=?", (chat_id,))
@@ -195,13 +257,33 @@ def handle_update(update: dict[str, Any]) -> None:
         _sender(chat_id, HELP, None)
 
 
+def _hm(t: float) -> str:
+    import time
+    return time.strftime("%H:%M", time.localtime(t))
+
+
+def _mute_command(chat_id: str, arg: str) -> None:
+    uid = user_for_chat(chat_id)
+    if uid is None:
+        _sender(chat_id, "Chưa liên kết tài khoản. Lấy mã trong mục Thông báo của Cabin Noir rồi nhắn /start <mã>.", None)
+        return
+    try:
+        minutes = int(arg.split()[0]) if arg.strip() else None
+    except ValueError:
+        _sender(chat_id, "Dùng: /tamdung 30 (số phút, từ 5 đến 240).", None)
+        return
+    end = mute.start(uid, minutes)
+    _sender(chat_id, f"Đã tạm tắt thông báo đến {_hm(end)}. Trong lúc này bạn KHÔNG nhận cảnh báo có người trong xe; "
+                     "sự cố vẫn được ghi lại trong ứng dụng. Nhắn /bat để bật lại sớm hơn.", None)
+
+
 async def poll_loop() -> None:
     """Long polling, used when no webhook secret is configured. One bad request never stops it."""
     offset = 0
     await asyncio.to_thread(_api, "deleteWebhook", {})
     while True:
         try:
-            updates = await asyncio.to_thread(_api, "getUpdates", {"offset": offset, "timeout": 25, "allowed_updates": ["message"]}, 40)
+            updates = await asyncio.to_thread(_api, "getUpdates", {"offset": offset, "timeout": 25, "allowed_updates": ["message", "callback_query"]}, 40)
             for u in updates or []:
                 offset = max(offset, int(u.get("update_id", 0)) + 1)
                 try:

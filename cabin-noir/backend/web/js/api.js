@@ -16,6 +16,7 @@ export async function api(method, path, body, opts = {}) {
   const headers = { Accept: "application/json" };
   if (!opts.anon && token) headers.Authorization = `Bearer ${token}`;
   if (opts.deviceToken) headers.Authorization = `Bearer ${opts.deviceToken}`;
+  Object.assign(headers, opts.headers || {});
   let payload;
   if (body !== undefined && body !== null) {
     if (body instanceof Blob || body instanceof ArrayBuffer) payload = body;

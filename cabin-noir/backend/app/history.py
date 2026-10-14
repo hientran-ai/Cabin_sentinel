@@ -17,6 +17,7 @@ RETENTION = {          # seconds
     "observations": 7 * DAY,
     "locations": 7 * DAY,
     "media": 30 * DAY,
+    "alert_photo": 1 * DAY,   # blurred frames the device sent with an alert
     "audit": 365 * DAY,
     "events": 180 * DAY,
     "deliveries": 30 * DAY,
@@ -75,9 +76,11 @@ def outcome_for(status: int) -> str:
 
 # ---------------------------------------------------------------- media (photos the user chose to send)
 
-def add_media(conn: Any, media_id: str, vehicle_id: str, ext: str, data: bytes, uploaded_by: str) -> None:
-    conn.execute("INSERT INTO media(id,vehicle_id,kind,ext,sha256,size_bytes,created_at,expires_at,uploaded_by) VALUES(?,?,?,?,?,?,?,?,?)",
-                 (media_id, vehicle_id, "photo", ext, hashlib.sha256(data).hexdigest(), len(data), now(), now() + RETENTION["media"], uploaded_by))
+def add_media(conn: Any, media_id: str, vehicle_id: str, ext: str, data: bytes, uploaded_by: str | None,
+              kind: str = "photo", incident_id: str | None = None) -> None:
+    keep = RETENTION["alert_photo"] if kind == "alert_photo" else RETENTION["media"]
+    conn.execute("INSERT INTO media(id,vehicle_id,kind,ext,sha256,size_bytes,created_at,expires_at,uploaded_by,incident_id) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                 (media_id, vehicle_id, kind, ext, hashlib.sha256(data).hexdigest(), len(data), now(), now() + keep, uploaded_by, incident_id))
 
 
 def adopt_legacy_media(media_dir: str, vehicle_id: str) -> None:
@@ -96,6 +99,12 @@ def adopt_legacy_media(media_dir: str, vehicle_id: str) -> None:
                     t = os.path.getmtime(path)
                     conn.execute("INSERT INTO media(id,vehicle_id,kind,ext,sha256,size_bytes,created_at,expires_at,uploaded_by) VALUES(?,?,?,?,?,?,?,?,?)",
                                  (pid, vehicle_id, "photo", ext, hashlib.sha256(data).hexdigest(), len(data), t, t + RETENTION["media"], None))
+
+
+def alert_photo_enabled(vehicle_id: str) -> bool:
+    """The owner chose to receive blurred camera frames with alerts (off by default)."""
+    row = db.one("SELECT alert_photo FROM vehicle_prefs WHERE vehicle_id=?", vehicle_id)
+    return bool(row and row["alert_photo"])
 
 
 def delete_media_file(media_dir: str, vehicle_id: str, media_id: str, ext: str) -> None:

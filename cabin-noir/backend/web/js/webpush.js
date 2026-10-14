@@ -6,6 +6,11 @@ export const supported = () => "serviceWorker" in navigator && "PushManager" in 
 export const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 export const installed = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
 
+// Remembered per browser: "this browser should get alerts". Survives sign-out, so signing in again restores the subscription.
+const PREF = "cn.push";
+export const wanted = () => { try { return localStorage.getItem(PREF) === "1"; } catch { return false; } };
+const remember = (on) => { try { on ? localStorage.setItem(PREF, "1") : localStorage.removeItem(PREF); } catch { /* ignore */ } };
+
 const keyBytes = (b64) => {
   const s = atob((b64 + "=".repeat((4 - (b64.length % 4)) % 4)).replace(/-/g, "+").replace(/_/g, "/"));
   return Uint8Array.from(s, (c) => c.charCodeAt(0));
@@ -39,9 +44,12 @@ export async function enable() {
   sub = sub || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(public_key) });
   const j = sub.toJSON();
   await post("/v1/me/webpush", { endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth });
+  remember(true);
 }
 
-export async function disable() {
+/** Turn alerts off here. `keep` (signing out) leaves the preference so the next sign-in turns them back on. */
+export async function disable({ keep = false } = {}) {
+  if (!keep) remember(false);
   const reg = supported() ? await navigator.serviceWorker.getRegistration("./") : null;
   const sub = reg ? await reg.pushManager.getSubscription() : null;
   if (sub) {
@@ -56,4 +64,10 @@ export const test = () => post("/v1/me/webpush/test", {});
 export function listen(onPush) {
   if (!("serviceWorker" in navigator)) return;
   navigator.serviceWorker.addEventListener("message", (e) => { if (e.data && e.data.type === "cn-push") onPush(e.data); });
+}
+
+/** After signing in: if this browser had alerts on and permission is still granted, subscribe again for the new session. */
+export async function restore() {
+  if (!wanted() || !supported() || Notification.permission !== "granted") return false;
+  try { await enable(); return true; } catch { return false; }
 }

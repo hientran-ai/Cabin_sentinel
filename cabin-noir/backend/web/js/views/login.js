@@ -42,6 +42,7 @@ export function render({ onDone }) {
     try {
       const r = await post("/v1/auth/verify", { phone, code: codeIn.value.trim(), name: nameIn.value.trim() || undefined }, { anon: true });
       auth.set(r.token);
+      location.hash = "#/home";                         // a new sign-in always starts on Home, never on the last user's page
       await onDone();
     } catch (e) { toast(e.message, "err"); }
   }

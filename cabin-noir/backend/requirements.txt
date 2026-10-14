@@ -1,3 +1,4 @@
 fastapi==0.115.*
 websockets>=13
 pywebpush==2.0.*
+Pillow==11.*
