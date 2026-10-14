@@ -382,19 +382,28 @@ def put_settings(body: SettingsIn, user: User = Depends(current_user)) -> dict[s
 
 
 class MuteIn(BaseModel):
-    minutes: int = Field(mute.DEFAULT_MINUTES, ge=mute.MIN_MINUTES, le=mute.MAX_MINUTES)
+    minutes: Optional[int] = Field(None, ge=mute.MIN_MINUTES, le=mute.MAX_MINUTES)
+    until_resumed: bool = False       # no end time: stays off until the person turns alerts back on; reminded every few hours
+
+    @model_validator(mode="after")
+    def _one(self) -> "MuteIn":
+        if self.until_resumed and self.minutes is not None:
+            raise ValueError("Chọn số phút hoặc cho đến khi bật lại, không chọn cả hai.")
+        return self
 
 
 @app.post("/v1/me/mute")
 def mute_me(body: MuteIn, user: User = Depends(current_user)) -> dict[str, Any]:
-    """Silence this person's pushes for a while. It ends by itself and says so; incidents are still recorded in the app."""
-    return {"mute_until": mute.start(user.id, body.minutes)}
+    """Silence this person's pushes. A timed mute ends by itself and says so; an open-ended one is reminded every few hours.
+    Incidents are still recorded in the app and other family members still get alerts."""
+    end = mute.start(user.id, body.minutes, until_resumed=body.until_resumed)
+    return {"mute_until": end, "mute_indefinite": body.until_resumed}
 
 
 @app.delete("/v1/me/mute")
 def unmute_me(user: User = Depends(current_user)) -> dict[str, Any]:
     mute.stop(user.id)
-    return {"mute_until": 0}
+    return {"mute_until": 0, "mute_indefinite": False}
 
 
 # ---------------------------------------------------------------- vehicles & membership

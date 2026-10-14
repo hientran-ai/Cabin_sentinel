@@ -109,3 +109,41 @@ def test_repeat_reminders_stop_after_five(prod):
         c.post("/v1/device/telemetry", json=PERSON, headers=dh)
         alerts.run_once(main.refresh)
     assert len([m for m in sent if "Vẫn chưa ai xem" in m["title"]]) == alerts.PUSH_MAX_REPEATS
+
+
+def test_mute_until_resumed_never_ends_alone_is_reminded_and_survives_reload(prod):
+    c, clock, sent, _ = prod
+    h, uid, vid, dh, _ = setup_car(c, sent)
+    assert c.post("/v1/me/mute", json={"minutes": 30, "until_resumed": True}, headers=h).status_code == 422   # one or the other
+    r = c.post("/v1/me/mute", json={"until_resumed": True}, headers=h).json()
+    assert r["mute_indefinite"] is True
+    st = c.get("/v1/me", headers=h).json()["settings"]                                    # what a reload sees
+    assert st["mute_indefinite"] is True and st["mute_until"] > clock.t + 365 * 86400
+    sent.clear()
+    c.post("/v1/device/telemetry", json=PERSON, headers=dh)
+    alerts.run_once(main.refresh)
+    assert not [m for m in sent if "người trong xe" in m["title"]]                       # silenced
+    assert db.one("SELECT COUNT(*) AS n FROM incidents WHERE status='open'")["n"] == 1   # still recorded
+    clock.t += mute.REMINDER_S - 60
+    alerts.run_once(main.refresh)
+    assert "Bạn vẫn đang tắt thông báo" not in titles(sent)
+    clock.t += 120
+    alerts.run_once(main.refresh)
+    alerts.run_once(main.refresh)
+    assert titles(sent).count("Bạn vẫn đang tắt thông báo") == 1                       # once per 6 hours, not every pass
+    assert "Đã bật lại thông báo" not in titles(sent) and mute.indefinite(uid)           # never ends by itself
+    clock.t += 30 * 86400
+    alerts.run_once(main.refresh)
+    assert mute.indefinite(uid)
+    assert c.delete("/v1/me/mute", headers=h).json() == {"mute_until": 0, "mute_indefinite": False}
+    assert not mute.active(uid) and not mute.indefinite(uid)
+    # a timed mute afterwards is a normal timed mute again
+    c.post("/v1/me/mute", json={"minutes": 30}, headers=h)
+    assert not mute.indefinite(uid) and 0 < mute.until(uid) - clock.t <= 30 * 60
+
+
+def test_account_page_offers_until_i_turn_it_back_on_with_a_warning():
+    from pathlib import Path
+    src = Path(__file__).resolve().parents[1].joinpath("web/js/views/account.js").read_text()
+    assert "Cho đến khi tôi bật lại" in src and "until_resumed: true" in src and "confirmDialog" in src
+    assert "Nếu không còn ai khác nhận" in src                                             # says who is left without alerts

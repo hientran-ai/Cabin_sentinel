@@ -73,8 +73,10 @@ function banner() {
   if (S.error) return h("div", { class: "banner red", role: "alert" }, `Mất kết nối máy chủ. Dữ liệu có thể đã cũ. ${S.error}`);
   const until = S.me && S.me.settings && S.me.settings.mute_until;
   if (until && until > Date.now() / 1000) {
-    return h("div", { class: "banner", role: "status" }, `Đang tạm tắt thông báo đến ${fmt.clock(until)}. Bạn sẽ không nhận cảnh báo khi có người trong xe. `,
-      h("button", { class: "btn small", on: { click: async () => { try { await del("/v1/me/mute"); S.me.settings.mute_until = 0; rerender(); } catch (e) { toast(e.message, "err"); } } } }, "Bật lại"));
+    return h("div", { class: "banner", role: "status" }, S.me.settings.mute_indefinite
+      ? "Đang tắt thông báo cho đến khi bạn bật lại. Bạn sẽ không nhận cảnh báo khi có người trong xe. "
+      : `Đang tạm tắt thông báo đến ${fmt.clock(until)}. Bạn sẽ không nhận cảnh báo khi có người trong xe. `,
+      h("button", { class: "btn small", on: { click: async () => { try { await del("/v1/me/mute"); Object.assign(S.me.settings, { mute_until: 0, mute_indefinite: false }); rerender(); } catch (e) { toast(e.message, "err"); } } } }, "Bật lại"));
   }
   return null;
 }

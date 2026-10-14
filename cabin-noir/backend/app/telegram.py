@@ -247,7 +247,8 @@ def handle_update(update: dict[str, Any]) -> None:
     elif cmd in ("/trangthai", "/status"):
         uid = user_for_chat(chat_id)
         t = mute.until(uid) if uid else 0
-        _sender(chat_id, (f"Đang tạm tắt thông báo đến {_hm(t)}. Nhắn /bat để bật lại." if t else
+        _sender(chat_id, ("Đang tắt thông báo cho đến khi bạn bật lại. Nhắn /bat để bật lại." if t and mute.indefinite(uid) else
+                          f"Đang tạm tắt thông báo đến {_hm(t)}. Nhắn /bat để bật lại." if t else
                           "Thông báo đang bật." if uid else "Chưa liên kết tài khoản."), None)
     elif cmd == "/stop":
         with db.tx() as conn:

@@ -144,18 +144,29 @@ function deleteAccount() {
 
 // Temporary mute for this person, on every channel (Telegram, ntfy, this browser). Ends by itself and says so.
 function muteCard(me, rerender) {
-  const until = me && me.settings && me.settings.mute_until;
-  const muted = until && until > Date.now() / 1000;
+  const st = (me && me.settings) || {};
+  const muted = st.mute_until && st.mute_until > Date.now() / 1000, forever = muted && st.mute_indefinite;
+  const save = (r) => { Object.assign(me.settings, r); rerender(); };
   const go = (minutes) => async (e) => busy(e.target, async () => {
-    try { const r = await post("/v1/me/mute", { minutes }); me.settings.mute_until = r.mute_until; toast(`Đã tạm tắt thông báo đến ${fmt.clock(r.mute_until)}.`, "ok"); rerender(); } catch (er) { toast(er.message, "err"); }
+    try { const r = await post("/v1/me/mute", { minutes }); toast(`Đã tạm tắt thông báo đến ${fmt.clock(r.mute_until)}.`, "ok"); save(r); } catch (er) { toast(er.message, "err"); }
   });
+  // No end time: say plainly what stops and what keeps running before turning it off.
+  const goForever = async (e) => {
+    const ok = await confirmDialog({ title: "Tắt thông báo cho đến khi bạn bật lại?", danger: true, ok: "Xác nhận tắt", cancel: "Hủy",
+      message: "Bạn sẽ không nhận cảnh báo có người trong xe qua Telegram, ntfy hay trình duyệt, và thông báo không tự bật lại. "
+        + "Thiết bị trong xe vẫn giám sát, sự cố vẫn được mở và ghi trong ứng dụng, người thân khác trong gia đình vẫn nhận cảnh báo. "
+        + "Nếu không còn ai khác nhận, sẽ không ai được báo khi trẻ em còn trong xe. Cứ 6 giờ bạn được nhắc một lần." });
+    if (!ok) return;
+    busy(e.target, async () => { try { const r = await post("/v1/me/mute", { until_resumed: true }); toast("Đã tắt thông báo cho đến khi bạn bật lại.", "ok"); save(r); } catch (er) { toast(er.message, "err"); } });
+  };
   return h("section", { class: "card gap" },
-    h("div", {}, h("h3", { style: "margin:0" }, icon("bell"), "Tạm tắt thông báo"),
-      h("div", { class: "small muted" }, muted ? `Đang tắt đến ${fmt.clock(until)}. Sự cố vẫn được ghi lại trong ứng dụng.`
-        : "Dùng khi đang thử nghiệm hoặc thiết bị hay mất mạng. Tối đa 4 giờ, tự bật lại và báo cho bạn. Trong lúc tắt, bạn không nhận cảnh báo có người trong xe.")),
-    h("div", { class: "row wrap" },
-      muted ? h("button", { class: "btn primary grow", on: { click: (e) => busy(e.target, async () => { try { await del("/v1/me/mute"); me.settings.mute_until = 0; toast("Đã bật lại thông báo.", "ok"); rerender(); } catch (er) { toast(er.message, "err"); } }) } }, "Bật lại ngay")
-        : [[30, "30 phút"], [60, "1 giờ"], [240, "4 giờ"]].map(([m, t]) => h("button", { class: "btn grow", on: { click: go(m) } }, t))),
+    h("div", {}, h("h3", { style: "margin:0;display:flex;align-items:center;gap:8px" }, icon("bell"), "Tạm tắt thông báo"),
+      h("div", { class: "small muted" }, forever ? "Đang tắt cho đến khi bạn bật lại. Bạn không nhận cảnh báo có người trong xe. Sự cố vẫn được ghi lại trong ứng dụng."
+        : muted ? `Đang tắt đến ${fmt.clock(st.mute_until)}. Sự cố vẫn được ghi lại trong ứng dụng.`
+        : "Dùng khi đang thử nghiệm hoặc thiết bị hay mất mạng. Chọn thời gian để tự bật lại và báo cho bạn, hoặc tắt cho đến khi bạn bật lại. Trong lúc tắt, bạn không nhận cảnh báo có người trong xe.")),
+    muted ? h("div", { class: "row wrap" }, h("button", { class: "btn primary grow", on: { click: (e) => busy(e.target, async () => { try { const r = await del("/v1/me/mute"); toast("Đã bật lại thông báo.", "ok"); save(r); } catch (er) { toast(er.message, "err"); } }) } }, "Bật lại ngay"))
+      : [h("div", { class: "row wrap" }, [[30, "30 phút"], [60, "1 giờ"], [240, "4 giờ"]].map(([m, t]) => h("button", { class: "btn grow", on: { click: go(m) } }, t))),
+        h("button", { class: "btn block", on: { click: goForever } }, "Cho đến khi tôi bật lại")],
     h("p", { class: "small muted", style: "margin:0" }, "Telegram: nhắn /tamdung 60 để tạm tắt, /bat để bật lại."));
 }
 
