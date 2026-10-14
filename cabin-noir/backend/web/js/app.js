@@ -115,12 +115,17 @@ function measureTabs() {
   if (window.ResizeObserver) { tabsObserver && tabsObserver.disconnect(); tabsObserver = new ResizeObserver(() => measureTabs()); tabsObserver.observe(bar); }
 }
 
+let lastY = 0;
+document.addEventListener("scroll", () => { lastY = scrollTop(); }, { capture: true, passive: true });   // window or the framed #app
+
 async function paint() {
   const mod = view;
   if (!mod) return;
   const node = await mod.render({ S, go, refresh, rerender: paint, arg: route.arg, vehicle, role });
   if (mod !== view) return;
-  const y = scrollTop();
+  // Building took kept elements (the live view) out of the page for a moment. Reading scrollTop now would make the browser
+  // lay out the shorter page and pull the reader up, so use the position from the last scroll event instead.
+  const y = painted === view ? lastY : scrollTop();
   const next = shell(node), cur = root.firstElementChild;
   // Same screen: update in place (see morph). A new screen is built from scratch.
   if (cur && painted === view && root.childElementCount === 1) morph(cur, next); else root.replaceChildren(next);
@@ -139,7 +144,7 @@ async function navigate() {
   openDetails.clear();
   view = await VIEWS[route.name]();
   painted = null;
-  scrollToY(0);
+  scrollToY(0); lastY = 0;
   await paint();
 }
 

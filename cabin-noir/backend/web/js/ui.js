@@ -33,9 +33,17 @@ export function morph(cur, next) {
   if (cur.nodeName === "DETAILS") next.open = cur.open;             // what the person opened stays open
   for (const ev of Object.keys(cur.__on || {})) if (!(next.__on && next.__on[ev])) cur.__on[ev] = null;
   for (const [ev, fn] of Object.entries(next.__on || {})) listen(cur, ev, fn);
+  // Children are matched in order. A kept element (data-keep) is the same node in both trees, so building `next` has
+  // already taken it out of `cur`: put it back in its place and do not count it, or every later child is paired with
+  // the wrong one and rebuilt (the incident page lost its ticks and jumped up when the alert card reloaded).
   const a = [...cur.childNodes], b = [...next.childNodes];
-  for (let i = 0; i < b.length; i++) { if (i < a.length) morph(a[i], b[i]); else cur.append(b[i]); }
-  for (let i = b.length; i < a.length; i++) a[i].remove();
+  let j = 0;
+  for (const n of b) {
+    while (j < a.length && a[j].nodeType === 1 && a[j].hasAttribute("data-keep") && a[j] !== n) a[j++].remove();
+    if (n.nodeType === 1 && n.hasAttribute("data-keep")) { if (a[j] === n) j++; else cur.insertBefore(n, a[j] || null); continue; }
+    if (j < a.length) morph(a[j++], n); else cur.append(n);
+  }
+  for (; j < a.length; j++) a[j].remove();
 }
 
 export function h(tag, props, ...kids) {
