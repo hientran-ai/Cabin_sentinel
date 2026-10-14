@@ -81,6 +81,9 @@ def run_once(refresh: Callable[[str], Any]) -> None:
     for uid in mute.expired():
         mute.stop(uid)
         push.notify_user(uid, "Đã bật lại thông báo", "Thời gian tạm tắt đã hết. Cảnh báo xe sẽ gửi tới bạn như bình thường.", False, respect_mute=False)
+    for uid in mute.reminders_due():
+        push.notify_user(uid, "Bạn vẫn đang tắt thông báo", "Bạn không nhận cảnh báo có người trong xe cho đến khi bật lại. "
+                         "Mở Cabin Noir → Tài khoản → Bật lại ngay.", False, respect_mute=False)
     # 1. Keep every device-fed vehicle evaluated so incidents open without anyone looking at the app.
     for row in db.all_("SELECT vehicle_id FROM vehicle_state"):
         vid = row["vehicle_id"]
