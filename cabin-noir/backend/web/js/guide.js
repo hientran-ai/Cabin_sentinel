@@ -9,11 +9,11 @@ import * as wp from "./webpush.js";
 
 const HELP = {
   login: ["Đăng nhập", ["Nhập số điện thoại, bấm Gửi mã. Mã đến qua Telegram (bản thử nội bộ có thể điền sẵn trên màn hình).", "Lần đầu: nhập thêm tên. Lần sau chỉ cần số điện thoại, mọi thứ đã thiết lập vẫn còn.", "Đăng nhập xong luôn vào màn hình Xe."]],
-  home: ["Xe", ["Thẻ lớn: kết luận của máy chủ (An toàn / Cảnh báo / Nghiêm trọng / Chưa có dữ liệu). “Chưa có dữ liệu” không bao giờ được hiểu là an toàn.", "Sơ đồ ghế: ghế nào camera thấy người hoặc thú. Không thấy gì không có nghĩa là xe trống.", "Làm mới dữ liệu: bắt thiết bị gửi ngay. Xem camera: chỉ có khung nhận diện, không có ảnh.", "Tạm dừng giám sát: tối đa 60 phút, tự bật lại, không dùng được khi có sự cố mở."]],
+  home: ["Xe", ["Thẻ lớn: kết luận của máy chủ (An toàn / Cảnh báo / Nghiêm trọng / Chưa có dữ liệu). “Chưa có dữ liệu” không bao giờ được hiểu là an toàn.", "Trong xe: camera đang thấy bao nhiêu người, trẻ em, thú cưng (cả khoang, không chia ghế). Không thấy gì không có nghĩa là xe trống.", "Làm mới dữ liệu: bắt thiết bị gửi ngay. Xem camera: chỉ có khung nhận diện, không có ảnh.", "Tạm dừng giám sát: tối đa 60 phút, tự bật lại, không dùng được khi có sự cố mở."]],
   incident: ["Sự cố", ["Mở khi camera thấy người hoặc thú trong xe đỗ. Sự cố chỉ đóng khi có người xác nhận đã tự kiểm tra xe.", "Đã xem chỉ ghi nhận, không đóng sự cố. Gọi 112 mở bàn phím gọi, app không tự gọi.", "Dòng thời gian cho biết thông báo nào đã gửi, thông báo nào bị bỏ qua và vì sao."]],
   school: ["Đưa đón", ["Dành cho phụ huynh đưa đón: chọn bé, đặt giờ, bấm các bước lên xe và tới trường.", "Phải bấm “Đã tới nơi” và “Đã xuống xe” thì chuyến mới đóng."]],
   history: ["Lịch sử", ["Dải ngày 7 / 30 / 90 ngày: chọn một ngày để xem các lần xe có người hoặc thú.", "Độ phủ dữ liệu cho biết thiết bị có mặt bao lâu. Khoảng không có dữ liệu không phải khoảng “trống”.", "Báo cáo và Nhật ký truy cập nằm cuối trang."]],
-  check: ["Kiểm tra xe", ["Xác nhận bạn đã tự kiểm tra từng ghế sau trước khi đóng sự cố."]],
+  check: ["Kiểm tra xe", ["Xác nhận bạn đã tự kiểm tra các ghế, sàn xe và cốp trước khi đóng sự cố."]],
   report: ["Báo cáo", ["Bản tóm tắt để in hoặc lưu. Số liệu ghi rõ đo thật hay mô phỏng."]],
   account: ["Tài khoản", ["Xe, Thiết bị trong xe, Gia đình, Người liên hệ khẩn cấp: mọi thiết lập nằm ở đây.", "Thông báo: bật “Thông báo trên máy này” rồi Gửi thử. Telegram dùng cùng lúc nếu đã liên kết.", "Đăng xuất chỉ thoát phiên này. Thiết bị trong xe vẫn chạy bình thường vì có khóa riêng.", "Xuất dữ liệu và Xóa tài khoản nằm cuối trang."]],
 };
@@ -42,7 +42,7 @@ function steps({ S, refresh }) {
     ["Ghép thiết bị trong xe", "Mở một tab riêng đóng vai camera trong xe. Hai tab nối với nhau qua máy chủ.", paired,
       S.vid && owner ? [h("button", { class: "gbtn", on: { click: () => quickPair(S, refresh) } }, "Tạo mã và mở thiết bị ↗"), paired && h("a", { class: "gbtn", href: deviceUrl(), target: "cn-device", style: "margin-left:6px" }, "Mở lại tab thiết bị")] : null],
     ["Bật thông báo", "Tài khoản → Thông báo trên máy này → Gửi thử.", pushOn, null],
-    ["Thử một tình huống", "Ở tab thiết bị bấm “Trẻ ở ghế sau phải”. Tab này sẽ báo ngay, kèm banner như trên iPhone.", !!(st && st.incident), null],
+    ["Thử một tình huống", "Ở tab thiết bị bấm “Có trẻ trong xe”. Tab này sẽ báo ngay, kèm banner như trên iPhone.", !!(st && st.incident), null],
   ];
   const firstTodo = list.findIndex((x) => !x[2]);
   return card(h("h3", {}, "Thử nhanh trong 5 bước"), ...list.map(([t, d, done, act], i) =>
@@ -52,7 +52,7 @@ function steps({ S, refresh }) {
 
 const roles = () => card(h("h3", {}, "Ba vai trò, một máy chủ"),
   h("ul", {}, h("li", {}, h("b", {}, "Người dùng"), ": khung điện thoại ở giữa. Nhận cảnh báo, xử lý sự cố."),
-    h("li", {}, h("b", {}, "Thiết bị trong xe"), ": ", h("a", { href: deviceUrl(), target: "cn-device", style: "color:#f5c518" }, "tab riêng"), ". Gửi nhãn, độ tin cậy, vị trí khung. Không gửi ảnh, trừ khi chủ xe bật ảnh kèm cảnh báo (người được làm mờ ngay trên máy)."),
+    h("li", {}, h("b", {}, "Thiết bị trong xe"), ": ", h("a", { href: deviceUrl(), target: "cn-device", style: "color:#f5c518" }, "tab riêng"), ". Gửi nhãn, độ tin cậy, vị trí khung. Không gửi ảnh, trừ khi chủ xe bật ảnh kèm cảnh báo (mặt người được che ngay trên máy)."),
     h("li", {}, h("b", {}, "Quản trị"), ": bảng điều hành vận hành, ở dịch vụ riêng của nhóm.")),
   h("p", {}, "Mở nhiều tab cùng lúc được: mỗi tab giữ phiên của mình, mọi thay đổi đi qua máy chủ."));
 
@@ -82,7 +82,7 @@ export function update({ route, S, refresh }) {
   side.right.replaceChildren(card(h("h3", {}, "Đang xem"), h("h4", {}, title), h("ul", {}, bullets.map((b) => h("li", {}, b)))),
     live(S),
     card(h("h3", {}, "Nhớ khi thử"), h("ul", {},
-      h("li", {}, "Trẻ hoặc thú ở ghế sau, máy tắt: cảnh báo ngay. Có cảm biến nhiệt ≥ 35°C: Nghiêm trọng."),
+      h("li", {}, "Thấy trẻ, người hoặc thú trong xe khi máy tắt: cảnh báo ngay. Có cảm biến nhiệt ≥ 35°C: Nghiêm trọng."),
       h("li", {}, "Thiết bị im lặng quá 2 phút: app báo ngoại tuyến, không coi là an toàn."),
       h("li", {}, "Số liệu từ tab thiết bị ở chế độ Giả lập luôn ghi nhãn MÔ PHỎNG."))));
 }

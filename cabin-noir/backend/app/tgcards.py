@@ -1,7 +1,7 @@
 """Telegram alert cards: one picture message per incident and chat, edited in place as the incident changes.
 
 The picture is the alert card drawn from data (alertcard.py), never a camera frame. Under it: a structured caption
-(level, vehicle, seat, how sure, cabin temperature, time, incident code) and buttons to open the incident, say "I have
+(level, vehicle, who is seen and how sure, cabin temperature, time, incident code) and buttons to open the incident, say "I have
 seen it" (stops the repeat reminders, like opening the app) or mute for an hour. When someone views or closes the incident
 every card of that incident is edited, so a family chat shows the current state instead of a pile of messages.
 
@@ -17,7 +17,7 @@ import urllib.request
 from typing import Any, Callable
 
 from . import alertcard, config, db, logic
-from .logic import SEAT_LABEL, now
+from .logic import now
 
 Api = Callable[[str, dict[str, Any], dict[str, tuple[str, bytes, str]] | None], Any]
 
@@ -68,18 +68,24 @@ def _data(iid: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]] | N
     return dict(inc), dict(v) if v else {}, state.get("seats") or {}
 
 
+def _who(inc: dict[str, Any]) -> str:
+    """'Thấy 2 người · 90%' from the incident reason (written by logic.evaluate); the cabin is one zone, no seat."""
+    head = str(inc.get("reason") or "").split(".")[0].strip()
+    if head.startswith("Thấy "):
+        return head
+    return "Trong xe" + (f" · {round(inc['confidence'] * 100)}%" if inc.get("confidence") else "")
+
+
 def caption(inc: dict[str, Any], vehicle: dict[str, Any]) -> str:
     e = html.escape
     resolved = inc["status"] == "resolved"
     head = ("✅ <b>ĐÃ ĐÓNG</b> · đã kiểm tra xe" if resolved else
             "🚨 <b>NGHIÊM TRỌNG</b> · có thể có người trong xe" if inc["level"] == "critical" else
             "⚠️ <b>CẢNH BÁO</b> · có thể có người trong xe")
-    seat = SEAT_LABEL.get(inc.get("seat") or "", "Không rõ ghế")
-    conf = f" · {round(inc['confidence'] * 100)}%" if inc.get("confidence") else ""
     temp = "—" if inc.get("cabin_temp") is None else f"{inc['cabin_temp']:.1f} °C".replace(".", ",")
     lines = [head,
              f"🚗 {e(vehicle.get('name') or '')} · {e(vehicle.get('plate') or '')}",
-             f"📍 {e(seat)}{conf}",
+             f"👤 {e(_who(inc))}",
              f"🌡 Cabin {temp}",
              f"🕒 {time.strftime('%H:%M:%S %d/%m', time.localtime(inc['created_at']))} · mã <code>{e(inc['id'][-8:])}</code>"]
     if resolved:
@@ -143,7 +149,7 @@ def send_photo(chat_id: str, iid: str, jpeg: bytes) -> bool:
     """A blurred frame from the in-car device, under this chat's latest card of the incident."""
     row = db.one("SELECT message_id FROM tg_alerts WHERE incident_id=? AND chat_id=? ORDER BY created_at DESC LIMIT 1", iid, chat_id)
     fields: dict[str, Any] = {"chat_id": chat_id, "protect_content": True,
-                              "caption": "📷 Ảnh từ camera trong xe. Người trong ảnh đã được làm mờ ngay trên thiết bị. "
+                              "caption": "📷 Ảnh từ camera trong xe, có khung nhận diện trẻ em, người, thú cưng, đồ vật. Mặt người đã được che ngay trên thiết bị. "
                                          "Cabin Noir xóa ảnh sau 24 giờ; bản trên Telegram do Telegram lưu."}
     if row:
         fields["reply_parameters"] = {"message_id": row["message_id"], "allow_sending_without_reply": True}

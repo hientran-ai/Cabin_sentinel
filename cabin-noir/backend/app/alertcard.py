@@ -1,7 +1,7 @@
 """Alert card: a picture of what the system knows about an incident, drawn from data only.
 
-It goes to Telegram with every alert, so a glance shows which seat, how hot and how sure, like a camera snapshot would,
-without a single pixel from the camera. The car is drawn from above with its five seats; occupied seats are filled.
+It goes to Telegram with every alert, so a glance shows who is seen in the car, how hot and how sure, without a single
+pixel from the camera. The cabin is one zone: the card counts people and pets, it does not say which seat.
 """
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import time
 from functools import lru_cache
 from typing import Any
 
-from .logic import SEAT_LABEL, SEATS
+from .logic import who_text
 
 W, H = 960, 540
 FONT_DIR = os.path.join(os.path.dirname(__file__), "assets", "fonts")
@@ -22,11 +22,6 @@ LEVEL = {   # header colour, label
     "resolved": ((40, 150, 80), "ĐÃ ĐÓNG"),
 }
 KIND = {"person": "Người", "pet": "Thú cưng", "child": "Trẻ em"}
-# Seat rectangles on the car drawing, as fractions of the car body (x1, y1, x2, y2). Front of the car is at the top.
-SEAT_BOX = {
-    "driver": (0.12, 0.18, 0.46, 0.40), "passenger": (0.54, 0.18, 0.88, 0.40),
-    "rear_left": (0.10, 0.52, 0.36, 0.78), "rear_mid": (0.38, 0.52, 0.62, 0.78), "rear_right": (0.64, 0.52, 0.90, 0.78),
-}
 
 
 @lru_cache(maxsize=8)
@@ -55,28 +50,32 @@ def render(vehicle: dict[str, Any], incident: dict[str, Any], seats: dict[str, d
     d.text((32 + d.textlength(label, font=_font(34, True)) + 18, 30),
            "Có thể có người trong xe" if not resolved else "Đã kiểm tra xe", font=_font(24), fill=(255, 255, 255))
 
-    # Car from above, left half
+    # Who is seen, left half: counts for the whole cabin, never a seat
     cx1, cy1, cx2, cy2 = 40, 116, 400, 516
-    d.rounded_rectangle((cx1, cy1, cx2, cy2), radius=70, outline=LINE, width=4)
-    d.rounded_rectangle((cx1 + 40, cy1 + 18, cx2 - 40, cy1 + 58), radius=14, outline=LINE, width=3)   # windscreen
-    d.text(((cx1 + cx2) / 2, cy1 + 38), "TRƯỚC", font=_font(14), fill=MUTED, anchor="mm")
-    cw, ch = cx2 - cx1, cy2 - cy1
-    key_seat = incident.get("seat")
-    for seat in SEATS:
-        fx1, fy1, fx2, fy2 = SEAT_BOX[seat]
-        box = (cx1 + fx1 * cw, cy1 + fy1 * ch, cx1 + fx2 * cw, cy1 + fy2 * ch)
-        info = (seats or {}).get(seat) or {}
-        occupied = bool(info.get("occ")) or (seat == key_seat and not seats)
-        fill = colour if occupied else (40, 40, 46)
-        d.rounded_rectangle(box, radius=14, fill=fill, outline=(255, 255, 255) if seat == key_seat else LINE,
-                            width=5 if seat == key_seat else 2)
-        if occupied:
-            conf = info.get("conf", incident.get("confidence") if seat == key_seat else None)
-            kind = KIND.get(info.get("kind") or "person", "Người")
-            mid = ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2)
-            d.text((mid[0], mid[1] - 12), kind, font=_font(18, True), fill=(255, 255, 255), anchor="mm")
-            if conf:
-                d.text((mid[0], mid[1] + 14), f"{round(conf * 100)}%", font=_font(18), fill=(255, 255, 255), anchor="mm")
+    d.rounded_rectangle((cx1, cy1, cx2, cy2), radius=36, fill=(30, 30, 34), outline=LINE, width=3)
+    cell = (seats or {}).get("cabin") or {}
+    occupied = bool(cell.get("occ")) or (not seats and not resolved)
+    d.text((cx1 + 28, cy1 + 26), "Camera thấy trong xe", font=_font(20), fill=MUTED)
+    rows = []
+    if occupied:
+        people, pets, kids = cell.get("people") or 0, cell.get("pets") or 0, cell.get("children") or 0
+        if not (people or pets):
+            people = 1 if cell.get("kind") != "pet" else 0
+            pets = 1 - people
+        if kids:
+            rows.append((f"{kids} trẻ em", colour))
+        if people - kids > 0:
+            rows.append((f"{people - kids} người", colour))
+        if pets:
+            rows.append((f"{pets} thú cưng", colour))
+    else:
+        rows.append(("Không thấy ai", (120, 220, 150) if resolved else MUTED))
+    for i, (text, col) in enumerate(rows[:3]):
+        d.text((cx1 + 28, cy1 + 70 + i * 70), text, font=_font(48, True), fill=col if col != colour else INK)
+    conf = cell.get("conf") or incident.get("confidence")
+    if occupied and conf:
+        d.text((cx1 + 28, cy2 - 92), "Độ chắc chắn cao nhất", font=_font(18), fill=MUTED)
+        d.text((cx1 + 28, cy2 - 66), f"{round(conf * 100)}%", font=_font(40, True), fill=INK)
 
     # Facts, right half
     x, y = 440, 118
@@ -87,10 +86,8 @@ def render(vehicle: dict[str, Any], incident: dict[str, Any], seats: dict[str, d
     d.text((x, y + 96), "Nhiệt độ cabin", font=_font(18), fill=MUTED)
     d.text((x, y + 120), "—" if temp is None else f"{temp:.1f} °C".replace(".", ","), font=_font(56, True),
            fill=(255, 120, 100) if (temp or 0) >= 35 else INK)
-    seat_text = SEAT_LABEL.get(key_seat or "", "Không rõ ghế")
-    conf = incident.get("confidence")
-    d.text((x, y + 206), "Vị trí", font=_font(18), fill=MUTED)
-    d.text((x, y + 230), seat_text + (f" · {round(conf * 100)}%" if conf else ""), font=_font(26, True), fill=INK)
+    d.text((x, y + 206), "Trong xe", font=_font(18), fill=MUTED)
+    d.text((x, y + 230), who_text(cell) if cell.get("occ") else ("Không thấy ai" if resolved else "Có thể có người"), font=_font(26, True), fill=INK)
     d.text((x, y + 280), "Bắt đầu", font=_font(18), fill=MUTED)
     d.text((x, y + 304), _clock(incident.get("created_at")), font=_font(24), fill=INK)
     status = (f"Đã đóng: {incident.get('resolved_by')}" if resolved else

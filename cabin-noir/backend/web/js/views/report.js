@@ -27,7 +27,7 @@ export async function render({ arg }) {
       h("div", { class: "row wrap" }, h("span", { class: `pill ${inc.level === "critical" ? "red" : "orange"}` }, inc.level === "critical" ? "Nghiêm trọng" : "Cảnh báo"),
         log && basisPill(log.basis), h("span", { class: "pill grey" }, inc.status === "open" ? "Đang mở" : "Đã đóng"))),
     h("div", { class: "tiles" },
-      stat("Bắt đầu", fmt.datetime(inc.created_at), inc.seat_label || ""),
+      stat("Bắt đầu", fmt.datetime(inc.created_at), ""),
       stat("Thời lượng", fmt.dur(log ? log.duration_s : inc.elapsed), inc.status === "open" ? "Đang diễn ra" : OUT(log)),
       stat("Gửi tin sau", first ? fmt.dur(first.delay_s) : "–", first ? "Từ lúc phát hiện" : "Chưa có tin gửi thành công"),
       stat("Có người xem sau", log && log.ack_s != null ? fmt.dur(log.ack_s) : "–", inc.viewed_by ? `Bởi ${inc.viewed_by}` : "Chưa ai xem"),

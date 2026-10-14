@@ -25,11 +25,11 @@ function evidence(inc) {
   const cardKey = `card:${inc.id}:${inc.status}:${inc.level}:${inc.viewed_by || ""}`;
   const photos = inc.alert_photos || [];
   return h("section", { class: "card gap" }, h("h3", {}, "Thẻ cảnh báo"),
-    pic(cardKey, `/v1/incidents/${inc.id}/card`, "Thẻ cảnh báo: sơ đồ ghế, mức rủi ro, nhiệt độ", "alert-card"),
+    pic(cardKey, `/v1/incidents/${inc.id}/card`, "Thẻ cảnh báo: ai đang ở trong xe, mức rủi ro, nhiệt độ", "alert-card"),
     h("p", { class: "small muted", style: "margin:0" }, "Hình vẽ từ dữ liệu cảm biến, giống tin gửi qua Telegram. Không phải ảnh camera."),
     photos.length > 0 && [h("h3", {}, "Ảnh từ camera trong xe"),
-      photos.map((id) => pic(`photo:${id}`, `/v1/vehicles/${inc.vehicle_id}/photos/${id}`, "Ảnh cảnh báo, người đã được làm mờ", "alert-photo")),
-      h("p", { class: "small muted", style: "margin:0" }, "Người được phát hiện đã được làm mờ ngay trên thiết bị. Ảnh tự xóa sau 24 giờ.")]);
+      photos.map((id) => pic(`photo:${id}`, `/v1/vehicles/${inc.vehicle_id}/photos/${id}`, "Ảnh cảnh báo có khung nhận diện, mặt người đã được che", "alert-photo")),
+      h("p", { class: "small muted", style: "margin:0" }, "Khung cho biết thiết bị thấy gì (trẻ em, người, thú cưng, đồ vật). Mặt người đã được che ngay trên thiết bị. Ảnh tự xóa sau 24 giờ.")]);
 }
 
 export async function render(ctx) {
@@ -54,7 +54,7 @@ export async function render(ctx) {
   return h("div", { class: "gap" }, h("a", { href: "#/home" }, "← Về trang chủ"),
     h("section", { class: `verdict ${inc.level}` }, h("div", { class: "kicker" }, inc.level === "critical" ? "Nghiêm trọng" : "Cảnh báo"),
       h("h1", { style: "margin:6px 0" }, "Có thể có người trong xe"), h("p", { style: "margin:0" }, inc.reason),
-      h("p", { class: "small muted", style: "margin:10px 0 0" }, `Mở ${fmt.ago(inc.created_at)} · ${inc.seat_label || ""}${inc.viewed_at ? ` · ${inc.viewed_by} đã xem` : ""}`)),
+      h("p", { class: "small muted", style: "margin:10px 0 0" }, `Mở ${fmt.ago(inc.created_at)}${inc.viewed_at ? ` · ${inc.viewed_by} đã xem` : ""}`)),
     h("div", { class: "actions3" }, h("a", { class: "btn danger", href: "tel:112", "aria-label": "Thấy người trong xe? Gọi 112" }, icon("phone"), "Gọi 112"),
       canAct && !inc.viewed_at && h("button", { class: "btn", on: { click: (e) => busy(e.target, async () => { try { await post(`/v1/incidents/${inc.id}/view`); toast("Đã ghi nhận bạn đã xem. Sự cố vẫn mở.", "ok"); refresh(); } catch (er) { toast(er.message, "err"); } }) } }, "Đã xem")),
     h("p", { class: "small muted", style: "margin:0" }, "“Đã xem” chỉ dừng nhắc lặp lại. Sự cố chỉ đóng khi bạn xác nhận đã kiểm tra xe và camera không còn thấy người."),

@@ -36,7 +36,7 @@ export async function render(ctx) {
     vid && owner && section("Thiết bị trong xe", list(devices.map((d) => h("div", { class: "item" }, icon(d.platform === "ios" || d.platform === "android" ? "smartphone" : d.platform === "web" ? "cam" : "cpu"), h("div", { class: "grow" }, h("div", {}, `${d.label} (${d.platform})`), h("div", { class: "sub" }, `${d.online ? "Trực tuyến" : "Ngoại tuyến"} · ${fmt.ago(d.last_seen)}${d.info && d.info.battery != null ? ` · pin ${d.info.battery}%` : ""}`)),
       h("button", { class: "btn ghost small", on: { click: async () => { if (await confirmDialog({ title: "Ngắt thiết bị này?", message: "Thiết bị sẽ không gửi dữ liệu được nữa và xe không còn được bảo vệ cho tới khi ghép lại.", ok: "Ngắt", danger: true })) { try { await del(`/v1/vehicles/${vid}/devices/${d.id}`); rerender(); } catch (e) { toast(e.message, "err"); } } } } }, "Ngắt"))),
       h("button", { class: "item", on: { click: () => pairCode(vid, rerender) } }, icon("plus"), "Tạo mã ghép thiết bị"),
-      h("button", { class: "item", on: { click: () => openDevice() } }, icon("cam"), h("div", { class: "grow" }, h("div", {}, "Mở trang thiết bị trong xe"), h("div", { class: "sub" }, alertPhoto && alertPhoto.enabled ? "Tab riêng: giả lập hoặc webcam. Chỉ gửi ảnh đã làm mờ người khi có cảnh báo" : "Tab riêng: giả lập hoặc webcam. Ảnh không gửi đi")), icon("chev")),
+      h("button", { class: "item", on: { click: () => openDevice() } }, icon("cam"), h("div", { class: "grow" }, h("div", {}, "Mở trang thiết bị trong xe"), h("div", { class: "sub" }, alertPhoto && alertPhoto.enabled ? "Tab riêng: giả lập hoặc webcam. Chỉ gửi ảnh đã che mặt khi có cảnh báo" : "Tab riêng: giả lập hoặc webcam. Ảnh không gửi đi")), icon("chev")),
       alertPhoto && alertPhotoRow(vid, alertPhoto, rerender))),
 
     vid && section("Gia đình", list(members.map((m) => h("div", { class: "item" }, icon("user"), h("div", { class: "grow" }, h("div", {}, `${m.name}${m.status === "pending" ? " (chờ đăng nhập)" : ""}`), h("div", { class: "sub" }, `${m.phone} · ${ROLE[m.role] || m.role}`)),
@@ -54,7 +54,7 @@ export async function render(ctx) {
         h("select", { "aria-label": "Kênh thông báo", style: "width:auto", on: { change: (e) => save({ notify_channel: e.target.value }) } }, [["auto", "Tự động"], ["telegram", "Telegram"], ["ntfy", "ntfy"], ["both", "Cả hai"]].map(([k, t]) => h("option", { value: k, selected: (st.notify_channel || "auto") === k }, t)))),
         switchRow("Cảnh báo mức Cảnh báo", "Mức Nghiêm trọng luôn được gửi", st.notify_warning, (v) => save({ notify_warning: v })),
         switchRow("Thông tin chung", "Kết nối lại thiết bị, đóng sự cố…", st.notify_info, (v) => save({ notify_info: v })),
-        switchRow("Nhắc khi rời xe", "Nhắc kiểm tra ghế sau khi khóa xe", st.exit_reminder, (v) => save({ exit_reminder: v })),
+        switchRow("Nhắc khi rời xe", "Nhắc kiểm tra trong xe khi khóa xe", st.exit_reminder, (v) => save({ exit_reminder: v })),
         pushRow()),
       push && h("p", { class: "small muted", style: "margin:6px 4px 0" }, `ntfy (kênh dự phòng): chủ đề riêng ${push.topic}. Ai biết tên chủ đề đều đọc được, đừng chia sẻ.`)),
 
@@ -69,7 +69,7 @@ export async function render(ctx) {
     section("Dữ liệu của bạn", list(
       h("button", { class: "item", on: { click: exportData } }, icon("download"), h("div", { class: "grow" }, h("div", {}, "Tải bản sao dữ liệu (JSON)"), h("div", { class: "sub" }, "Hồ sơ, bé, liên hệ, xe của bạn"))),
       h("button", { class: "item", style: "color:var(--red)", on: { click: () => deleteAccount() } }, icon("trash"), h("div", { class: "grow" }, h("div", {}, "Xóa tài khoản và dữ liệu"), h("div", { class: "sub" }, "Xóa luôn các xe bạn là chủ xe và toàn bộ lịch sử, ảnh")))),
-      h("p", { class: "small muted", style: "margin:6px 4px 0" }, "Lịch sử cảm biến và hành trình tự xóa sau 7 ngày, ảnh sau 30 ngày, nhật ký truy cập sau 365 ngày. Ảnh camera gốc không rời thiết bị; ảnh kèm cảnh báo (nếu chủ xe bật) đã được làm mờ người và tự xóa sau 24 giờ.")),
+      h("p", { class: "small muted", style: "margin:6px 4px 0" }, "Lịch sử cảm biến và hành trình tự xóa sau 7 ngày, ảnh sau 30 ngày, nhật ký truy cập sau 365 ngày. Ảnh camera gốc không rời thiết bị; ảnh kèm cảnh báo (nếu chủ xe bật) đã được che mặt người và tự xóa sau 24 giờ.")),
 
     h("button", { class: "btn block", style: "margin-top:18px", on: { click: async (e) => busy(e.target, async () => { try { await wp.disable({ keep: true }); await post("/v1/auth/logout"); } catch { /* token may already be gone */ } signedOut(); }) } }, "Đăng xuất"),
     h("p", { class: "small muted center" }, "Cabin Noir chỉ giám sát, không mở khóa hay điều khiển xe và không thể đảm bảo an toàn tuyệt đối. Thấy người trong xe: gọi 112."));
@@ -179,8 +179,9 @@ function alertPhotoRow(vid, cur, rerender) {
     try {
       if (v) {
         const ok = await confirmDialog({ title: "Bật ảnh kèm cảnh báo?", ok: "Tôi đồng ý, bật", message:
-          "Khi thiết bị thấy người trong xe, nó gửi tối đa 1 ảnh mỗi 30 giây kèm cảnh báo. Mọi người được phát hiện sẽ bị làm mờ ngay trên thiết bị trước khi gửi, "
-          + "nhưng người mà mô hình không nhận ra thì không được làm mờ. Ảnh lưu 24 giờ trong Cabin Noir. Nếu bạn nhận qua Telegram, Telegram lưu một bản riêng "
+          "Khi thiết bị thấy người trong xe, nó gửi tối đa 1 ảnh mỗi 30 giây kèm cảnh báo, có khung đánh dấu trẻ em, người, thú cưng và đồ vật. "
+          + "Mặt của mọi người được phát hiện sẽ bị che ngay trên thiết bị trước khi gửi, nhưng người mà mô hình không nhận ra thì không được che; "
+          + "phần người dưới mặt (quần áo, dáng người) vẫn thấy được. Ảnh lưu 24 giờ trong Cabin Noir. Nếu bạn nhận qua Telegram, Telegram lưu một bản riêng "
           + "mà Cabin Noir không xóa được. Ảnh có thể có trẻ em: chỉ bật khi bạn là người giám hộ và đồng ý với điều này." });
         if (!ok) { el.checked = false; el.disabled = false; return; }
       }

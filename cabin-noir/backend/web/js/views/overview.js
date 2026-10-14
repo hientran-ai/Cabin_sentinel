@@ -28,5 +28,5 @@ export async function overviewSection({ S, rerender }) {
       h("div", { class: "grow" }, h("div", {}, `${v.name} · ${v.plate}`),
         h("div", { class: "sub" }, `${v.left_behind} bỏ quên (${v.critical} nghiêm trọng) · che camera ${fmt.dur(v.camera_blocked_min * 60)} · mất kết nối ${fmt.dur(v.offline_min * 60)}`)),
       v.open ? h("span", { class: "pill red" }, `${v.open} đang mở`) : h("span", { class: `pill ${v.device.online ? "green" : "grey"}` }, v.device.known ? (v.device.online ? "Thiết bị trực tuyến" : "Thiết bị ngoại tuyến") : "Chưa có thiết bị")))),
-    h("p", { class: "small muted" }, o.note, " Chỉ có số lượng, nhãn ghế và thời lượng. Không có ảnh và không hiện tên bé."));
+    h("p", { class: "small muted" }, o.note, " Chỉ có số lượng, loại (người, thú cưng) và thời lượng. Không có ảnh và không hiện tên bé."));
 }

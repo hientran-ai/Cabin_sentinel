@@ -24,7 +24,7 @@ def test_left_behind_episode_from_open_to_confirmed(prod):
     tick(c, clock, dh, PERSON)
     r = rows(c, h, vid)
     assert [i["kind"] for i in r["items"]] == ["left_behind"] and r["items"][0]["ongoing"] and r["items"][0]["basis"] == "measured"
-    assert r["items"][0]["level"] == "critical" and r["items"][0]["seat"] == "rear_right"
+    assert r["items"][0]["level"] == "critical" and r["items"][0]["seat"] == "cabin"
     inc = c.get(f"/v1/vehicles/{vid}/history", headers=h).json()["incidents"][0]
     c.post(f"/v1/incidents/{inc['id']}/view", headers=h)
     tick(c, clock, dh, PERSON, 40)

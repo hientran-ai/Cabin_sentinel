@@ -218,7 +218,7 @@ def report(inc: Any) -> dict[str, Any]:
                                                "AND COALESCE(ended_at, ?)>=?", vid, end, now(), inc["created_at"])]
     return {"incident": logic.incident_json(inc, with_detail=True), "log": _row_json(row) if row else None, "deliveries": deliveries,
             "observations": obs, "observations_kept_days": 7, "related": blocked, "chain": verify(vid),
-            "notes": "Chỉ lưu số lượng và nhãn ghế, không lưu ảnh. Nhật ký quan sát tự xóa sau 7 ngày; sự cố lưu 365 ngày."}
+            "notes": "Chỉ lưu số lượng và loại (người, thú cưng), không lưu ảnh. Nhật ký quan sát tự xóa sau 7 ngày; sự cố lưu 365 ngày."}
 
 
 WEEKDAY = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]

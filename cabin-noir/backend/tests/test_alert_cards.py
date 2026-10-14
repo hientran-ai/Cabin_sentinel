@@ -60,7 +60,7 @@ def test_incident_goes_to_telegram_as_a_card_with_buttons_and_no_camera_frame(tg
     assert card["files"]["photo"][2] == "image/png" and card["fields"]["chat_id"] == "555"     # the drawn card, not a JPEG frame
     cap = card["fields"]["caption"]
     assert "CẢNH BÁO" in cap or "NGHIÊM TRỌNG" in cap
-    assert "Ghế sau phải" in cap and "90%" in cap
+    assert "Thấy 1 người · 90%" in cap and "Ghế" not in cap                          # who is seen, never a seat
     buttons = [b for row in card["fields"]["reply_markup"]["inline_keyboard"] for b in row]
     assert buttons[0]["url"].startswith("https://cabin.example/app/#/incident/")
     assert {b.get("callback_data", "")[:4] for b in buttons} >= {"ack:", "mute"}
@@ -114,7 +114,7 @@ def test_closing_the_incident_turns_every_card_green(tg):
 def test_alert_photo_is_off_by_default_owner_only_needs_consent_and_must_be_blurred(tg):
     (c, clock, sent, _), calls = tg
     h, uid, vid, dh, _ = setup_car(c, sent)
-    hdr = {**dh, "Content-Type": "image/jpeg", "X-Cabin-Blurred": "people"}
+    hdr = {**dh, "Content-Type": "image/jpeg", "X-Cabin-Blurred": "faces"}
     assert c.post("/v1/device/alert-photo", content=jpeg(), headers=hdr).status_code == 403            # off by default
     assert c.get("/v1/vehicles/{}/alert-photo".format(vid), headers=h).json()["enabled"] is False
     assert c.put(f"/v1/vehicles/{vid}/alert-photo", json={"enabled": True}, headers=h).status_code == 422   # consent first

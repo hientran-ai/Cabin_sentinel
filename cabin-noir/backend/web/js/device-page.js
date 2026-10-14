@@ -1,27 +1,25 @@
 // The in-car device as its own page: the third role next to the owner's app and the admin console.
-// It pairs with a one-time code from the owner, then reports to the server what the camera sees at the rear seats.
+// It pairs with a one-time code from the owner, then reports to the server what the camera sees in the cabin (no seats).
 // Three sources: a simulator (buttons, for testing without a camera), a recorded clip ("Video mẫu": a sample or the user's
 // own file, played and analysed on this device) or the real webcam, both with detection running in this browser.
-// Only seat labels, confidences and boxes are sent. Camera frames never leave this page, with one exception the owner
-// must turn on (alert photos): when someone is seen, one frame every 30 s at most, with every detected person pixelated
-// here on the device before it is uploaded.
+// Only kinds (person, pet, item), confidences and boxes are sent. Camera frames never leave this page, with one exception
+// the owner must turn on (alert photos): when someone is seen, one frame every 30 s at most, with the detections drawn
+// on it and every person's face pixelated here on the device before it is uploaded.
 import { api, post, del, ApiError } from "./api.js";
 import { h, icon, fmt, toast, busy, switchRow, confirmDialog } from "./ui.js";
 import { loadModel, detectFrame } from "./detect.js";
-import { SAMPLES, OWN, sampleUrl, newRun, setReference, analyse, stats, paint, SEAT_TEXT } from "./device-video.js";
+import { SAMPLES, OWN, sampleUrl, newRun, setReference, analyse, stats, paint } from "./device-video.js";
 
 const KEY = "cn.device";
 const SEND_MS = 2000, DETECT_MS = 600, PHOTO_GAP_MS = 30000;
-const SEATS = [["rear_left", "Ghế sau trái"], ["rear_mid", "Ghế sau giữa"], ["rear_right", "Ghế sau phải"]];
-const WHO = [["none", "Trống"], ["adult", "Người lớn"], ["child", "Trẻ em"], ["pet", "Thú cưng"]];
+const WHO = [["adult", "Người lớn"], ["child", "Trẻ em"], ["pet", "Thú cưng"]];
 const ITEMS = ["Ba lô", "Túi xách", "Điện thoại", "Chai nước"];
-const BOX = { rear_left: [0.04, 0.3, 0.28, 0.6], rear_mid: [0.36, 0.3, 0.28, 0.6], rear_right: [0.68, 0.3, 0.28, 0.6] };
 
 const root = document.getElementById("app");
 let dev = null;
 try { dev = JSON.parse(localStorage.getItem(KEY) || "null"); } catch { dev = null; }
 
-const sim = { seats: { rear_left: "none", rear_mid: "none", rear_right: "none" }, items: new Set(), blocked: false, engine: false, temp: null,
+const sim = { who: { adult: 0, child: 0, pet: 0 }, items: new Set(), blocked: false, engine: false, temp: null,
   battery: 78, charging: false, thermal: "nominal", gps: false, lat: 10.7769, lon: 106.7009, toLat: 10.7800, toLon: 106.7050 };
 const clip = { sample: SAMPLES[0], vr: null, url: null, own: null, ownRef: null, blocked: false, busy: false };
 const run = { drive: null, mode: "sim", sending: true, mirror: true, timer: null, detectTimer: null, stream: null, wake: null, frame: null, sent: 0, last: null, error: null, paused: null, log: [], alertPhoto: false, lastPhoto: 0 };
@@ -32,9 +30,11 @@ const say = (text, bad = false) => { run.log.unshift({ at: clock(), text, bad })
 
 // ---------------------------------------------------------------- what to send
 function simFrame() {
-  const detections = Object.entries(sim.seats).filter(([, v]) => v !== "none").map(([seat, v]) =>
-    ({ seat, kind: v === "pet" ? "pet" : "person", conf: 0.9, ...(v === "child" || v === "adult" ? { age: v } : {}), box: BOX[seat] }));
-  const items = [...sim.items].map((name) => ({ name, seat: "rear_mid", conf: 0.8, box: [0.4, 0.62, 0.2, 0.25] }));
+  // Simulated occupants side by side across the picture; only what and how many matter, never where.
+  const who = Object.entries(sim.who).flatMap(([k, n]) => Array.from({ length: n }, () => k));
+  const detections = who.map((k, i) => ({ kind: k === "pet" ? "pet" : "person", conf: 0.9, ...(k === "pet" ? {} : { age: k }),
+    box: [+(0.04 + (0.92 / Math.max(1, who.length)) * i).toFixed(3), 0.3, +(0.9 / Math.max(1, who.length)).toFixed(3), 0.6] }));
+  const items = [...sim.items].map((name, i) => ({ name, conf: 0.8, box: [+(0.1 + 0.2 * i).toFixed(2), 0.75, 0.15, 0.2] }));
   return { detections, items, ok: !sim.blocked };
 }
 
@@ -67,39 +67,47 @@ async function send() {
   paintStatus();
 }
 
-/** One frame for an alert photo, made on this device: every detected person is pixelated so no face can be recognised,
- *  boxes and labels are drawn, and the picture is shrunk to 640 px. Pets and items are left as they are. */
-export function blurredFrame(video, detections, mirror) {
+/** One frame for an alert photo, made on this device: every detection (child, person, pet, item) is boxed and labelled,
+ *  and every person's face is pixelated so nobody can be recognised; the picture is shrunk to 640 px. The detector gives
+ *  a box for the whole person, so the face is taken as the top of it (a little wider, to be safe). */
+export function blurredFrame(video, detections, mirror, items = []) {
   const w = video.videoWidth || 640, hgt = video.videoHeight || 480, scale = Math.min(1, 640 / w);
   const c = document.createElement("canvas");
   c.width = Math.round(w * scale); c.height = Math.round(hgt * scale);
   const g = c.getContext("2d");
   g.drawImage(video, 0, 0, c.width, c.height);
   const tiny = document.createElement("canvas"), tg = tiny.getContext("2d");
-  for (const d of detections) {
-    if (!d.box) continue;
-    let [x, y, bw, bh] = d.box;
+  const rect = (box) => {
+    let [x, y, bw, bh] = box;
     if (mirror) x = Math.max(0, 1 - x - bw);                 // boxes are reported mirrored like the preview; undo it
-    const pad = 0.12;
-    const px = Math.max(0, (x - bw * pad) * c.width), py = Math.max(0, (y - bh * pad) * c.height);
-    const pw = Math.min(c.width - px, bw * (1 + 2 * pad) * c.width), ph = Math.min(c.height - py, bh * (1 + 2 * pad) * c.height);
-    if (pw < 2 || ph < 2) continue;
-    if (d.kind !== "pet") {                                   // pixelate the whole person, not only the face
-      const block = Math.max(12, Math.round(pw / 6));
-      tiny.width = Math.max(1, Math.round(pw / block)); tiny.height = Math.max(1, Math.round(ph / block));
-      tg.drawImage(c, px, py, pw, ph, 0, 0, tiny.width, tiny.height);
-      g.imageSmoothingEnabled = false;
-      g.drawImage(tiny, 0, 0, tiny.width, tiny.height, px, py, pw, ph);
-      g.imageSmoothingEnabled = true;
-    }
-    g.strokeStyle = d.kind === "pet" ? "#4cc9f0" : "#ff4d4d"; g.lineWidth = 3; g.strokeRect(px, py, pw, ph);
-    const label = `${d.kind === "pet" ? "Thú cưng" : "Người"} ${Math.round((d.conf || 0) * 100)}%`;
-    g.font = "bold 16px sans-serif"; const tw = g.measureText(label).width + 10;
-    g.fillStyle = g.strokeStyle; g.fillRect(px, Math.max(0, py - 22), tw, 22);
-    g.fillStyle = "#fff"; g.fillText(label, px + 5, Math.max(16, py - 6));
+    return [x * c.width, y * c.height, bw * c.width, bh * c.height];
+  };
+  const people = detections.filter((d) => d.box && d.kind !== "pet");
+  for (const d of people) {                                   // faces first, so no box or label is pixelated with them
+    const [x, y, bw, bh] = rect(d.box);
+    const fx = Math.max(0, x - bw * 0.1), fy = Math.max(0, y - bh * 0.05);
+    const fw = Math.min(c.width - fx, bw * 1.2), fh = Math.min(c.height - fy, bh * 0.45);
+    if (fw < 2 || fh < 2) continue;
+    const block = Math.max(10, Math.round(fw / 7));
+    tiny.width = Math.max(1, Math.round(fw / block)); tiny.height = Math.max(1, Math.round(fh / block));
+    tg.drawImage(c, fx, fy, fw, fh, 0, 0, tiny.width, tiny.height);
+    g.imageSmoothingEnabled = false;
+    g.drawImage(tiny, 0, 0, tiny.width, tiny.height, fx, fy, fw, fh);
+    g.imageSmoothingEnabled = true;
+  }
+  const label = (d) => d.name ? d.name : d.kind === "pet" ? "Thú cưng" : d.age === "child" ? "Trẻ em" : "Người";
+  const COLOR = { person: "#ff4d4d", pet: "#ff9f0a", item: "#f5c518" };
+  for (const d of [...detections, ...items.map((i) => ({ ...i, kind: "item" }))]) {
+    if (!d.box) continue;
+    const [x, y, bw, bh] = rect(d.box);
+    g.strokeStyle = COLOR[d.kind] || COLOR.person; g.lineWidth = 3; g.strokeRect(x, y, bw, bh);
+    const text = `${label(d)} ${Math.round((d.conf || 0) * 100)}%`;
+    g.font = "bold 16px sans-serif"; const tw = g.measureText(text).width + 10, ty = y >= 22 ? y - 22 : y;
+    g.fillStyle = g.strokeStyle; g.fillRect(x, ty, tw, 22);
+    g.fillStyle = "#111"; g.fillText(text, x + 5, ty + 16);
   }
   g.font = "13px sans-serif"; g.fillStyle = "rgba(0,0,0,.6)"; g.fillRect(0, c.height - 22, c.width, 22);
-  g.fillStyle = "#fff"; g.fillText(`Cabin Noir · ${new Date().toLocaleString("vi-VN")} · đã làm mờ người trên thiết bị`, 8, c.height - 7);
+  g.fillStyle = "#fff"; g.fillText(`Cabin Noir · ${new Date().toLocaleString("vi-VN")} · đã che mặt trên thiết bị`, 8, c.height - 7);
   return new Promise((resolve) => c.toBlob((b) => resolve(b), "image/jpeg", 0.72));
 }
 
@@ -108,10 +116,10 @@ async function maybeSendPhoto(video, mirror = run.mirror) {
   if (!dev || !run.alertPhoto || !f || !f.ok || !f.detections.length || Date.now() - run.lastPhoto < PHOTO_GAP_MS) return;
   run.lastPhoto = Date.now();
   try {
-    const blob = await blurredFrame(video, f.detections, mirror);
+    const blob = await blurredFrame(video, f.detections, mirror, f.items || []);
     if (!blob) return;
-    await api("POST", "/v1/device/alert-photo", blob, { deviceToken: dev.token, headers: { "X-Cabin-Blurred": "people" } });
-    say("Đã gửi ảnh cảnh báo (người đã được làm mờ trên máy này)");
+    await api("POST", "/v1/device/alert-photo", blob, { deviceToken: dev.token, headers: { "X-Cabin-Blurred": "faces" } });
+    say("Đã gửi ảnh cảnh báo (đã che mặt trên máy này)");
   } catch (e) {
     if (!(e instanceof ApiError && (e.status === 403 || e.status === 429))) say(`Không gửi được ảnh cảnh báo: ${e.message}`, true);
   }
@@ -172,25 +180,26 @@ function paintLog() {
   ui.log.replaceChildren(...run.log.map((l) => h("div", { class: l.bad ? "bad" : "" }, h("span", {}, l.at), l.text)));
 }
 
-function seatControls() {
-  return h("div", { class: "seatsel" }, SEATS.map(([seat, label]) => {
-    const sel = h("select", { "aria-label": label, on: { change: (e) => { sim.seats[seat] = e.target.value; send(); } } }, WHO.map(([k, t]) => h("option", { value: k, selected: sim.seats[seat] === k }, t)));
-    sel.dataset.seat = seat;
+// How many of each are in the car. Where they sit does not matter.
+function whoControls() {
+  return h("div", { class: "seatsel" }, WHO.map(([k, label]) => {
+    const sel = h("select", { "aria-label": label, on: { change: (e) => { sim.who[k] = +e.target.value; send(); } } }, [0, 1, 2, 3].map((n) => h("option", { value: n, selected: sim.who[k] === n }, String(n))));
+    sel.dataset.who = k;
     return h("label", { class: "seatcell" }, h("span", { class: "small muted" }, label), sel);
   }));
 }
 
 const SCENARIOS = [
-  ["Xe trống", () => ({ seats: ["none", "none", "none"], blocked: false, engine: false, temp: null })],
-  ["Trẻ ở ghế sau phải", () => ({ seats: ["none", "none", "child"], blocked: false, engine: false, temp: null })],
-  ["Thú cưng ghế sau trái", () => ({ seats: ["pet", "none", "none"], blocked: false, engine: false, temp: null })],
-  ["Trẻ + trời nóng 41°C", () => ({ seats: ["none", "none", "child"], blocked: false, engine: false, temp: 41 })],
-  ["Che camera", () => ({ seats: ["none", "none", "none"], blocked: true, engine: false, temp: null })],
-  ["Tài xế đang lái", () => ({ seats: ["none", "none", "adult"], blocked: false, engine: true, temp: null })],
+  ["Xe trống", () => ({ who: { adult: 0, child: 0, pet: 0 }, blocked: false, engine: false, temp: null })],
+  ["Có trẻ trong xe", () => ({ who: { adult: 0, child: 1, pet: 0 }, blocked: false, engine: false, temp: null })],
+  ["Thú cưng trong xe", () => ({ who: { adult: 0, child: 0, pet: 1 }, blocked: false, engine: false, temp: null })],
+  ["Trẻ + trời nóng 41°C", () => ({ who: { adult: 0, child: 1, pet: 0 }, blocked: false, engine: false, temp: 41 })],
+  ["Che camera", () => ({ who: { adult: 0, child: 0, pet: 0 }, blocked: true, engine: false, temp: null })],
+  ["Tài xế đang lái", () => ({ who: { adult: 1, child: 0, pet: 0 }, blocked: false, engine: true, temp: null })],
 ];
 function applyScenario(fn) {
   const s = fn();
-  SEATS.forEach(([seat], i) => { sim.seats[seat] = s.seats[i]; });
+  sim.who = { ...s.who };
   sim.blocked = s.blocked; sim.engine = s.engine; sim.temp = s.temp;
   render(); send();
 }
@@ -206,11 +215,11 @@ function simCard() {
   const bat = h("input", { type: "range", min: 1, max: 100, value: sim.battery, "aria-label": "Pin mô phỏng", on: { input: (e) => { sim.battery = +e.target.value; bv.textContent = `${sim.battery}%`; } } });
   const bv = h("span", { class: "small" }, `${sim.battery}%`);
   return h("section", { class: "card gap" }, h("div", { class: "row between" }, h("h3", {}, "Giả lập cảm biến"), h("span", { class: "pill orange" }, "MÔ PHỎNG")),
-    h("p", { class: "small muted", style: "margin:0" }, "Chọn người, thú hoặc đồ vật ở từng ghế. Dữ liệu gửi lên máy chủ y như thiết bị thật, nhưng là số liệu mô phỏng."),
+    h("p", { class: "small muted", style: "margin:0" }, "Chọn số người lớn, trẻ em, thú cưng và đồ vật trong xe. Dữ liệu gửi lên máy chủ y như thiết bị thật, nhưng là số liệu mô phỏng."),
     h("div", { class: "row wrap" }, SCENARIOS.map(([t, fn]) => h("button", { class: "btn small", on: { click: () => applyScenario(fn) } }, t))),
-    seatControls(), h("div", {}, h("div", { class: "small muted", style: "margin-bottom:6px" }, "Đồ vật"), items),
+    whoControls(), h("div", {}, h("div", { class: "small muted", style: "margin-bottom:6px" }, "Đồ vật"), items),
     h("div", { class: "card pad0 list" },
-      switchRow("Che camera", "Máy chủ sẽ báo “Chưa nhìn được ghế sau”, không coi là xe trống", sim.blocked, (v) => { sim.blocked = v; send(); }),
+      switchRow("Che camera", "Máy chủ sẽ báo “Chưa nhìn được trong xe”, không coi là xe trống", sim.blocked, (v) => { sim.blocked = v; send(); }),
       switchRow("Xe đang chạy (máy nổ)", "Tạm dừng giám sát cabin khi có tài xế", sim.engine, (v) => { sim.engine = v; send(); }),
       switchRow("Có cảm biến nhiệt cabin", "Thiết bị thật thường không có. Không bật thì app hiện “chưa có cảm biến”", sim.temp != null, (v) => { sim.temp = v ? 30 : null; temp.disabled = !v; temp.value = sim.temp ?? 30; tv.textContent = v ? "30°C" : "không có cảm biến"; send(); }),
       h("div", { class: "switch" }, h("div", {}, "Nhiệt độ cabin"), h("div", { class: "row" }, temp, tv)),
@@ -224,7 +233,7 @@ function gpsCard() {
   const num = (key, label) => { const i = h("input", { type: "number", step: "any", value: sim[key], "aria-label": label, on: { change: (e) => { sim[key] = +e.target.value; } } }); return h("label", { class: "field" }, h("span", { class: "small muted" }, label), i); };
   ui.lat = num("lat", "Vĩ độ hiện tại").querySelector("input"); ui.lon = num("lon", "Kinh độ hiện tại").querySelector("input");
   return h("section", { class: "card gap" }, h("div", { class: "row between" }, h("h3", {}, "Vị trí và chuyến đi"), h("span", { class: "pill orange" }, "MÔ PHỎNG")),
-    h("p", { class: "small muted", style: "margin:0" }, "Để thử Đưa đón và bản đồ: bật gửi vị trí, đặt điểm đến trong app, rồi chạy thử. Bé phải ngồi đúng ghế đã chọn ở mục Đưa đón."),
+    h("p", { class: "small muted", style: "margin:0" }, "Để thử Đưa đón và bản đồ: bật gửi vị trí, đặt điểm đến trong app, đặt 1 trẻ em (hoặc 2 người lớn: tài xế và bé) rồi chạy thử."),
     h("div", { class: "card pad0 list" }, switchRow("Gửi vị trí giả lập", "Hiện xe trên bản đồ trong app", sim.gps, (v) => { sim.gps = v; send(); })),
     h("div", { class: "row" }, h("div", { class: "grow" }, h("label", { class: "field" }, h("span", { class: "small muted" }, "Vĩ độ hiện tại"), ui.lat)), h("div", { class: "grow" }, h("label", { class: "field" }, h("span", { class: "small muted" }, "Kinh độ hiện tại"), ui.lon))),
     h("div", { class: "row" }, ["toLat", "toLon"].map((k, i) => h("div", { class: "grow" }, h("label", { class: "field" }, h("span", { class: "small muted" }, i ? "Kinh độ điểm đến" : "Vĩ độ điểm đến"),
@@ -236,7 +245,7 @@ function camCard() {
   const video = h("video", { class: "video", autoplay: true, muted: true, playsInline: true, "aria-label": "Xem trước webcam, chỉ hiển thị trên máy này" });
   const scratch = h("canvas", { hidden: true, width: 32, height: 24 });
   const msg = h("div", { class: "small muted", role: "status", "aria-live": "polite" }, run.stream ? "Đang giám sát bằng webcam." : "Chưa bật webcam.");
-  const mirror = switchRow("Lật ảnh trái/phải", "Bật nếu ghế sau trái hiện bên phải trong bản xem trước", run.mirror, (v) => { run.mirror = v; });
+  const mirror = switchRow("Lật ảnh trái/phải", "Bật nếu bản xem trước bị ngược trái/phải", run.mirror, (v) => { run.mirror = v; });
   const start = (e) => busy(e.target, async () => {
     try {
       msg.textContent = "Đang bật webcam…";
@@ -265,7 +274,7 @@ function camCard() {
   return h("section", { class: "card gap" }, h("div", { class: "row between" }, h("h3", {}, "Webcam thật"), h("span", { class: "pill green" }, "ĐO THẬT")),
     h("p", { class: "small muted", style: "margin:0" }, "Nhận diện chạy ngay trên máy này (TensorFlow.js). Không phân biệt trẻ em. Không phát hiện được gì không có nghĩa là xe trống."),
     h("p", { class: "small", style: "margin:0" }, run.alertPhoto
-      ? "Ảnh kèm cảnh báo: BẬT (chủ xe đã đồng ý). Khi thấy người, tối đa 1 ảnh mỗi 30 giây được gửi, người trong ảnh được làm mờ ngay trên máy này."
+      ? "Ảnh kèm cảnh báo: BẬT (chủ xe đã đồng ý). Khi thấy người, tối đa 1 ảnh mỗi 30 giây được gửi, có khung nhận diện và mặt người đã được che ngay trên máy này."
       : "Ảnh kèm cảnh báo: TẮT. Không có ảnh nào rời máy này."),
     video, scratch, msg, mirror,
     !run.stream ? h("button", { class: "btn primary block", on: { click: start } }, icon("cam"), "Bật webcam và nhận diện") : h("button", { class: "btn block", on: { click: () => { stopCamera(); render(); } } }, "Tắt webcam"));
@@ -276,16 +285,14 @@ function videoCard() {
   // One video element for the whole page: render() rebuilds the card, and a media element taken out of the page pauses.
   clip.el ||= { video: h("video", { class: "video", muted: true, playsInline: true, loop: true, "aria-label": "Video đang phát thay camera, chỉ hiển thị trên máy này" }),
     overlay: h("canvas", { class: "video-overlay", "aria-hidden": "true" }), scratch: h("canvas", { hidden: true }),
-    msg: h("div", { class: "small muted", role: "status", "aria-live": "polite" }), seatsBox: h("div", { class: "card pad0 list" }) };
-  const { video, overlay, scratch, msg, seatsBox } = clip.el;
+    msg: h("div", { class: "small muted", role: "status", "aria-live": "polite" }), seenBox: h("div", { class: "card pad0 list" }) };
+  const { video, overlay, scratch, msg, seenBox } = clip.el;
   if (!clip.vr) msg.textContent = "Chọn một video rồi bấm Bắt đầu.";
+  // What the camera sees right now, anywhere in the cabin. Nothing seen is never "empty".
   const paintSeats = () => {
-    const vr = clip.vr;
-    seatsBox.replaceChildren(...Object.keys(clip.sample.seats).map((n) => {
-      const st = vr && vr.seats[n] ? vr.seats[n] : null;
-      const name = { rear_left: "Ghế sau trái", rear_mid: "Ghế sau giữa", rear_right: "Ghế sau phải", passenger: "Ghế phụ" }[n] || n;
-      return h("div", { class: "switch" }, h("div", {}, name), h("div", { class: "small" }, st ? `${SEAT_TEXT[st.state]}${st.conf ? ` · ${Math.round(st.conf * 100)}%` : ""}${st.sim != null ? ` · giống xe trống ${st.sim}` : ""}` : "—"));
-    }));
+    const vr = clip.vr, seen = vr ? vr.seen : [];
+    seenBox.replaceChildren(...(seen.length ? seen.map((t) => h("div", { class: "item" }, t))
+      : [h("div", { class: "item muted" }, vr ? "Chưa thấy ai. Điều đó không có nghĩa là xe trống." : "—")]));
   };
   const pick = (sample) => { stopCamera(); clip.sample = sample; render(); };
   const sampleBtns = h("div", { class: "row wrap" }, [...SAMPLES, ...(clip.own ? [OWN] : [])].map((x) =>
@@ -323,10 +330,10 @@ function videoCard() {
           const f = await analyse(vr, video, scratch, clip.blocked || video.paused);
           run.frame = f;
           paint(overlay, video, vr, f.boxes);
-          maybeSendPhoto(video, false);
+          maybeSendPhoto(video, false);                 // f.items are drawn on the photo too
           paintSeats();
           const st = stats(vr);
-          msg.textContent = `${f.ok ? "Camera bình thường" : "Camera bị che hoặc quá tối"} · ${f.detections.length} ghế có thể có người/thú · ${st.frames} khung · ${st.p50 != null ? Math.round(st.p50) : "–"} ms/khung${st.firstAlert != null ? ` · báo sau ${st.firstAlert.toFixed(1)} s` : ""}`;
+          msg.textContent = `${f.ok ? "Camera bình thường" : "Camera bị che hoặc quá tối"} · ${f.detections.length} người/thú · ${st.frames} khung · ${st.p50 != null ? Math.round(st.p50) : "–"} ms/khung${st.firstAlert != null ? ` · báo sau ${st.firstAlert.toFixed(1)} s` : ""}`;
         } finally { clip.busy = false; }
       }, DETECT_MS);
       render();
@@ -337,20 +344,20 @@ function videoCard() {
   else { video.pause(); video.removeAttribute("src"); overlay.getContext("2d").clearRect(0, 0, overlay.width, overlay.height); paintSeats(); }
   const hasRef = s.id === "own" ? !!clip.ownRef : !!s.ref;
   return h("section", { class: "card gap" }, h("div", { class: "row between" }, h("h3", {}, "Video mẫu"), h("span", { class: "pill orange" }, "MÔ PHỎNG")),
-    h("p", { class: "small muted", style: "margin:0" }, "Video phát và được nhận diện ngay trên máy này, thay cho camera trong xe. Máy chủ chỉ nhận ghế nào có thể có người, độ tin cậy và khung; video không rời máy."),
+    h("p", { class: "small muted", style: "margin:0" }, "Video phát và được nhận diện ngay trên máy này, thay cho camera trong xe. Máy chủ chỉ nhận loại (người, thú, đồ vật), độ tin cậy và khung; video không rời máy."),
     sampleBtns,
     h("p", { class: "small", style: "margin:0" }, h("strong", {}, s.title), ` · ${s.note}`, s.truth ? h("span", { class: "muted" }, ` Thực tế: ${s.truth}.`) : null),
     h("div", { class: "row wrap" }, h("label", { class: "field grow" }, h("span", { class: "small muted" }, "Hoặc dùng video của bạn"), fileIn),
       s.id === "own" ? h("label", { class: "field grow" }, h("span", { class: "small muted" }, "Ảnh xe trống cùng góc máy (tùy chọn)"), refIn) : null),
-    h("p", { class: "small muted", style: "margin:0" }, hasRef ? "Có ảnh xe trống: ghế nào khác lúc trống 3 khung liền được báo là có thể có người, kể cả khi mô hình không thấy ai." : "Không có ảnh xe trống: chỉ dựa vào mô hình. Không phát hiện được gì không có nghĩa là xe trống."),
+    h("p", { class: "small muted", style: "margin:0" }, hasRef ? "Có ảnh xe trống: chỗ nào khác lúc xe trống 3 khung liền được báo là có thể có người, kể cả khi mô hình không thấy ai." : "Không có ảnh xe trống: chỉ dựa vào mô hình. Không phát hiện được gì không có nghĩa là xe trống."),
     h("div", { class: "video-wrap" }, video, overlay), scratch, msg,
     running ? h("div", { class: "row wrap" },
       h("button", { class: "btn grow", on: { click: () => { clip.blocked = !clip.blocked; render(); } } }, clip.blocked ? "Bỏ che camera" : "Che camera"),
       h("button", { class: "btn grow", on: { click: () => { stopCamera(); run.frame = null; render(); send(); } } }, "Dừng"))
       : h("button", { class: "btn primary block", disabled: s.id === "own" && !clip.own, on: { click: start } }, icon("cam"), "Bắt đầu"),
-    h("div", {}, h("div", { class: "small muted", style: "margin-bottom:6px" }, "Từng ghế (trên máy này)"), seatsBox),
+    h("div", {}, h("div", { class: "small muted", style: "margin-bottom:6px" }, "Đang thấy (trên máy này)"), seenBox),
     h("p", { class: "small", style: "margin:0" }, run.alertPhoto
-      ? "Ảnh kèm cảnh báo: BẬT. Khi có ghế báo, tối đa 1 ảnh mỗi 30 giây, vùng người và ghế đó được làm mờ ngay trên máy này."
+      ? "Ảnh kèm cảnh báo: BẬT. Khi thấy người, tối đa 1 ảnh mỗi 30 giây, có khung nhận diện, mặt người được che ngay trên máy này."
       : "Ảnh kèm cảnh báo: TẮT. Không có ảnh nào rời máy này."));
 }
 
@@ -378,7 +385,7 @@ function render() {
   root.replaceChildren(h("div", { class: "devwrap" },
     h("header", { class: "devhead" }, h("img", { src: "../logo.png", alt: "", width: 32, height: 32 }), h("div", {}, h("h1", { style: "margin:0;font-size:20px" }, "Cabin Noir"), h("div", { class: "small muted" }, "Thiết bị camera trong xe")), h("div", { class: "grow" }), dev && pill),
     dev ? consoleView() : pairing(),
-    h("p", { class: "small muted center" }, "Máy chủ chỉ nhận nhãn, độ tin cậy và vị trí khung. Ảnh camera chỉ rời máy khi chủ xe bật ảnh kèm cảnh báo, và người trong ảnh được làm mờ ngay trên máy này. Chỉ giám sát, không điều khiển xe.")));
+    h("p", { class: "small muted center" }, "Máy chủ chỉ nhận nhãn, độ tin cậy và vị trí khung. Ảnh camera chỉ rời máy khi chủ xe bật ảnh kèm cảnh báo, và mặt người trong ảnh được che ngay trên máy này. Chỉ giám sát, không điều khiển xe.")));
 }
 
 render();

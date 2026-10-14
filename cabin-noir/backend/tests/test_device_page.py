@@ -34,14 +34,16 @@ def test_device_page_sends_pixels_only_as_a_blurred_opt_in_alert_photo():
     assert "toBlob" not in (WEB / "js" / "detect.js").read_text()
     for banned in ("toDataURL", "canvas.captureStream", "MediaRecorder", "FormData"):
         assert banned not in src, banned
-    # Exactly one place encodes a frame, and it pixelates people before encoding.
+    # Exactly one place encodes a frame, and it pixelates every detected person's face before encoding.
     assert src.count("toBlob") == 1
     blurred = src[src.index("export function blurredFrame"):src.index("async function maybeSendPhoto")]
     assert "toBlob" in blurred and "imageSmoothingEnabled = false" in blurred and 'd.kind !== "pet"' in blurred
+    assert blurred.index("imageSmoothingEnabled = false") < blurred.index("strokeRect")          # faces first, then boxes and labels
+    assert '"Trẻ em"' in blurred and "d.name" in blurred                                         # children and items are labelled
     assert blurred.index("imageSmoothingEnabled = false") < blurred.index("toBlob")
     # It is uploaded only to the alert-photo endpoint, only when the owner turned it on, saying it was blurred.
     sender = src[src.index("async function maybeSendPhoto"):src.index("/** A one-minute test drive")]
-    assert "!run.alertPhoto" in sender and '"/v1/device/alert-photo"' in sender and '"X-Cabin-Blurred": "people"' in sender
+    assert "!run.alertPhoto" in sender and '"/v1/device/alert-photo"' in sender and '"X-Cabin-Blurred": "faces"' in sender
     assert src.count("/v1/device/alert-photo") == 1
 
 

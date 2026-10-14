@@ -2,9 +2,8 @@
 // Everything runs on this device. Nothing is sent unless the person chooses to keep a photo (preview first, 30 days, deletable).
 import { api } from "../api.js";
 import { h, icon, toast, busy, sheet } from "../ui.js";
-import { loadModel, ITEM, PET, seatOf, norm } from "../detect.js";
+import { loadModel, ITEM, PET, norm } from "../detect.js";
 
-const SEAT = { rear_left: "ghế sau trái", rear_mid: "ghế sau giữa", rear_right: "ghế sau phải" };
 const COLOR = { person: "#ff5a4d", pet: "#ff9f0a", item: "#f5c518" };
 const st = { stream: null, model: null, timer: null, found: [], dark: false, running: false, loading: false };
 
@@ -38,7 +37,7 @@ export async function render({ S }) {
     for (const f of st.found) {
       const [x, y, bw, bh] = f.box, col = COLOR[f.type === "item" ? "item" : f.kind];
       g.strokeStyle = col; g.lineWidth = 2.5; g.strokeRect(x * w, y * hh, bw * w, bh * hh);
-      const t = f.type === "item" ? `${f.name} ${Math.round(f.conf * 100)}%` : `${f.kind === "person" ? "Người" : "Thú cưng"} · ${SEAT[f.seat]} ${Math.round(f.conf * 100)}%`;
+      const t = f.type === "item" ? `${f.name} ${Math.round(f.conf * 100)}%` : `${f.kind === "person" ? "Người" : "Thú cưng"} ${Math.round(f.conf * 100)}%`;
       g.font = "600 12px -apple-system, sans-serif";
       const tw = g.measureText(t).width + 10, ty = Math.max(0, y * hh - 20);
       g.fillStyle = col; g.fillRect(x * w, ty, tw, 20); g.fillStyle = "#111"; g.fillText(t, x * w + 5, ty + 14);
@@ -58,10 +57,10 @@ export async function render({ S }) {
     try { preds = st.dark ? [] : await st.model.detect(video, 12, 0.35); } catch { /* skip */ }
     const vw = video.videoWidth || 640, vh = video.videoHeight || 480, found = [];
     for (const p of preds) {
-      const seat = seatOf(p.bbox[0] + p.bbox[2] / 2, vw, false), box = norm(p.bbox, vw, vh, false), conf = +p.score.toFixed(2);
-      if (p.class === "person") found.push({ type: "person", kind: "person", seat, conf, box });
-      else if (PET.has(p.class)) found.push({ type: "pet", kind: "pet", seat, conf, box });
-      else if (ITEM[p.class]) found.push({ type: "item", name: ITEM[p.class], seat, conf, box });
+      const box = norm(p.bbox, vw, vh, false), conf = +p.score.toFixed(2);
+      if (p.class === "person") found.push({ type: "person", kind: "person", conf, box });
+      else if (PET.has(p.class)) found.push({ type: "pet", kind: "pet", conf, box });
+      else if (ITEM[p.class]) found.push({ type: "item", name: ITEM[p.class], conf, box });
     }
     st.found = found; paint();
   };
@@ -104,7 +103,7 @@ export async function render({ S }) {
 
   if (st.running && st.stream) { video.srcObject = st.stream; video.play().catch(() => {}); }
   return h("div", { class: "gap" }, h("a", { href: "#/history", on: { click: (e) => { if (history.length > 1) { e.preventDefault(); history.back(); } } } }, "← Quay lại"), h("h1", {}, "Tự kiểm tra cabin"),
-    h("p", { class: "muted", style: "margin:0" }, "Đứng cạnh xe, hướng camera của máy này vào ghế sau, sàn xe và cốp. Việc nhận diện chạy ngay trên máy, không gửi ảnh đi đâu."),
+    h("p", { class: "muted", style: "margin:0" }, "Đứng cạnh xe, hướng camera của máy này vào các ghế, sàn xe và cốp. Việc nhận diện chạy ngay trên máy, không gửi ảnh đi đâu."),
     wrap, result, actions(),
     h("div", { class: "banner" }, "Hệ thống không thấy gì không có nghĩa là xe trống. Luôn tự nhìn lại bằng mắt trước khi xác nhận đã kiểm tra xe."));
 }

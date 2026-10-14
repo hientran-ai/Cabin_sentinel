@@ -236,7 +236,8 @@ def test_school_trip_follows_the_device_and_flags_a_child_left_in_the_car(prod):
     h, uid, vid, dh, _ = setup_car(c, sent)
     kid = c.post("/v1/children", json={"name": "Bin", "cls": "2A", "seat": "left"}, headers=h).json()[0]
     c.put(f"/v1/vehicles/{vid}/geofence", json={"name": "Trường", "lat": 21.0, "lon": 105.8, "radius_m": 150}, headers=h)
-    seat = [{"seat": "rear_left", "kind": "person", "conf": 0.9, "age": "unknown"}]
+    seat = [{"kind": "person", "conf": 0.9, "age": "unknown"}]                     # one person, no seat
+    driver_and_kid = seat + [{"kind": "person", "conf": 0.8, "age": "unknown"}]
 
     def stage():
         return c.get(f"/v1/vehicles/{vid}/trips", headers=h).json()[0]["stage"]
@@ -245,7 +246,12 @@ def test_school_trip_follows_the_device_and_flags_a_child_left_in_the_car(prod):
     assert stage() == "waiting"                                   # sitting in a parked car is not a trip yet
     clock.t += 5
     c.post("/v1/device/telemetry", json=frame(detections=seat, engine_on=True, lat=21.04, lon=105.8), headers=dh)
-    assert stage() == "enroute"                                   # seat occupied + car moving
+    assert stage() == "waiting"                                   # only the driver while moving: nobody boarded
+    clock.t += 1
+    c.post("/v1/device/telemetry", json=frame(detections=driver_and_kid, engine_on=True, lat=21.04, lon=105.8), headers=dh)
+    clock.t += 4
+    c.post("/v1/device/telemetry", json=frame(detections=driver_and_kid, engine_on=True, lat=21.04, lon=105.8), headers=dh)
+    assert stage() == "enroute"                                   # a passenger besides the driver + car moving
     clock.t += 5
     c.post("/v1/device/telemetry", json=frame(detections=seat, engine_on=False, lat=21.0, lon=105.8), headers=dh)
     assert stage() == "arrived"                                   # parked inside the zone
@@ -261,7 +267,7 @@ def test_school_trip_follows_the_device_and_flags_a_child_left_in_the_car(prod):
     clock.t += 15
     c.post("/v1/device/telemetry", json=frame(detections=[], engine_on=False, lat=21.0, lon=105.8), headers=dh)
     assert stage() == "arrived"
-    assert logic.open_incident(vid) is not None                   # an empty seat does not close the incident by itself
+    assert logic.open_incident(vid) is not None                   # an empty cabin does not close the incident by itself
 
 
 def test_cors_allows_web_origin_without_credentials(env):  # noqa: F811

@@ -20,14 +20,13 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from . import alerts as alert_worker
 from . import alertcard, cabinlog, config, db, logic, mute, notifications, otp, push, sms, telegram, webpush
 from . import history as hist
-from .logic import SEAT_LABEL, now
+from .logic import now
 
 DEV = config.DEV
 PRODUCTION = config.PRODUCTION
 PHONE_RE = re.compile(r"^0\d{9}$")
 DEFAULT_SETTINGS = {"mute_until": 0, "purpose": "both", "notify_warning": True, "notify_info": True, "exit_reminder": True,
                     "auto_cool": False, "demo_mode": not config.PRODUCTION, "notify_channel": "auto"}
-CHILD_SEATS = {"left": "rear_left", "mid": "rear_mid", "right": "rear_right"}
 
 from contextlib import asynccontextmanager
 
@@ -465,7 +464,8 @@ def tiles(state: dict[str, Any], verdict: dict[str, Any]) -> list[dict[str, str]
         out = state.get("outside_temp")
         cabin = {"label": "Ngoài trời", "value": "—" if out is None else f"{out:.0f}°C", "tone": "grey" if stale else ("orange" if (out or 0) >= config.HOT_OUTSIDE_C else "plain")}
     if verdict.get("seat"):
-        third = {"label": SEAT_LABEL[verdict["seat"]], "value": f"Người {round(verdict['conf'] * 100)}%",
+        cell = state["seats"].get(verdict["seat"]) or {}
+        third = {"label": "Trong xe", "value": f"{logic.who_text(cell)} · {round(verdict['conf'] * 100)}%",
                  "tone": "red" if verdict["level"] == "critical" else "orange"}
     else:
         cam = state["camera"]
@@ -484,7 +484,7 @@ def exit_check(state: dict[str, Any]) -> dict[str, Any]:
     pending = (not logic.is_stale(state) and not state["engine_on"] and not state["doors_locked"]
                and bool(pres) and state.get("exit_confirmed_at") is None)
     return {"pending": pending, "location": state["location"],
-            "seats": [{"key": k, "label": SEAT_LABEL[k], "conf": v["conf"]} for k, v in pres],
+            "seen": [{"who": logic.who_text(v), "conf": v["conf"]} for _, v in pres],
             "items": state["items"], "confirmed_at": state.get("exit_confirmed_at")}
 
 
@@ -504,7 +504,8 @@ def status_json(vehicle_id: str, role: str) -> dict[str, Any]:
         return out
     out.update({
         "restricted": False, "verdict": verdict, "tiles": tiles(state, verdict),
-        "seats": [{"key": k, "label": SEAT_LABEL[k], **v} for k, v in state["seats"].items()],
+        "cabin": {**{k: v for k, v in (state["seats"].get("cabin") or logic.empty_cabin()).items() if k not in ("dets", "box")},
+                  "seen": detections_of(state, boxes=False)},
         "items": state["items"], "cabin_temp": round(state["cabin_temp"], 1) if state.get("temp_known", True) else None, "outside_temp": state.get("outside_temp"),
         "doors_locked": state["doors_locked"], "lock_known": state.get("lock_known", True), "engine_on": state["engine_on"], "camera": state["camera"],
         # A real device that has gone quiet is offline, whatever the last message said (same rule as the device list).
@@ -661,7 +662,7 @@ def put_alert_photo(vehicle_id: str, body: AlertPhotoIn, user: User = Depends(cu
                      "ON CONFLICT(vehicle_id) DO UPDATE SET alert_photo=excluded.alert_photo, changed_by=excluded.changed_by, "
                      "changed_at=excluded.changed_at", (vehicle_id, int(body.enabled), user.name, now()))
         logic.add_event(conn, vehicle_id, None, "settings", f"{user.name} đã {'bật' if body.enabled else 'tắt'} ảnh kèm cảnh báo",
-                        "Ảnh do thiết bị trong xe làm mờ người trước khi gửi" if body.enabled else "")
+                        "Ảnh do thiết bị trong xe che mặt người trước khi gửi" if body.enabled else "")
     return get_alert_photo(vehicle_id, user)
 
 
@@ -836,8 +837,22 @@ def camera(vehicle_id: str, user: User = Depends(current_user)) -> dict[str, Any
     with db.tx() as conn:
         logic.add_event(conn, vehicle_id, None, "camera", f"{user.name} đã xem camera", "Đèn xanh dương trên thiết bị nhấp nháy khi có người xem")
     return {"available": True, "simulated": True, "level": verdict["level"],
-            "detections": [{"seat": k, "label": SEAT_LABEL[k], "kind": v["kind"], "conf": v["conf"], "age": v.get("age")} for k, v in logic.presence(state)],
+            "detections": detections_of(state, boxes=False),
             "items": state["items"]}
+
+
+KIND_LABEL = {"person": "Người", "pet": "Thú cưng"}
+
+
+def detections_of(state: dict[str, Any], boxes: bool) -> list[dict[str, Any]]:
+    """Everything the device sees in the cabin, one entry per detection, labelled by what it is (never by seat)."""
+    out = []
+    for _, cell in logic.presence(state):
+        dets = cell.get("dets") or [{"kind": cell.get("kind"), "conf": cell.get("conf"), "age": cell.get("age"), "box": cell.get("box")}]
+        for d in dets:
+            label = "Trẻ em" if d.get("age") == "child" else KIND_LABEL.get(d.get("kind"), "Người")
+            out.append({"label": label, "kind": d.get("kind"), "conf": d.get("conf"), "age": d.get("age"), **({"box": d.get("box")} if boxes else {})})
+    return out
 
 
 LIVE_NOTE = ("Hình trực tiếp được vẽ từ kết quả nhận diện (vị trí và nhãn), không phải video camera. "
@@ -863,7 +878,7 @@ def live_view(vehicle_id: str, user: User = Depends(current_user)) -> dict[str, 
         with db.tx() as conn:
             logic.add_event(conn, vehicle_id, None, "camera", f"{user.name} đang xem trực tiếp", "Đèn xanh dương trên thiết bị nhấp nháy khi có người xem")
     return {**base, "available": True,
-            "detections": [{"seat": k, "label": SEAT_LABEL[k], "kind": v["kind"], "conf": v["conf"], "age": v.get("age"), "box": v.get("box")} for k, v in logic.presence(state)],
+            "detections": detections_of(state, boxes=True),
             "items": state["items"]}
 
 
@@ -876,7 +891,7 @@ def exit_confirm(vehicle_id: str, user: User = Depends(current_user)) -> dict[st
         state = logic.load_state(vehicle_id)
         state["exit_confirmed_at"] = now()
         logic.save_state(conn, vehicle_id, state)
-        logic.add_event(conn, vehicle_id, None, "exit", f"{user.name} xác nhận đã kiểm tra ghế sau", f"Trước khi khóa xe tại {state['location']}")
+        logic.add_event(conn, vehicle_id, None, "exit", f"{user.name} xác nhận đã kiểm tra trong xe", f"Trước khi khóa xe tại {state['location']}")
     return status_json(vehicle_id, role)
 
 
@@ -946,7 +961,7 @@ def remove_member(vehicle_id: str, member_id: str, user: User = Depends(current_
 class ChildIn(BaseModel):
     name: str = Field(min_length=1, max_length=30)
     cls: str = Field("", max_length=60)
-    seat: Literal["left", "mid", "right"] = "left"
+    seat: Literal["left", "mid", "right"] = "left"      # kept for older apps; not used (the cabin is one zone)
     pickup: str = Field("06:45", pattern=r"^\d{2}:\d{2}$")
     dropoff: str = Field("16:30", pattern=r"^\d{2}:\d{2}$")
     days: list[int] = [0, 1, 2, 3, 4]
@@ -1029,7 +1044,7 @@ def delete_contact(contact_id: str, user: User = Depends(current_user)) -> list[
 
 # ---------------------------------------------------------------- school trips
 
-def log_entry(code: str, child: dict[str, Any], seat: str) -> dict[str, str]:
+def log_entry(code: str, child: dict[str, Any], seat: str = "") -> dict[str, str]:
     # Codes: "boarded" (legacy fixed text) or "key@HH:MM#m|s|g" = real time, manual / simulated / vehicle position.
     base, _, src_code = code.partition("#")
     key, _, hhmm = base.partition("@")
@@ -1044,8 +1059,7 @@ def trip_json(vehicle_id: str, child: dict[str, Any]) -> dict[str, Any]:
     if row and time.strftime("%Y-%m-%d", time.localtime(row["updated_at"])) != time.strftime("%Y-%m-%d", time.localtime(now())):
         row = None   # yesterday's run: today starts again at "waiting"
     stage, log = (row["stage"], db.loads(row["log"])) if row else ("waiting", [])
-    seat = SEAT_LABEL[CHILD_SEATS[child["seat"]]]
-    entries = [log_entry(c, child, seat) for c in log]
+    entries = [log_entry(c, child) for c in log]
     state = logic.load_state(vehicle_id)
     route, coords, geo = state.get("route"), state.get("coords"), state.get("geofence")
     dest = (route or {}).get("dest") or geo
@@ -1054,7 +1068,7 @@ def trip_json(vehicle_id: str, child: dict[str, Any]) -> dict[str, Any]:
     if known:
         progress = max(4, min(96, round(coords["progress"] * 100)))
     return {"vehicle_id": vehicle_id, "child": child, "stage": stage, "log": list(reversed(entries)),
-            "pickup": child["pickup"], "dropoff": child["dropoff"], "seat_label": seat,
+            "pickup": child["pickup"], "dropoff": child["dropoff"],
             "progress": progress, "progress_known": known or stage in ("arrived", "leftin"),
             "school": dest["name"] if dest else None,
             "destination": {"name": dest["name"], "lat": dest["lat"], "lon": dest["lon"]} if dest else None,
@@ -1136,8 +1150,11 @@ def _check_box(v: Box) -> Box:
     return [round(x, 3), round(y, 3), round(min(v[2], 1.0 - x), 3), round(min(v[3], 1.0 - y), 3)]
 
 
+SeatIn = Optional[Literal["rear_left", "rear_mid", "rear_right", "passenger", "driver", "cabin"]]   # older devices; ignored
+
+
 class DetIn(BaseModel):
-    seat: Literal["rear_left", "rear_mid", "rear_right", "passenger"]
+    seat: SeatIn = None
     kind: Literal["person", "pet"]
     conf: float = Field(ge=0, le=1)
     box: Box = None
@@ -1153,7 +1170,7 @@ class DetIn(BaseModel):
 
 class ItemIn(BaseModel):
     name: str = Field(min_length=1, max_length=30)
-    seat: Literal["rear_left", "rear_mid", "rear_right", "passenger"]
+    seat: SeatIn = None
     conf: float = Field(ge=0, le=1)
     box: Box = None
 
@@ -1164,11 +1181,11 @@ class ItemIn(BaseModel):
 
 
 class TelemetryIn(BaseModel):
-    # Preferred: one entry per detected occupant/item, already assigned to a seat by the sensor.
+    # Preferred: one entry per detected occupant/item anywhere in the cabin.
     detections: Optional[list[DetIn]] = Field(None, max_length=8)
     items: list[ItemIn] = Field(default_factory=list, max_length=12)
     model: Optional[str] = Field(None, max_length=40)  # which detector produced this frame
-    seat: Literal["rear_left", "rear_mid", "rear_right", "passenger"] = "rear_right"
+    seat: SeatIn = None
     person_conf: float = Field(0, ge=0, le=1)
     pet_conf: float = Field(0, ge=0, le=1)
     camera_ok: bool = True
@@ -1195,15 +1212,15 @@ def apply_geofence(conn: Any, vehicle_id: str, state: dict[str, Any], lat: float
         state["location"] = g["name"]
 
 
-BOARD_AFTER_S = 3        # the child's seat must have been occupied this long before "boarded"
+BOARD_AFTER_S = 3        # a passenger must have been seen this long before "boarded"
 LEFT_IN_AFTER_S = 120    # still occupied this long after arriving at the school: "left in"
-CLEAR_AFTER_S = 10       # an empty seat for this long takes "left in" back to "arrived"
+CLEAR_AFTER_S = 10       # nobody seen for this long takes "left in" back to "arrived"
 
 
 def auto_trips(conn: Any, vehicle_id: str, state: dict[str, Any]) -> None:
     """Move today's school trips along from what the in-car device itself sees, never from a guess about the child:
-    boarded/en route = the child's seat is occupied by a person and the car is moving; arrived = parked inside the
-    destination zone; left in = the seat is still occupied a while after arriving. The alert itself comes from the
+    boarded/en route = the camera sees a passenger (a child, or a second person besides the driver) and the car is moving;
+    arrived = parked inside the destination zone; left in = someone is still seen in the car a while after arriving. The alert itself comes from the
     normal cabin pipeline, this only tells the trip what happened. Age labels play no part."""
     owner = conn.execute("SELECT user_id FROM members WHERE vehicle_id=? AND role='owner'", (vehicle_id,)).fetchone()
     if owner is None:
@@ -1215,9 +1232,11 @@ def auto_trips(conn: Any, vehicle_id: str, state: dict[str, Any]) -> None:
     driving, inside = bool(state.get("engine_on")), bool(state.get("in_geofence"))
     seen = state.get("camera") == "ok"
     watch = state.setdefault("trip_watch", {})
+    cell = state.get("seats", {}).get("cabin") or {}
+    people = (cell.get("people") or 0) if seen and cell.get("occ") else 0
+    passenger = (cell.get("children") or 0) >= 1 or people >= (2 if driving else 1)
     for kid in kids:
-        cell = state.get("seats", {}).get(CHILD_SEATS[kid["seat"]]) or {}
-        occ = bool(seen and cell.get("occ") and cell.get("kind") == "person")
+        occ = bool(passenger)
         w = watch.setdefault(kid["id"], {})
         if occ:
             w.setdefault("since", t)
@@ -1242,9 +1261,9 @@ def auto_trips(conn: Any, vehicle_id: str, state: dict[str, Any]) -> None:
         elif stage in ("boarded", "enroute") and inside and not driving:
             new, add, what = "arrived", [f"arrived@{hhmm}#g"], "Xe đã đỗ tại điểm đến"
         elif stage == "arrived" and occ and not driving and held >= LEFT_IN_AFTER_S:
-            new, add, what = "leftin", [f"leftin@{hhmm}#d"], f"Ghế của {kid['name']} vẫn còn người sau khi tới điểm đến"
+            new, add, what = "leftin", [f"leftin@{hhmm}#d"], "Trong xe vẫn còn người sau khi tới điểm đến"
         elif stage == "leftin" and not occ and empty >= CLEAR_AFTER_S:
-            new, add, what = "arrived", [f"arrived@{hhmm}#d"], f"Ghế của {kid['name']} đã trống"
+            new, add, what = "arrived", [f"arrived@{hhmm}#d"], "Camera không còn thấy ai trong xe"
         if new is None:
             continue
         conn.execute("INSERT INTO trips(id,vehicle_id,child_id,stage,log,updated_at) VALUES(?,?,?,?,?,?) "
@@ -1257,18 +1276,15 @@ def ingest_telemetry(conn: Any, vehicle_id: str, body: TelemetryIn, source: str)
     (a paired in-car device). A device cannot see door locks or a cabin thermometer, so it never claims to."""
     state = logic.load_state(vehicle_id)
     first = state.get("source") not in logic.REAL_SOURCES
-    seats = {k: {"occ": False, "conf": 0.0, "kind": None} for k in state["seats"]}
     if body.detections is not None:
-        for d in body.detections:
-            if d.conf >= 0.5 and d.conf > seats[d.seat]["conf"]:
-                seats[d.seat] = {"occ": True, "conf": round(d.conf, 2), "kind": d.kind, "age": d.age, "box": d.box}
+        dets = [{"kind": d.kind, "conf": round(d.conf, 2), "age": d.age, "box": d.box} for d in body.detections if d.conf >= 0.5]
     else:
         conf, kind = max((body.person_conf, "person"), (body.pet_conf, "pet"))
-        if conf >= 0.5:
-            seats[body.seat] = {"occ": True, "conf": round(conf, 2), "kind": kind}
+        dets = [{"kind": kind, "conf": round(conf, 2), "age": None, "box": None}] if conf >= 0.5 else []
+    seats = {"cabin": logic.cabin_from(dets)}
     state.update({"source": source, "scenario": source, "connection": "online", "last_seen": now(), "t_at": now(),
                   "camera": "ok" if body.camera_ok else "blocked", "engine_on": body.engine_on, "seats": seats,
-                  "items": [i.model_dump() for i in body.items if i.conf >= 0.5], "detector": body.model})
+                  "items": [i.model_dump(exclude={"seat"}) for i in body.items if i.conf >= 0.5], "detector": body.model})
     if source == "device":
         dev = body  # DeviceTelemetryIn
         state.update({"doors_locked": True, "lock_known": False, "signal": None})
@@ -1295,7 +1311,7 @@ def ingest_telemetry(conn: Any, vehicle_id: str, body: TelemetryIn, source: str)
         hist.record_location(conn, vehicle_id, body.lat, body.lon, body.accuracy_m, None, source)
     if first:
         if source == "device":
-            logic.add_event(conn, vehicle_id, None, "device", "Thiết bị trong xe đã kết nối", "Bắt đầu giám sát hàng ghế sau")
+            logic.add_event(conn, vehicle_id, None, "device", "Thiết bị trong xe đã kết nối", "Bắt đầu giám sát trong xe")
         else:
             logic.add_event(conn, vehicle_id, None, "sim", "Mô phỏng", "Dùng camera điện thoại làm cảm biến thử nghiệm")
 
@@ -1491,7 +1507,7 @@ def manual_trip(child_id: str, vehicle_id: str, user: User, stage: str, cabin_ch
     if stage == "arrived" and not cabin_checked:
         st = logic.load_state(vehicle_id)
         if not logic.is_stale(st) and logic.presence(st):
-            raise err(409, "still_detected", "Camera vẫn thấy người ở ghế sau. Kiểm tra cabin rồi xác nhận để ghi nhận xuống xe.")
+            raise err(409, "still_detected", "Camera vẫn thấy người trong xe. Kiểm tra cabin rồi xác nhận để ghi nhận xuống xe.")
     hhmm = time.strftime("%H:%M", time.localtime(now()))
     with db.tx() as conn:
         row = conn.execute("SELECT * FROM trips WHERE vehicle_id=? AND child_id=?", (vehicle_id, child_id)).fetchone()
@@ -1763,13 +1779,15 @@ ALERT_PHOTO_MIN_GAP_S = 30
 
 @app.post("/v1/device/alert-photo")
 async def device_alert_photo(request: Request, device: dict[str, Any] = Depends(current_device)) -> dict[str, Any]:
-    """A frame the device sends with an alert, only when the owner turned alert photos on. The device blurs every
-    person in it before it leaves the phone and says so; a frame without that promise is refused. Kept 24 hours."""
+    """A frame the device sends with an alert, only when the owner turned alert photos on. The device draws what it
+    detected and pixelates every detected person's face before it leaves the phone, and says so; a frame without that
+    promise is refused. Kept 24 hours."""
     vid = device["vehicle_id"]
     if not hist.alert_photo_enabled(vid):
         raise err(403, "alert_photo_off", "Chủ xe chưa bật gửi ảnh kèm cảnh báo.")
-    if request.headers.get("x-cabin-blurred") != "people":
-        raise err(422, "not_blurred", "Ảnh phải được làm mờ người ngay trên thiết bị trước khi gửi.")
+    # "faces": every detected person's face pixelated, boxes drawn; "people": older devices pixelating whole people.
+    if request.headers.get("x-cabin-blurred") not in ("faces", "people"):
+        raise err(422, "not_blurred", "Ảnh phải được che mặt người ngay trên thiết bị trước khi gửi.")
     data = await request.body()
     if not data or len(data) > ALERT_PHOTO_MAX_BYTES or not data.startswith(b"\xff\xd8"):
         raise err(422, "bad_photo", "Ảnh cảnh báo phải là JPEG, tối đa 400 KB.")
@@ -1784,7 +1802,7 @@ async def device_alert_photo(request: Request, device: dict[str, Any] = Depends(
     with db.tx() as conn:
         hist.add_media(conn, pid, vid, "jpg", data, None, kind="alert_photo", incident_id=inc["id"] if inc else None)
         logic.add_event(conn, vid, inc["id"] if inc else None, "photo", "Thiết bị gửi ảnh cảnh báo",
-                        "Người trong ảnh đã được làm mờ trên thiết bị · xóa sau 24 giờ")
+                        "Mặt người trong ảnh đã được che trên thiết bị · xóa sau 24 giờ")
     return {"ok": True, "id": pid}
 
 

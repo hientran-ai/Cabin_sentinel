@@ -291,11 +291,16 @@ def test_phone_multi_detection(env):
             "items": [{"name": "Ba lô", "seat": "rear_mid", "conf": 0.8}, {"name": "Chai nước", "seat": "rear_mid", "conf": 0.2}],
             "model": "apple-vision", "locked": True, "cabin_temp": 31}
     r = c.post(f"/v1/vehicles/{vid}/telemetry", json=body, headers=h).json()
-    occ = {s["key"]: s for s in r["seats"] if s["occ"]}
-    assert set(occ) == {"rear_left", "rear_right"} and occ["rear_right"]["kind"] == "pet" and r["detector"] == "apple-vision"
+    cab = r["cabin"]                                              # one zone: counts, no seats
+    assert cab["occ"] and cab["people"] == 1 and cab["pets"] == 1 and cab["kind"] == "person" and r["detector"] == "apple-vision"
+    assert "seats" not in r
     cam = c.get(f"/v1/vehicles/{vid}/camera", headers=h).json()
     assert len(cam["detections"]) == 2 and [i["name"] for i in cam["items"]] == ["Ba lô"]
-    assert c.post(f"/v1/vehicles/{vid}/telemetry", json={"detections": [{"seat": "driver", "kind": "person", "conf": 1}]}, headers=h).status_code == 422
+    assert {d["label"] for d in cam["detections"]} == {"Người", "Thú cưng"} and "seat" not in cam["items"][0]
+    # a detection anywhere in the cabin counts, with or without a seat
+    r = c.post(f"/v1/vehicles/{vid}/telemetry", json={"detections": [{"kind": "person", "conf": 0.9, "age": "child"}], "locked": True}, headers=h).json()
+    assert r["cabin"]["children"] == 1 and r["verdict"]["sub"].startswith("Thấy 1 người")
+    assert c.post(f"/v1/vehicles/{vid}/telemetry", json={"detections": [{"seat": "trunk", "kind": "person", "conf": 1}]}, headers=h).status_code == 422
 
 
 def test_age_hint_never_changes_the_verdict(env):
@@ -378,3 +383,19 @@ def test_otp_is_rate_limited(env):
     assert codes[:5] == [200] * 5 and codes[5:] == [429, 429]
     clock.t += 700
     assert c.post("/v1/auth/otp", json={"phone": "0911222333"}).status_code == 200
+
+
+def test_cabin_is_one_zone_and_old_seat_state_is_folded_in(env):
+    """No seats: whatever the device sees anywhere counts, and state saved with five seats keeps every occupant."""
+    from app import logic
+    old = logic.base_state()
+    old["seats"] = {"driver": {"occ": False, "conf": 0.0, "kind": None}, "rear_left": {"occ": True, "conf": 0.8, "kind": "pet"},
+                    "rear_right": {"occ": True, "conf": 0.7, "kind": "person", "age": "child"}}
+    old["items"] = [{"name": "Ba lô", "seat": "rear_mid", "conf": 0.9}]
+    st = logic.normalise_seats(old)
+    cab = st["seats"]["cabin"]
+    assert set(st["seats"]) == {"cabin"} and cab["people"] == 1 and cab["pets"] == 1 and cab["children"] == 1
+    assert cab["kind"] == "person"                                  # a child beside a pet is reported as a person
+    assert "seat" not in st["items"][0]
+    v = logic.evaluate(st)
+    assert v["level"] in ("warning", "critical") and v["sub"].startswith("Thấy 1 người, 1 thú cưng") and "Ghế" not in v["sub"]

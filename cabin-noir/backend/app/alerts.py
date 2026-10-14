@@ -228,7 +228,7 @@ def _device_link(vid: str) -> None:
             sent = False
             if t - (state.get("camera_notice_at") or 0) >= NOTICE_COOLDOWN_S:
                 sent = _push_all(vid, None, "Camera trong xe không nhìn được",
-                                 f"{label}: camera mất tín hiệu hoặc bị che nên chưa biết ghế sau có ai không. Không coi là xe trống, hãy kiểm tra xe.", True)[0]
+                                 f"{label}: camera mất tín hiệu hoặc bị che nên chưa biết trong xe có ai không. Không coi là xe trống, hãy kiểm tra xe.", True)[0]
             _save(vid, camera_notified=True, camera_sent=sent, **({"camera_notice_at": t} if sent else {}))
     elif state.get("camera_bad_since") is not None:
         if state.get("camera_notified") and state.get("camera_sent"):

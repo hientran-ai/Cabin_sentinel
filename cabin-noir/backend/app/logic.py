@@ -37,11 +37,52 @@ def new_id(prefix: str) -> str:
 HOT_C = 35.0
 STALE_AFTER_S = 120
 PAUSE_FOREVER = 4102444800.0      # 2100-01-01: 'until I turn it back on'
-SEATS = ["driver", "passenger", "rear_left", "rear_mid", "rear_right"]
-SEAT_LABEL = {
-    "driver": "Ghế lái", "passenger": "Ghế phụ", "rear_left": "Ghế sau trái",
-    "rear_mid": "Ghế sau giữa", "rear_right": "Ghế sau phải",
-}
+# The cabin is one zone: the device reports what it sees anywhere inside, never which seat. A person the camera finds
+# outside a drawn seat box must count all the same, and a seat map invites reading an empty box as "nobody there".
+SEATS = ["cabin"]
+SEAT_LABEL = {"cabin": "Trong xe"}
+# Seat keys written before the cabin became one zone (old incidents, logs and stored state).
+LEGACY_SEATS = ("driver", "passenger", "rear_left", "rear_mid", "rear_right")
+
+
+def empty_cabin() -> dict[str, Any]:
+    return {"occ": False, "conf": 0.0, "kind": None, "people": 0, "pets": 0, "children": 0, "dets": []}
+
+
+def cabin_from(dets: list[dict[str, Any]]) -> dict[str, Any]:
+    """One cabin cell from every detection the device made (conf >= 0.5 already applied). Any person makes it a person:
+    a pet beside a child must not turn the alert into "thú cưng"."""
+    cell = empty_cabin()
+    if not dets:
+        return cell
+    people = [d for d in dets if d["kind"] == "person"]
+    pets = [d for d in dets if d["kind"] == "pet"]
+    top = max(people or pets, key=lambda d: d["conf"])
+    cell.update({"occ": True, "conf": round(top["conf"], 2), "kind": top["kind"], "age": top.get("age"), "box": top.get("box"),
+                 "people": len(people), "pets": len(pets), "children": sum(1 for d in people if d.get("age") == "child"),
+                 "dets": [{k: d.get(k) for k in ("kind", "conf", "age", "box")} for d in sorted(dets, key=lambda d: -d["conf"])]})
+    return cell
+
+
+def who_text(cell: dict[str, Any]) -> str:
+    """'2 người, 1 thú cưng' from a cabin cell (at least '1 người' / '1 thú cưng' for an occupied one)."""
+    people, pets = cell.get("people") or 0, cell.get("pets") or 0
+    if not people and not pets and cell.get("occ"):
+        people, pets = (0, 1) if cell.get("kind") == "pet" else (1, 0)
+    parts = [f"{people} người" if people else "", f"{pets} thú cưng" if pets else ""]
+    return ", ".join(p for p in parts if p) or "không thấy ai"
+
+
+def normalise_seats(state: dict[str, Any]) -> dict[str, Any]:
+    """State saved with five seats becomes one cabin cell, keeping every occupant it had."""
+    seats = state.get("seats") or {}
+    if set(seats) == {"cabin"}:
+        return state
+    dets = [{"kind": v.get("kind") or "person", "conf": v.get("conf", 0.0), "age": v.get("age"), "box": v.get("box")}
+            for k, v in seats.items() if v.get("occ") and (k != "driver" or not state.get("engine_on"))]
+    state["seats"] = {"cabin": cabin_from(dets)}
+    state["items"] = [{k: v for k, v in i.items() if k != "seat"} for i in state.get("items") or []]
+    return state
 REAL_SOURCES = ("phone", "device")   # anything else is the simulator
 ESCALATION = [
     (0, "push", "Thông báo khẩn tới mọi điện thoại trong gia đình", "Nhắc lại mỗi 60 giây"),
@@ -60,7 +101,7 @@ def base_state() -> dict[str, Any]:
         "scenario": "safe", "connection": "online", "last_seen": now(), "camera": "ok",
         "battery": 82, "signal": 4, "doors_locked": True, "engine_on": False,
         "cabin_temp": 32.0, "outside_temp": 34.0, "location": "Nhà",
-        "seats": {s: {"occ": False, "conf": 0.0, "kind": None} for s in SEATS},
+        "seats": {"cabin": empty_cabin()},
         "items": [], "exit_confirmed_at": None, "t_at": now(),
     }
 
@@ -87,7 +128,10 @@ def apply_scenario(state: dict[str, Any], name: str) -> dict[str, Any]:
         for k in ("source", "coords", "route"):
             s.pop(k, None)
     s["seats"] = {k: dict(v) for k, v in state["seats"].items()}
-    clear = {k: {"occ": False, "conf": 0.0, "kind": None} for k in SEATS}
+    clear = {"cabin": empty_cabin()}
+
+    def seen(conf: float, kind: str = "person") -> None:
+        s["seats"] = {"cabin": cabin_from([{"kind": kind, "conf": conf, "age": None, "box": None}])}
 
     def reset(**kw: Any) -> None:
         s.update({"connection": "online", "last_seen": t, "camera": "ok", "doors_locked": True,
@@ -98,32 +142,32 @@ def apply_scenario(state: dict[str, Any], name: str) -> dict[str, Any]:
         reset(cabin_temp=32.0, location="Nhà")
     elif name == "warning":
         reset(cabin_temp=34.0)
-        s["seats"]["rear_right"] = {"occ": True, "conf": 0.64, "kind": "person"}
+        seen(0.64)
     elif name == "critical":
         reset(cabin_temp=40.0)
-        s["seats"]["rear_right"] = {"occ": True, "conf": 0.82, "kind": "person"}
+        seen(0.82)
     elif name == "camera_blocked":
         s.update({"camera": "blocked", "connection": "online", "last_seen": t})
     elif name == "offline":
         s.update({"connection": "offline", "last_seen": t - 900})
     elif name == "items_left":
         reset(cabin_temp=31.0, items=[
-            {"name": "Ba lô", "seat": "rear_left", "conf": 0.91},
-            {"name": "Điện thoại", "seat": "rear_mid", "conf": 0.87},
-            {"name": "Chai nước", "seat": "rear_right", "conf": 0.78}])
+            {"name": "Ba lô", "conf": 0.91},
+            {"name": "Điện thoại", "conf": 0.87},
+            {"name": "Chai nước", "conf": 0.78}])
     elif name == "driving":
         reset(engine_on=True, doors_locked=False, cabin_temp=26.0)
-        s["seats"]["driver"] = {"occ": True, "conf": 0.98, "kind": "person"}
+        seen(0.98)
     elif name == "exit_child":
         reset(engine_on=False, doors_locked=False, cabin_temp=29.0, location="Trường TH Kim Đồng", exit_confirmed_at=None)
-        s["seats"]["rear_left"] = {"occ": True, "conf": 0.9, "kind": "person"}
+        seen(0.9)
     elif name == "presence_clear":
         s.update({"seats": {k: dict(v) for k, v in clear.items()}, "connection": "online", "last_seen": t, "camera": "ok"})
     elif name == "low_battery":
         s.update({"battery": 18, "connection": "online", "last_seen": t})
     elif name == "trip_leftin":
         reset(cabin_temp=36.0, location="Trường TH Kim Đồng")
-        s["seats"]["rear_left"] = {"occ": True, "conf": 0.74, "kind": "person"}
+        seen(0.74)
     elif name == "route_start":
         s["route"] = {"started_at": t, **DEMO_ROUTE}
         s["trip_origin"] = {"name": "Nhà", "lat": DEMO_ROUTE["points"][0][0], "lon": DEMO_ROUTE["points"][0][1]}
@@ -160,7 +204,7 @@ def route_position(route: dict[str, Any], t: float) -> dict[str, Any]:
 
 def load_state(vehicle_id: str) -> dict[str, Any]:
     row = db.one("SELECT data FROM vehicle_state WHERE vehicle_id=?", vehicle_id)
-    return db.loads(row["data"]) if row else base_state()
+    return normalise_seats(db.loads(row["data"])) if row else base_state()
 
 
 def save_state(conn: Any, vehicle_id: str, state: dict[str, Any]) -> None:
@@ -171,7 +215,9 @@ def save_state(conn: Any, vehicle_id: str, state: dict[str, Any]) -> None:
 
 
 def presence(state: dict[str, Any]) -> list[tuple[str, dict[str, Any]]]:
-    return [(k, v) for k, v in state["seats"].items() if v.get("occ") and (k != "driver" or not state["engine_on"])]
+    """[("cabin", cell)] when the device sees someone in the car, else []. While the engine runs the driver is in the
+    picture; monitoring is paused then anyway (evaluate)."""
+    return [(k, v) for k, v in state["seats"].items() if v.get("occ")]
 
 
 def is_stale(state: dict[str, Any]) -> bool:
@@ -213,8 +259,8 @@ def evaluate(state: dict[str, Any]) -> dict[str, Any]:
         return {"level": "paused", "title": "Đã tạm dừng giám sát", "sub": f"Đến {hms(state['paused_until'])[:5]}, sau đó tự giám sát lại.",
                 "current": True, "paused_until": state["paused_until"]}
     if state["camera"] != "ok":
-        return {"level": "notice", "title": "Chưa nhìn được ghế sau",
-                "sub": "Camera đang bị che nên chưa biết ghế sau có ai không. Không coi là xe trống, hãy kiểm tra xe." if not state.get("lock_known", True)
+        return {"level": "notice", "title": "Chưa nhìn được trong xe",
+                "sub": "Camera đang bị che nên chưa biết trong xe có ai không. Không coi là xe trống, hãy kiểm tra xe." if not state.get("lock_known", True)
                 else "Camera đang bị che. Cửa và nhiệt độ vẫn được theo dõi.", "current": True}
     locked = state["doors_locked"]
     if pres and locked:
@@ -224,9 +270,9 @@ def evaluate(state: dict[str, Any]) -> dict[str, Any]:
         is_hot, temp_text = hot(state)
         parked = "xe đã khóa" if state.get("lock_known", True) else "xe đang đỗ, tắt máy"
         return {"level": "critical" if is_hot else "warning", "title": f"Có thể có {who} trong xe",
-                "sub": f"{SEAT_LABEL[seat]} · {pct}%. {temp_text}, {parked}.", "seat": seat, "conf": info["conf"], "current": True}
+                "sub": f"Thấy {who_text(info)} · {pct}%. {temp_text}, {parked}.", "seat": seat, "conf": info["conf"], "current": True}
     if pres:
-        return {"level": "notice", "title": "Có người trong xe", "sub": "Xe chưa khóa. Kiểm tra ghế sau trước khi rời xe.", "current": True}
+        return {"level": "notice", "title": "Có người trong xe", "sub": "Xe chưa khóa. Kiểm tra trong xe trước khi rời xe.", "current": True}
     return {"level": "safe", "title": "Không thấy ai trong xe", "sub": f"Cập nhật {hms(state['last_seen'])}", "current": True}
 
 
@@ -393,8 +439,8 @@ def check_resolve(state: dict[str, Any], inc: Any, revision: int) -> str | None:
 REJECT_TEXT = {
     "changed": ("Sự cố đã thay đổi", "Có dữ liệu mới từ xe sau khi bạn mở màn này. Xem lại rồi xác nhận lần nữa."),
     "stale": ("Dữ liệu đã cũ", "Xe chưa gửi dữ liệu mới. Yêu cầu dữ liệu mới rồi gửi lại."),
-    "camera": ("Camera chưa nhìn được ghế sau", "Lấy vật che camera ra để hệ thống xác minh."),
-    "presence": ("Vẫn phát hiện người trong xe", "Hệ thống vẫn thấy có người. Kiểm tra lại ghế sau và sàn xe."),
+    "camera": ("Camera chưa nhìn được trong xe", "Lấy vật che camera ra để hệ thống xác minh."),
+    "presence": ("Vẫn phát hiện người trong xe", "Hệ thống vẫn thấy có người. Kiểm tra lại các ghế và sàn xe."),
 }
 
 
@@ -412,7 +458,7 @@ def protection(state: dict[str, Any]) -> dict[str, Any]:
                          else "Xe có thể ở nơi mất sóng như hầm gửi xe. Thiết bị tự kết nối lại khi có sóng.") if stale else None})
     cam_bad = state["camera"] != "ok"
     rows.append({"key": "camera", "label": "Camera trong xe",
-                 "detail": "Không rõ" if stale else ("Bị che" if cam_bad else "Nhìn rõ hàng ghế sau"),
+                 "detail": "Không rõ" if stale else ("Bị che" if cam_bad else "Nhìn rõ trong xe"),
                  "status": "unknown" if stale else ("bad" if cam_bad else "good"),
                  "fix": "Lấy vật che ống kính ra, ví dụ áo khoác hoặc túi." if cam_bad and not stale else None})
     if state.get("lock_known", True):
@@ -421,7 +467,7 @@ def protection(state: dict[str, Any]) -> dict[str, Any]:
     else:
         rows.append({"key": "doors", "label": "Cảm biến cửa", "detail": "Không có. Khi xe đỗ và tắt máy, hệ thống coi như đã khóa.",
                      "status": "unknown", "fix": "Dùng nút Tạm dừng giám sát khi bạn ngồi trong xe đang đỗ."})
-    rows.append({"key": "seats", "label": "Cảm biến ghế", "detail": "Không rõ" if stale else ("Camera nhìn 3 ghế sau" if real else "5 ghế · hoạt động"),
+    rows.append({"key": "seats", "label": "Nhận diện trong xe", "detail": "Không rõ" if stale else ("Camera nhìn trong xe" if real else "Mô phỏng · hoạt động"),
                  "status": "unknown" if stale else "good", "fix": None})
     low = state["battery"] < 20 and not state.get("charging")
     rows.append({"key": "battery", "label": "Pin thiết bị", "detail": f"{state['battery']}%" + (" · đang sạc" if state.get("charging") else "") + (" · sắp hết" if low else ""),
@@ -447,9 +493,9 @@ def protection(state: dict[str, Any]) -> dict[str, Any]:
 
 TRIP_STAGES = ["waiting", "boarded", "enroute", "arrived", "late", "leftin"]
 TRIP_LOG = {
-    "boarded": ("06:52", "{n} lên xe", "{seat} · tại Nhà", "Cảm biến ghế · camera"),
+    "boarded": ("06:52", "{n} lên xe", "Tại Nhà", "Camera trong xe"),
     "enroute": ("06:53", "Xe bắt đầu chạy", "Đang trên đường tới trường", "Vị trí xe"),
     "arrived": ("07:18", "{n} xuống xe", "Đã tới điểm đến", "Camera · vị trí xe"),
     "late": ("07:00", "Chưa thấy {n} lên xe", "Đã quá giờ đón 15 phút. Đã nhắc người đưa đón.", "Lịch đưa đón"),
-    "leftin": ("07:24", "Xe đã đỗ, camera vẫn thấy người", "{seat} · đã báo cả gia đình", "Camera · cảm biến ghế"),
+    "leftin": ("07:24", "Xe đã đỗ, camera vẫn thấy người", "Đã báo cả gia đình", "Camera trong xe"),
 }

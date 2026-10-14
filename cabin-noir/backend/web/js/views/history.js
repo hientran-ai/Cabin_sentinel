@@ -106,7 +106,7 @@ function incidentCard(inc, row) {
   return h("a", { class: `icard ${tone}`, href: `#/report/${inc.id}`, "aria-label": `${open ? "Sự cố đang mở" : "Sự cố đã đóng"}: ${inc.reason}` },
     h("div", { class: "row between" }, h("b", { class: "ititle" }, crit ? "Có thể có người trong xe" : "Cảnh báo cabin"),
       h("span", { class: `tag ${open ? tone : ""}` }, open ? "Đang mở" : (row && row.outcome_label) || "Đã đóng")),
-    h("div", { class: "isub" }, `${inc.seat_label ? `${inc.seat_label} · ` : ""}${fmt.datetime(inc.created_at)}${row ? ` · ${fmt.dur(row.duration_s)}` : ""}`),
+    h("div", { class: "isub" }, `${fmt.datetime(inc.created_at)}${row ? ` · ${fmt.dur(row.duration_s)}` : ""}`),
     h("div", { class: "isub" }, inc.reason),
     stepper(inc, row), row && row.basis !== "measured" && h("span", { class: "tag" }, fmt.basis(row.basis)));
 }

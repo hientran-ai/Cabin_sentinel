@@ -6,25 +6,25 @@ import { addVehicle, setupCard } from "./setup.js";
 const LEVEL = { critical: "Nghiêm trọng", warning: "Cảnh báo", notice: "Lưu ý", paused: "Tạm dừng", ok: "Bình thường", safe: "Bình thường", unknown: "Chưa rõ" };
 
 // Fresh, real data only. "unknown" and stale data are never drawn as safe.
-function fresh(s) { return s && !s.restricted && s.verdict && s.verdict.current !== false && !s.no_real_data && (s.camera || "ok") === "ok" && s.seats; }
+function fresh(s) { return s && !s.restricted && s.verdict && s.verdict.current !== false && !s.no_real_data && (s.camera || "ok") === "ok" && s.cabin; }
 
 function counts(s) {
   if (!fresh(s)) return null;
-  const who = s.seats.filter((x) => x.occ);
-  return { people: who.length, items: (s.items || []).length, child: who.some((x) => x.age === "child") };
+  const c = s.cabin;
+  return { people: c.occ ? (c.people || 0) + (c.pets || 0) || 1 : 0, items: (s.items || []).length, child: (c.children || 0) > 0 };
 }
 
 function glance(s) {
   return sheet((close) => {
-    const who = (s.seats || []).filter((x) => x.occ);
+    const who = (s.cabin && s.cabin.seen) || [];
     return h("div", { class: "gap" },
       !fresh(s) && h("div", { class: "banner" }, "Chưa có dữ liệu mới từ xe. Không coi là an toàn."),
       h("h3", {}, "Người và thú cưng"),
       who.length ? h("div", { class: "card pad0 list" }, who.map((x) => h("div", { class: "item" }, icon("child"),
-        h("div", { class: "grow" }, h("div", {}, `${x.label} · ${x.kind === "pet" ? "thú cưng" : "người"} ${Math.round(x.conf * 100)}%`),
-          x.age === "child" && h("div", { class: "sub" }, "Có thể là trẻ em (chỉ là gợi ý, không đổi mức cảnh báo)"))))) : h("p", { class: "muted" }, "Camera chưa thấy ai ở các ghế sau."),
+        h("div", { class: "grow" }, h("div", {}, `${x.label} ${Math.round(x.conf * 100)}%`),
+          x.age === "child" && h("div", { class: "sub" }, "Có thể là trẻ em (chỉ là gợi ý, không đổi mức cảnh báo)"))))) : h("p", { class: "muted" }, "Camera chưa thấy ai trong xe."),
       h("h3", {}, "Đồ vật"),
-      (s.items || []).length ? h("div", { class: "card pad0 list" }, s.items.map((i) => h("div", { class: "item" }, icon("bag"), `${i.name} · ${i.seat}`))) : h("p", { class: "muted" }, "Chưa thấy đồ vật."),
+      (s.items || []).length ? h("div", { class: "card pad0 list" }, s.items.map((i) => h("div", { class: "item" }, icon("bag"), `${i.name} ${Math.round(i.conf * 100)}%`))) : h("p", { class: "muted" }, "Chưa thấy đồ vật."),
       h("p", { class: "small muted" }, "Chỉ giám sát, không thay cho việc tự kiểm tra xe."));
   }, { title: "Trong xe" });
 }
@@ -65,7 +65,7 @@ export async function render(ctx) {
   out.push(h("section", { class: `verdict ${pending ? "warning" : level}` },
     h("div", { class: "row between" }, h("div", { class: "kicker" }, stale ? "Chưa có dữ liệu mới" : pending ? "Sự cố chưa đóng" : LEVEL[v.level] || v.level), sim && h("span", { class: "pill" }, "MÔ PHỎNG")),
     h("h1", { style: "margin:6px 0" }, stale && !s.no_real_data ? "Không coi là an toàn" : pending ? "Camera không còn thấy người" : v.title),
-    h("p", { class: "muted", style: "margin:0" }, stale && !s.no_real_data ? "Xe chưa gửi dữ liệu mới hoặc camera không nhìn được ghế sau. Hãy kiểm tra xe." : pending ? "Sự cố vẫn mở cho tới khi có người xác nhận đã tự kiểm tra xe." : v.sub),
+    h("p", { class: "muted", style: "margin:0" }, stale && !s.no_real_data ? "Xe chưa gửi dữ liệu mới hoặc camera không nhìn được trong xe. Hãy kiểm tra xe." : pending ? "Sự cố vẫn mở cho tới khi có người xác nhận đã tự kiểm tra xe." : v.sub),
     h("p", { class: "small muted", style: "margin:10px 0 0" }, s.last_seen ? `Cập nhật ${fmt.ago(s.last_seen)} · ${s.connection === "online" ? "thiết bị trực tuyến" : "thiết bị ngoại tuyến"}` : "Chưa nhận dữ liệu nào từ thiết bị trong xe")));
 
   if (setup) out.push(setup);
@@ -87,13 +87,16 @@ export async function render(ctx) {
   const ex = s.exit_check;
   if (ex && ex.pending && !inc) {
     out.push(h("section", { class: "card gap" }, h("h2", {}, "Trước khi rời xe"),
-      h("p", { style: "margin:0" }, `Camera đang thấy ${ex.seats.length} người/thú${ex.items.length ? ` và ${ex.items.length} đồ vật` : ""} ở ghế sau.`),
-      h("button", { class: "btn primary", on: { click: (e) => act(e.target, async () => { await post(`/v1/vehicles/${s.vehicle.id}/exit-check/confirm`); await refresh(); }, "Đã ghi nhận.") } }, "Tôi đã kiểm tra ghế sau")));
+      h("p", { style: "margin:0" }, `Camera đang thấy ${(ex.seen || []).map((x) => x.who).join(", ") || "người"}${ex.items.length ? ` và ${ex.items.length} đồ vật` : ""} trong xe.`),
+      h("button", { class: "btn primary", on: { click: (e) => act(e.target, async () => { await post(`/v1/vehicles/${s.vehicle.id}/exit-check/confirm`); await refresh(); }, "Đã ghi nhận.") } }, "Tôi đã kiểm tra trong xe")));
   }
 
-  out.push(h("section", { class: "card gap" }, h("h3", {}, "Sơ đồ ghế"),
-    h("div", { class: "seats", role: "list" }, s.seats.map((x) => h("div", { role: "listitem", class: `seat ${["driver", "passenger"].includes(x.key) ? "front" : "rear"} ${x.occ ? (x.kind === "pet" ? "occ pet" : "occ") : ""}`,
-      "aria-label": `${x.label}: ${x.occ ? (x.kind === "pet" ? "thú cưng" : "có người") : "chưa thấy ai"}` }, x.label, x.occ && h("div", {}, `${x.kind === "pet" ? "Thú" : "Người"} ${Math.round(x.conf * 100)}%`)))),
+  // What the camera sees in the whole cabin: kinds and counts, never a seat.
+  const cab = s.cabin || {}, seenNow = cab.seen || [];
+  out.push(h("section", { class: "card gap" }, h("h3", {}, "Trong xe"),
+    !fresh(s) ? h("p", { class: "muted", style: "margin:0" }, seenNow.length ? `Chưa có dữ liệu mới. Lần cuối thấy: ${seenNow.map((x) => x.label.toLowerCase()).join(", ")} (dữ liệu cũ).` : "Chưa có dữ liệu mới.")
+      : seenNow.length ? h("div", { class: "row wrap", role: "list" }, seenNow.map((x) => h("span", { role: "listitem", class: `pill ${x.kind === "pet" ? "orange" : "red"}` }, `${x.label} ${Math.round(x.conf * 100)}%`)))
+      : h("p", { class: "muted", style: "margin:0" }, "Camera chưa thấy ai trong xe."),
     h("p", { class: "small muted", style: "margin:0" }, "Không phát hiện gì không có nghĩa là xe trống.")));
 
   if ((s.tiles || []).length) out.push(h("div", { class: "tiles" }, s.tiles.map((t) => h("div", { class: `tile ${t.tone}` }, h("div", { class: "small muted" }, t.label), h("div", { class: "v" }, t.value)))));

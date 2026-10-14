@@ -75,11 +75,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
 .chips { display: flex; gap: 8px; }
 .chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); font-weight: 700; }
 .chip svg { width: 20px; height: 20px; } .chip.hot { border-color: var(--red); color: var(--red); } .chip.items svg { color: var(--accent); }
-.seats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
-.seat { border-radius: 14px; border: 1px dashed var(--line); padding: 10px 6px; text-align: center; font-size: 12px; color: var(--muted); min-height: 64px; display: grid; place-items: center; }
-.seat.occ { border-style: solid; border-color: var(--red); color: var(--text); background: color-mix(in srgb, var(--red) 14%, transparent); font-weight: 700; }
-.seat.pet { border-color: var(--orange); background: color-mix(in srgb, var(--orange) 14%, transparent); }
-.seat.front { grid-column: span 3; } .seat.rear { grid-column: span 2; }
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
 .tile { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; }
 .tile .v { font-size: 20px; font-weight: 700; } .tile.orange .v { color: var(--orange); } .tile.red .v { color: var(--red); } .tile.green .v { color: var(--green); }

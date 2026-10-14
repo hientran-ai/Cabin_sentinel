@@ -1,7 +1,7 @@
 """History tables, audit log, retention and data deletion.
 
 Every table here has a retention deadline and a way to delete it (see RETENTION and purge()). Raw camera frames are never stored:
-an observation keeps only counts and seat labels. Photos are stored only when the user sends one after previewing it.
+an observation keeps only counts, kinds and confidences (no seat, no box). Photos are stored only when the user sends one after previewing it.
 """
 from __future__ import annotations
 
@@ -36,7 +36,8 @@ def record_observation(conn: Any, vehicle_id: str, state: dict[str, Any], source
     last = conn.execute("SELECT MAX(ts) AS t FROM observations WHERE vehicle_id=?", (vehicle_id,)).fetchone()["t"]
     if last is not None and now() - last < OBS_MIN_GAP_S:
         return
-    occ = [{"seat": k, "kind": v.get("kind"), "conf": v.get("conf"), "age": v.get("age")} for k, v in state["seats"].items() if v.get("occ")]
+    occ = [{"kind": d.get("kind"), "conf": d.get("conf"), "age": d.get("age")}
+           for v in state["seats"].values() if v.get("occ") for d in (v.get("dets") or [{"kind": v.get("kind"), "conf": v.get("conf"), "age": v.get("age")}])]
     conn.execute("INSERT INTO observations(vehicle_id,ts,source,detector,camera_ok,people,children_hint,pets,items,cabin_temp,outside_temp,engine_on,seats_json) "
                  "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
                  (vehicle_id, now(), source, state.get("detector"), 1 if state.get("camera") == "ok" else 0,

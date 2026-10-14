@@ -56,7 +56,7 @@ def feed(user_id: str, limit: int = 30, app_version: str | None = None) -> dict[
             cam = r["kind"] == "camera_blocked"
             items.append({**base, "id": f"log:{r['id']}", "kind": "camera" if cam else "offline", "level": "warning",
                           "title": "Camera bị che" if cam else "Thiết bị mất kết nối",
-                          "detail": ("Đang diễn ra. " if j["ongoing"] else "") + f"{'Không nhìn được ghế sau' if cam else 'Không có dữ liệu mới'} trong {cabinlog_dur(j['duration_s'])}. Không coi là xe an toàn.",
+                          "detail": ("Đang diễn ra. " if j["ongoing"] else "") + f"{'Không nhìn được trong xe' if cam else 'Không có dữ liệu mới'} trong {cabinlog_dur(j['duration_s'])}. Không coi là xe an toàn.",
                           "at": r["started_at"], "incident_id": None, "url": None})
     items.sort(key=lambda i: -i["at"])
     upd = update_notice(app_version)

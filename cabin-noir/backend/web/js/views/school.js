@@ -4,7 +4,6 @@ import { leaflet, baseMap, loadMap } from "./map.js";
 
 const STAGE = { waiting: ["Chờ đón", "grey"], boarded: ["Đã lên xe", "green"], enroute: ["Đang trên đường", "green"], arrived: ["Đã tới nơi", "green"], leftin: ["Còn trên xe", "red"], late: ["Trễ giờ", "orange"] };
 const DAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-const SEATS = { left: "Ghế sau trái", mid: "Ghế sau giữa", right: "Ghế sau phải" };
 
 export async function render(ctx) {
   const { S, refresh } = ctx;
@@ -51,7 +50,7 @@ function tripCard(t, ctx, owner) {
   const vid = t.vehicle_id;
   const call = (fn, msg) => (e) => busy(e.target, async () => { try { await fn(); toast(msg, "ok"); await refresh(); } catch (er) { toast(er.message, "err"); } });
   return h("section", { class: "card gap" },
-    h("div", { class: "row between top" }, h("div", { class: "grow" }, h("h2", {}, t.child.name), h("div", { class: "small muted" }, [t.child.cls, t.seat_label, `đón ${t.pickup}, về ${t.dropoff}`].filter(Boolean).join(" · "))), h("span", { class: `pill nowrap ${tone}` }, label)),
+    h("div", { class: "row between top" }, h("div", { class: "grow" }, h("h2", {}, t.child.name), h("div", { class: "small muted" }, [t.child.cls, `đón ${t.pickup}, về ${t.dropoff}`].filter(Boolean).join(" · "))), h("span", { class: `pill nowrap ${tone}` }, label)),
     t.stage === "leftin" && h("div", { class: "banner red", role: "alert" }, "Xe đã đỗ nhưng camera vẫn thấy người. Quay lại xe ngay. Thấy người trong xe: gọi 112."),
     t.progress_known && h("div", {}, h("div", { class: "row between small muted" }, h("span", {}, t.school || (t.destination && t.destination.name) || "Điểm đến"), h("span", {}, `${t.progress}%`)),
       h("div", { class: "progress", role: "progressbar", "aria-valuenow": t.progress, "aria-valuemin": 0, "aria-valuemax": 100 }, h("i", { style: `width:${t.progress}%` }))),
@@ -75,16 +74,15 @@ function childForm(child, refresh, S) {
   return sheet((close) => {
     const name = h("input", { type: "text", value: child ? child.name : "", maxLength: 30 });
     const cls = h("input", { type: "text", value: child ? child.cls : "", maxLength: 60, placeholder: "Ví dụ: Lớp 2A" });
-    const seat = h("select", {}, Object.entries(SEATS).map(([k, v]) => h("option", { value: k, selected: child ? child.seat === k : k === "left" }, v)));
     const pick = h("input", { type: "text", value: child ? child.pickup : "06:45", pattern: "\\d{2}:\\d{2}", maxLength: 5 });
     const drop = h("input", { type: "text", value: child ? child.dropoff : "16:30", pattern: "\\d{2}:\\d{2}", maxLength: 5 });
     const days = new Set(child ? child.days : [0, 1, 2, 3, 4]);
     const dayRow = h("div", { class: "row wrap" }, DAYS.map((d, i) => { const b = h("button", { type: "button", class: `btn small ${days.has(i) ? "primary" : ""}`, "aria-pressed": days.has(i), on: { click: () => { days.has(i) ? days.delete(i) : days.add(i); b.classList.toggle("primary"); b.setAttribute("aria-pressed", days.has(i)); } } }, d); return b; }));
     const save = async (e) => busy(e.target, async () => {
-      const body = { name: name.value.trim(), cls: cls.value.trim(), seat: seat.value, pickup: pick.value, dropoff: drop.value, days: [...days].sort() };
+      const body = { name: name.value.trim(), cls: cls.value.trim(), pickup: pick.value, dropoff: drop.value, days: [...days].sort() };
       try { child ? await put(`/v1/children/${child.id}`, body) : await post("/v1/children", body); close(true); toast("Đã lưu.", "ok"); await refresh(); } catch (er) { toast(er.message, "err"); }
     });
-    return h("div", { class: "gap" }, field("Tên bé", name), field("Lớp", cls), field("Ngồi ở", seat),
+    return h("div", { class: "gap" }, field("Tên bé", name), field("Lớp", cls),
       h("div", { class: "row" }, h("div", { class: "grow" }, field("Giờ đón", pick)), h("div", { class: "grow" }, field("Giờ về", drop))),
       h("div", { class: "field" }, h("label", {}, "Các ngày đi học"), dayRow),
       h("button", { class: "btn primary block", on: { click: save } }, "Lưu"),
