@@ -53,7 +53,7 @@ let refreshPromise: Promise<string | undefined> | undefined
 
 const mockUsers: Record<Portal, User> = {
   owner: { id: 'owner-demo', displayName: 'Thu Hiền', email: 'owner@demo.cabinsentinel.vn', roles: ['OWNER'], permissions: ['vehicle:view', 'incident:acknowledge'], vehicleIds: ['CAR_1', 'CAR_2'] },
-  operations: { id: 'admin-demo', displayName: 'Thu Hiền · Demo Admin', email: 'admin@demo.cabinsentinel.vn', roles: ['ADMIN'], permissions: ['operations:view', 'audit:view', 'users:manage', 'models:manage', 'vehicle:view'], vehicleIds: ['VF8-HN-0188', 'VF9-HCM-2205', 'VF6-DN-7712', 'VF7-HN-9090'] },
+  operations: { id: 'admin-demo', displayName: 'Thu Hiền · Demo Admin', email: 'admin@demo.cabinsentinel.vn', roles: ['ADMIN'], permissions: ['*'], vehicleIds: ['VF8-HN-0188', 'VF9-HCM-2205', 'VF6-DN-7712', 'VF7-HN-9090'], tenantId: null, permissionSource: 'role-default' },
 }
 
 export function getV1DemoAccessToken() { return sessionStorage.getItem(V1_TOKEN_KEY) || undefined }
@@ -111,9 +111,10 @@ export async function getPortalAccessToken(apiBaseUrl: string, mode: AuthMode): 
 }
 
 function permissionsFor(role: V1Me['role']): Permission[] {
-  if (role === 'admin') return ['operations:view', 'audit:view', 'users:manage', 'models:manage', 'vehicle:view']
-  if (role === 'operator') return ['operations:view', 'audit:view', 'vehicle:view', 'incident:acknowledge']
-  return ['vehicle:view', 'incident:acknowledge']
+  if (role === 'admin') return ['*']
+  if (role === 'operator') return ['fleet.read', 'vehicle.read', 'incident.manage', 'incident.ack', 'command.request', 'device.read', 'audit.read', 'system.read']
+  if (role === 'owner') return ['profile.manage', 'vehicle.read', 'vehicle.manage', 'caregiver.manage', 'incident.ack', 'incident.manage', 'command.request', 'vehicle:view', 'incident:acknowledge']
+  return ['profile.manage', 'vehicle.read', 'incident.ack', 'vehicle:view', 'incident:acknowledge']
 }
 
 export function mapV1User(me: V1Me, profile?: V1PlatformUser): User {
@@ -126,8 +127,10 @@ export function mapV1User(me: V1Me, profile?: V1PlatformUser): User {
     displayName: profile?.full_name || (role === 'ADMIN' ? 'Fleet Admin' : me.subject === 'demo-owner' ? 'Demo Owner' : me.subject),
     email: profile?.email || `${me.subject}@demo.cabinsentinel.local`,
     roles: [role],
-    permissions: permissionsFor(me.role),
+    permissions: (me.permissions?.length ? me.permissions : permissionsFor(me.role)) as Permission[],
     vehicleIds: me.vehicle_ids,
+    tenantId: me.tenant_id !== undefined ? me.tenant_id : profile?.tenant_id,
+    permissionSource: me.permissions ? 'backend' : 'role-default',
   }
 }
 
@@ -303,7 +306,7 @@ const loginCopy = {
   vi: {
     brand: 'Hệ thống an toàn kết nối', language: 'English', eyebrow: 'Chào mừng trở lại', title: 'Đăng nhập vào hệ thống',
     intro: 'Một tài khoản, một trang đăng nhập. Chọn không gian bạn muốn truy cập; quyền thực tế luôn do backend xác minh.',
-    roleLabel: 'Bạn muốn truy cập không gian', user: 'User', userDetail: 'Theo dõi phương tiện và cảnh báo', admin: 'Admin', adminDetail: 'Quản trị và vận hành hệ thống',
+    roleLabel: 'Bạn muốn truy cập không gian', user: 'Cabin Noir', userDetail: 'Mở ứng dụng mobile cho chủ xe và người thân', admin: 'Admin / Vận hành', adminDetail: 'Quản trị nền tảng hoặc xử lý sự cố vận hành',
     email: 'Email', password: 'Mật khẩu', show: 'Hiện', hide: 'Ẩn', showPassword: 'Hiện mật khẩu', hidePassword: 'Ẩn mật khẩu',
     signingIn: 'Đang xác minh…', signIn: (role: string) => `Đăng nhập với vai trò ${role}`, opening: 'Đang mở phiên…', continue: (role: string) => `Tiếp tục với vai trò ${role}`,
     demoHint: 'Chế độ demo chỉ dùng phiên mô phỏng và không thay đổi cơ chế đăng nhập production.',
@@ -316,7 +319,7 @@ const loginCopy = {
   en: {
     brand: 'Connected safety system', language: 'Tiếng Việt', eyebrow: 'Welcome back', title: 'Sign in to CabinSentinel',
     intro: 'One account, one login page. Choose the workspace you want; the backend always verifies your actual access.',
-    roleLabel: 'Choose a workspace', user: 'User', userDetail: 'Monitor vehicles and alerts', admin: 'Admin', adminDetail: 'Manage and operate the system',
+    roleLabel: 'Choose a workspace', user: 'Cabin Noir', userDetail: 'Open the mobile app for owners and family', admin: 'Admin / Operations', adminDetail: 'Administer the platform or handle safety operations',
     email: 'Email', password: 'Password', show: 'Show', hide: 'Hide', showPassword: 'Show password', hidePassword: 'Hide password',
     signingIn: 'Verifying…', signIn: (role: string) => `Sign in as ${role}`, opening: 'Opening session…', continue: (role: string) => `Continue as ${role}`,
     demoHint: 'Demo mode uses a simulated session and does not change production authentication.',

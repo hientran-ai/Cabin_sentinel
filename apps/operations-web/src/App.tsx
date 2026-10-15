@@ -4,6 +4,7 @@ import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { AdminOverview, EvaluationsWorkbench, PlatformPage } from './PlatformPages'
 import { useLocale } from './i18n'
 import { adminDemoEnabled, stopAdminDemo } from './adminDemo'
+import { hasOperationsPermission, isPlatformAdmin, operationsLandingPath, type OperationsPermission } from './access'
 
 type IconName = 'grid' | 'pulse' | 'car' | 'cpu' | 'users' | 'layers' | 'rules' | 'audit' | 'system' | 'search' | 'bell' | 'menu' | 'close' | 'arrow' | 'refresh' | 'shield' | 'camera' | 'radar' | 'clock' | 'lock' | 'check' | 'warning' | 'chevron'
 const paths: Record<IconName, ReactNode> = {
@@ -22,34 +23,36 @@ const paths: Record<IconName, ReactNode> = {
 }
 function Icon({ name, ...props }: { name: IconName } & SVGProps<SVGSVGElement>) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>{paths[name]}</svg> }
 
-type AdminNavItem = { to: string; labelKey: string; icon: IconName; adminOnly?: boolean }
+type AdminNavItem = { to: string; labelKey: string; icon: IconName; permission?: OperationsPermission; platformOnly?: boolean }
 type AdminSection = { labelKey: string; items: AdminNavItem[] }
-const overviewItem: AdminNavItem = { to: '/admin', labelKey: 'overview', icon: 'grid' }
+const overviewItem: AdminNavItem = { to: '/admin', labelKey: 'overview', icon: 'grid', platformOnly: true }
 const adminSections: AdminSection[] = [
   { labelKey: 'operationsHub', items: [
-    { to: '/admin/incidents', labelKey: 'incidents', icon: 'warning' },
-    { to: '/admin/evaluations', labelKey: 'evaluations', icon: 'pulse' },
-    { to: '/admin/commands', labelKey: 'commands', icon: 'lock' },
+    { to: '/admin/incidents', labelKey: 'incidents', icon: 'warning', permission: 'fleet.read' },
+    { to: '/admin/evaluations', labelKey: 'evaluations', icon: 'pulse', permission: 'fleet.read' },
+    { to: '/admin/commands', labelKey: 'commands', icon: 'lock', permission: 'fleet.read' },
   ] },
   { labelKey: 'fleetHub', items: [
-    { to: '/admin/vehicles', labelKey: 'vehicles', icon: 'car' },
-    { to: '/admin/devices', labelKey: 'devices', icon: 'cpu' },
+    { to: '/admin/vehicles', labelKey: 'vehicles', icon: 'car', permission: 'fleet.read' },
+    { to: '/admin/devices', labelKey: 'devices', icon: 'cpu', permission: 'device.read' },
   ] },
   { labelKey: 'peopleHub', items: [
-    { to: '/admin/tenants', labelKey: 'tenants', icon: 'layers', adminOnly: true },
-    { to: '/admin/users', labelKey: 'users', icon: 'users', adminOnly: true },
+    { to: '/admin/tenants', labelKey: 'tenants', icon: 'layers', permission: 'user.manage' },
+    { to: '/admin/users', labelKey: 'users', icon: 'users', permission: 'user.manage' },
   ] },
   { labelKey: 'systemHub', items: [
-    { to: '/admin/models', labelKey: 'models', icon: 'layers', adminOnly: true },
-    { to: '/admin/rules', labelKey: 'rules', icon: 'rules', adminOnly: true },
-    { to: '/admin/audit', labelKey: 'audit', icon: 'audit' },
-    { to: '/admin/system', labelKey: 'system', icon: 'system' },
+    { to: '/admin/models', labelKey: 'models', icon: 'layers', permission: 'model.manage', platformOnly: true },
+    { to: '/admin/rules', labelKey: 'rules', icon: 'rules', permission: 'rules.manage', platformOnly: true },
+    { to: '/admin/audit', labelKey: 'audit', icon: 'audit', permission: 'audit.read' },
+    { to: '/admin/system', labelKey: 'system', icon: 'system', permission: 'system.read' },
   ] },
 ]
 
-function AdminRoute({ children }: { children: ReactNode }) {
+function AccessRoute({ permission, platformOnly = false, children }: { permission: OperationsPermission; platformOnly?: boolean; children: ReactNode }) {
   const { user } = useAuth()
-  return user?.roles.includes('ADMIN') ? <>{children}</> : <Navigate to="/admin/incidents" replace/>
+  return hasOperationsPermission(user, permission) && (!platformOnly || isPlatformAdmin(user))
+    ? <>{children}</>
+    : <Navigate to={operationsLandingPath(user)} replace/>
 }
 
 function OperationsUserMenu() {
@@ -60,29 +63,35 @@ function OperationsUserMenu() {
     <span aria-hidden="true">{user.displayName.slice(0, 2).toUpperCase()}</span>
     <div><strong>{user.displayName}</strong><small>{user.roles.join(' · ')}</small></div>
     {canAccessPortal(user, 'owner') && <a href={portalUrl('owner')}>{locale === 'vi' ? 'Người dùng' : 'User'}</a>}
-    {canAccessPortal(user, 'operations') && <a href={portalUrl('operations')}>{locale === 'vi' ? 'Quản trị' : 'Admin'}</a>}
+    {canAccessPortal(user, 'operations') && <a href={portalUrl('operations')}>{locale === 'vi' ? 'Quản trị / Vận hành' : 'Admin / Operations'}</a>}
     <button onClick={() => void logout()}>{locale === 'vi' ? 'Đăng xuất' : 'Sign out'}</button>
   </div>
 }
 
 function ServiceState({ ok, children }: { ok?: boolean; children: ReactNode }) { return <span className={`service-state ${ok === true ? 'is-ok' : ok === false ? 'is-down' : ''}`}><i />{children}</span> }
+function NoOperationsAccess() {
+  const { locale } = useLocale()
+  return <section className="platform-state is-error"><strong>{locale === 'vi' ? 'Tài khoản chưa được cấp quyền vận hành' : 'No operations permission assigned'}</strong><span>{locale === 'vi' ? 'Hãy liên hệ quản trị viên để được cấp đúng tenant và quyền truy cập.' : 'Contact an administrator to assign the correct tenant and access permissions.'}</span></section>
+}
 function AdminShell() {
   const [open, setOpen] = useState(false)
   const location = useLocation()
   const { user } = useAuth()
   const { locale, setLocale, t } = useLocale()
   const demoMode = adminDemoEnabled()
-  const isAdmin = user?.roles.includes('ADMIN') === true
-  const visibleSections = adminSections.map(section => ({ ...section, items: section.items.filter(item => !item.adminOnly || isAdmin) })).filter(section => section.items.length > 0)
-  const visibleItems = [overviewItem, ...visibleSections.flatMap(section => section.items)]
+  const isAdmin = isPlatformAdmin(user)
+  const canViewItem = (item: AdminNavItem) => (!item.permission || hasOperationsPermission(user, item.permission)) && (!item.platformOnly || isAdmin)
+  const visibleSections = adminSections.map(section => ({ ...section, items: section.items.filter(canViewItem) })).filter(section => section.items.length > 0)
+  const visibleItems = [overviewItem, ...visibleSections.flatMap(section => section.items)].filter(canViewItem)
   const currentItem = visibleItems.find(item => location.pathname === item.to || (item.to !== '/admin' && location.pathname.startsWith(item.to)))
   const current = t(currentItem?.labelKey || 'overview')
+  const sectionEntry = (labelKey: string) => visibleSections.find(section => section.labelKey === labelKey)?.items[0]?.to
   const primaryItems = [
-    { ...overviewItem, paths: ['/admin'] },
-    { to: '/admin/incidents', labelKey: 'operationsHub', icon: 'warning' as IconName, paths: ['/admin/incidents', '/admin/evaluations', '/admin/commands'] },
-    { to: '/admin/vehicles', labelKey: 'fleetHub', icon: 'car' as IconName, paths: ['/admin/vehicles', '/admin/devices'] },
-    ...(isAdmin ? [{ to: '/admin/tenants', labelKey: 'peopleHub', icon: 'users' as IconName, paths: ['/admin/tenants', '/admin/users'] }] : []),
-    { to: isAdmin ? '/admin/models' : '/admin/audit', labelKey: 'systemHub', icon: 'system' as IconName, paths: ['/admin/models', '/admin/rules', '/admin/audit', '/admin/system'] },
+    ...(isAdmin ? [{ ...overviewItem, paths: ['/admin'] }] : []),
+    ...(sectionEntry('operationsHub') ? [{ to: sectionEntry('operationsHub')!, labelKey: 'operationsHub', icon: 'warning' as IconName, paths: ['/admin/incidents', '/admin/evaluations', '/admin/commands'] }] : []),
+    ...(sectionEntry('fleetHub') ? [{ to: sectionEntry('fleetHub')!, labelKey: 'fleetHub', icon: 'car' as IconName, paths: ['/admin/vehicles', '/admin/devices'] }] : []),
+    ...(sectionEntry('peopleHub') ? [{ to: sectionEntry('peopleHub')!, labelKey: 'peopleHub', icon: 'users' as IconName, paths: ['/admin/tenants', '/admin/users'] }] : []),
+    ...(sectionEntry('systemHub') ? [{ to: sectionEntry('systemHub')!, labelKey: 'systemHub', icon: 'system' as IconName, paths: ['/admin/models', '/admin/rules', '/admin/audit', '/admin/system'] }] : []),
   ]
   const activeSection = visibleSections.find(section => section.items.some(item => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)))
   const primaryActive = (paths: string[]) => paths.some(path => path === '/admin' ? location.pathname === path : location.pathname === path || location.pathname.startsWith(`${path}/`))
@@ -103,12 +112,21 @@ function AdminShell() {
       <main>{demoMode && <section className="demo-mode-banner" role="status"><div><strong>{locale === 'vi' ? 'DỮ LIỆU MÔ PHỎNG' : 'SIMULATED DATA'}</strong><span>{locale === 'vi' ? 'Mọi số liệu và thao tác bên dưới chỉ dùng để minh họa, không gửi đến backend thật.' : 'All data and actions below are simulated and are never sent to the live backend.'}</span></div><button onClick={stopAdminDemo}>{locale === 'vi' ? 'Thoát demo' : 'Exit demo'}</button></section>}
         {activeSection && activeSection.items.length > 1 && <nav className="section-tabs" aria-label={t(activeSection.labelKey)}><div><span>{t(activeSection.labelKey)}</span>{activeSection.items.map(item => <NavLink key={item.to} to={item.to}><Icon name={item.icon}/>{t(item.labelKey)}</NavLink>)}</div></nav>}
         <div className="route-view" key={location.pathname}><Routes>
-        <Route path="/admin" element={<AdminOverview/>}/>
-        <Route path="/admin/evaluations" element={<EvaluationsWorkbench/>}/>
+        <Route path="/admin" element={isAdmin ? <AdminOverview/> : <Navigate to={operationsLandingPath(user)} replace/>}/>
+        <Route path="/admin/evaluations" element={<AccessRoute permission="fleet.read"><EvaluationsWorkbench/></AccessRoute>}/>
         <Route path="/admin/evaluations/:revision" element={<Navigate to="/admin/evaluations" replace/>}/>
-        {(['incidents','commands','vehicles','devices','audit','system'] as const).map(name => <Route key={name} path={`/admin/${name}`} element={<PlatformPage name={name}/>}/>)}
-        {(['tenants','users','models','rules'] as const).map(name => <Route key={name} path={`/admin/${name}`} element={<AdminRoute><PlatformPage name={name}/></AdminRoute>}/>)}
-        <Route path="*" element={<Navigate to={isAdmin ? '/admin' : '/admin/incidents'} replace/>}/>
+        <Route path="/admin/incidents" element={<AccessRoute permission="fleet.read"><PlatformPage name="incidents"/></AccessRoute>}/>
+        <Route path="/admin/commands" element={<AccessRoute permission="fleet.read"><PlatformPage name="commands"/></AccessRoute>}/>
+        <Route path="/admin/vehicles" element={<AccessRoute permission="fleet.read"><PlatformPage name="vehicles"/></AccessRoute>}/>
+        <Route path="/admin/devices" element={<AccessRoute permission="device.read"><PlatformPage name="devices"/></AccessRoute>}/>
+        <Route path="/admin/tenants" element={<AccessRoute permission="user.manage"><PlatformPage name="tenants"/></AccessRoute>}/>
+        <Route path="/admin/users" element={<AccessRoute permission="user.manage"><PlatformPage name="users"/></AccessRoute>}/>
+        <Route path="/admin/models" element={<AccessRoute permission="model.manage" platformOnly><PlatformPage name="models"/></AccessRoute>}/>
+        <Route path="/admin/rules" element={<AccessRoute permission="rules.manage" platformOnly><PlatformPage name="rules"/></AccessRoute>}/>
+        <Route path="/admin/audit" element={<AccessRoute permission="audit.read"><PlatformPage name="audit"/></AccessRoute>}/>
+        <Route path="/admin/system" element={<AccessRoute permission="system.read"><PlatformPage name="system"/></AccessRoute>}/>
+        <Route path="/admin/no-access" element={<NoOperationsAccess/>}/>
+        <Route path="*" element={<Navigate to={operationsLandingPath(user)} replace/>}/>
       </Routes></div></main>
       <footer><span>CabinSentinel Operations · {locale === 'vi' ? 'Backend quyết định cuối cùng' : 'Backend-authoritative'}</span><span><i/> {locale === 'vi' ? 'Giao diện điều khiển V1' : 'Control plane UI v1'}</span></footer>
       <nav className="mobile-bottom-nav" aria-label="Mobile operations navigation">

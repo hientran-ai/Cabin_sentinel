@@ -9,12 +9,30 @@ export type ConnectivityStatus = 'CONNECTED' | 'DEGRADED' | 'OFFLINE' | 'UNKNOWN
 export type CameraStatus = 'OK' | 'BLOCKED' | 'ERROR' | 'DISCONNECTED' | 'NO_FEED' | 'UNKNOWN'
 export type CommandStatus = 'requested' | 'authorized' | 'sent' | 'acknowledged' | 'failed' | 'expired'
 export type Permission =
+  | '*'
   | 'vehicle:view'
   | 'incident:acknowledge'
   | 'operations:view'
   | 'users:manage'
   | 'models:manage'
   | 'audit:view'
+  | 'profile.manage'
+  | 'vehicle.read'
+  | 'vehicle.manage'
+  | 'caregiver.manage'
+  | 'incident.ack'
+  | 'incident.manage'
+  | 'command.request'
+  | 'fleet.read'
+  | 'fleet.manage'
+  | 'device.read'
+  | 'device.manage'
+  | 'user.manage'
+  | 'audit.read'
+  | 'audit.manage'
+  | 'model.manage'
+  | 'rules.manage'
+  | 'system.read'
 
 export interface Freshness {
   status: FreshnessStatus
@@ -113,6 +131,8 @@ export interface User {
   roles: Array<'OWNER' | 'CAREGIVER' | 'OPERATOR' | 'ADMIN' | 'AUDITOR'>
   permissions: Permission[]
   vehicleIds: string[]
+  tenantId?: string | null
+  permissionSource?: 'backend' | 'role-default'
 }
 
 export interface Page<T> {
@@ -227,6 +247,10 @@ export interface V1Me {
   subject: string
   trip_id: string | null
   vehicle_ids: string[]
+  /** Optional until the backend operator-access contract is deployed. */
+  tenant_id?: string | null
+  /** Effective permissions after role and tenant policy have been resolved by the backend. */
+  permissions?: string[]
 }
 
 export interface V1VehicleSummary {

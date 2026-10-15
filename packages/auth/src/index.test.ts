@@ -54,6 +54,24 @@ describe('production role mapping', () => {
     expect(canAccessPortal(caregiver, 'operations')).toBe(false)
   })
 
+  it('prefers effective permissions and tenant scope supplied by the backend', () => {
+    const operator = mapV1User({
+      role: 'operator', subject: 'operator-1', trip_id: null, vehicle_ids: ['VF8-03'],
+      tenant_id: 'tenant-1', permissions: ['fleet.read', 'incident.manage'],
+    })
+
+    expect(operator.permissions).toEqual(['fleet.read', 'incident.manage'])
+    expect(operator.tenantId).toBe('tenant-1')
+    expect(operator.permissionSource).toBe('backend')
+  })
+
+  it('uses safe role defaults while the backend access contract is not deployed', () => {
+    const operator = mapV1User({ role: 'operator', subject: 'operator-1', trip_id: null, vehicle_ids: [] })
+
+    expect(operator.permissions).toContain('incident.manage')
+    expect(operator.permissionSource).toBe('role-default')
+  })
+
   it('classifies canonical portal paths without granting access', () => {
     expect(portalForPath('/admin/users')).toBe('operations')
     expect(portalForPath('/user/vehicles')).toBe('owner')
