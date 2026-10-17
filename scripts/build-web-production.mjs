@@ -7,9 +7,10 @@ const productionEnv = {
   // /api/* and /health to BACKEND_ORIGIN; never bake developer localhost URLs.
   VITE_API_BASE_URL: '',
   VITE_CAMERA_API_BASE_URL: process.env.VITE_CAMERA_API_BASE_URL || '',
-  VITE_MOBILE_APP_URL: process.env.VITE_MOBILE_APP_URL || 'https://cabin-noir.duckdns.org/app/',
+  // Family users open the VinFast judge demo; override with VITE_MOBILE_APP_URL to point at another app.
+  VITE_MOBILE_APP_URL: process.env.VITE_MOBILE_APP_URL || '/cockpit/vinfast/',
   VITE_AUTH_MODE: 'session',
-  VITE_OWNER_WEB_URL: process.env.VITE_MOBILE_APP_URL || 'https://cabin-noir.duckdns.org/app/',
+  VITE_OWNER_WEB_URL: process.env.VITE_MOBILE_APP_URL || '/cockpit/vinfast/',
   VITE_OPERATIONS_WEB_URL: '',
 }
 
