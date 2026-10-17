@@ -1,0 +1,9 @@
+[
+ {"js":"await __sleep(6000);return 'ok'","shot":"1-home.png"},
+ {"js":"document.querySelector('[data-testid=cockpit] nav button[aria-label=\"Cài đặt\"]').click();await __sleep(2500);return 'ok'","shot":"2-settings.png"},
+ {"js":"document.querySelector('[data-testid=cockpit] nav button[aria-label=Home]').click();await __sleep(300);const b=document.querySelector('[data-testid=cockpit] nav button[aria-label=\"Âm nhạc\"]');b.click();await __sleep(1200);return 'ok'","shot":"3-music.png"},
+ {"js":"document.querySelector('[data-testid=cockpit] nav button[aria-label=Home]').click();await __sleep(1500);__vehicle.getState().set({gear:'D',speedOverride:30,parkingBrake:false});await __sleep(4000);return 'ok'","shot":"4-driving.png"},
+ {"js":"const w=[...document.querySelectorAll('[data-testid=cockpit] button')].find(b=>b.getAttribute('aria-label')?.startsWith('Wi-Fi'));w.click();await __sleep(900);return 'ok'","shot":"5-control.png"},
+ {"js":"document.querySelector('[data-testid=cockpit] nav button[aria-label=Home]').click();await __sleep(300);document.querySelector('[data-testid=cockpit] nav button[aria-label=\"Ứng dụng\"]').click();await __sleep(900);return 'ok'","shot":"6-apps.png"},
+ {"js":"document.querySelector('[data-testid=cockpit] nav button[aria-label=\"Giám sát cabin\"]').click();await __sleep(1500);return 'ok'","shot":"7-cabin.png"}
+]

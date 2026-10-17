@@ -1,0 +1,317 @@
+@import "tailwindcss";
+@import "maplibre-gl/dist/maplibre-gl.css";
+
+/* MiSans Latin (Xiaomi, MiSans Fonts license — see public/fonts/misans/NOTICE.txt). Full Vietnamese coverage checked. */
+@font-face { font-family: "MiSans Latin"; src: url("/cockpit/fonts/misans/MiSansLatin-ExtraLight.woff2") format("woff2"); font-weight: 200; font-style: normal; font-display: swap; }
+@font-face { font-family: "MiSans Latin"; src: url("/cockpit/fonts/misans/MiSansLatin-Light.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "MiSans Latin"; src: url("/cockpit/fonts/misans/MiSansLatin-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "MiSans Latin"; src: url("/cockpit/fonts/misans/MiSansLatin-Medium.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "MiSans Latin"; src: url("/cockpit/fonts/misans/MiSansLatin-Semibold.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+
+/* V6: 1 rem = 16 CSS px always. Sizes come from the breakpoint tokens below (W >= 1600 / W < 1600); nothing scales with the window.
+   (The end-to-end demo page still sets the root size itself to fit the cockpit next to the phone: that page is scaled by design.) */
+html { font-size: 16px; }
+html, body, #root { height: 100%; margin: 0; overflow: hidden; }
+body { font-family: Inter, "SF Pro Display", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; font-feature-settings: "tnum"; -webkit-font-smoothing: antialiased; touch-action: manipulation; }
+
+/* Theme tokens. TESLA_MODE and VINFAST_MODE are inspired designs with our own values, not official brand colours. */
+:root, [data-brand="tesla"][data-mode="light"] {
+  --cx-bg: #F4F6F6; --cx-surface: #FFFFFF; --cx-surface-2: #ECEFF0; --cx-text: #20252A; --cx-text-2: #78828A; --cx-text-3: #A6AEB4;
+  --cx-line: #DDE2E5; --cx-accent: #2C6BED; --cx-critical: #D83A43; --cx-warning: #D98A1C; --cx-ok: #2E9D5A; --cx-scrim: rgba(244, 246, 246, .82);
+  --cx-radius: .9rem; --cx-panel-gap: 0rem; --cx-shadow: 0 .25rem 1.25rem rgba(20, 30, 40, .08); --cx-weight: 400;
+}
+[data-brand="tesla"][data-mode="dark"] {
+  --cx-bg: #0F1112; --cx-surface: #1A1D1F; --cx-surface-2: #24282B; --cx-text: #ECEFF1; --cx-text-2: #8D979E; --cx-text-3: #5D666D;
+  --cx-line: #2D3236; --cx-accent: #3D7BF2; --cx-critical: #E5484D; --cx-warning: #E39B2B; --cx-ok: #3DBB6E; --cx-scrim: rgba(15, 17, 18, .82);
+  --cx-shadow: 0 .25rem 1.25rem rgba(0, 0, 0, .4);
+}
+/* Default in-car theme: neutral charcoal, flat surfaces, one restrained blue for active controls.
+   Warning/critical colours are used only when the data has that state. */
+[data-brand="vinfast"][data-mode="dark"] {
+  --cx-bg: #0D121A; --cx-surface: #19222E; --cx-surface-2: #263342; --cx-text: #F3F6FA; --cx-text-2: #B5C0CE; --cx-text-3: #8E9BAB;
+  --cx-line: rgba(255, 255, 255, .12); --cx-accent: #63B8E8; --cx-critical: #F0525A; --cx-warning: #E8A23A; --cx-ok: #3DBE78; --cx-scrim: rgba(13, 18, 26, .88);
+  --cx-radius: var(--r-panel); --cx-panel-gap: var(--gap-panel); --cx-shadow: none; --cx-weight: 400; --cx-dock: #0D121A;
+}
+[data-brand="vinfast"][data-mode="light"] {
+  --cx-bg: #E9EEF4; --cx-surface: #FFFFFF; --cx-surface-2: #EEF2F7; --cx-text: #0B1626; --cx-text-2: #56657A; --cx-text-3: #9AA7B8;
+  --cx-line: #D3DBE6; --cx-accent: #1660F0; --cx-critical: #E23A47; --cx-warning: #D98A1C; --cx-ok: #19A06E; --cx-scrim: rgba(233, 238, 244, .84);
+  --cx-radius: 1.25rem; --cx-panel-gap: .75rem; --cx-shadow: 0 .5rem 2rem rgba(10, 30, 60, .12); --cx-weight: 500;
+}
+
+@theme inline {
+  /* every Tailwind text size maps onto one of the six V6 roles (nothing smaller than the label role exists) */
+  --text-xs: var(--fs-label); --text-xs--line-height: var(--lh-label);
+  --text-sm: var(--fs-label); --text-sm--line-height: var(--lh-label);
+  --text-base: var(--fs-body); --text-base--line-height: var(--lh-body);
+  --text-lg: var(--fs-body); --text-lg--line-height: var(--lh-body);
+  --text-xl: var(--fs-title); --text-xl--line-height: var(--lh-title);
+  --text-2xl: var(--fs-title); --text-2xl--line-height: var(--lh-title);
+  --text-3xl: var(--fs-title); --text-3xl--line-height: var(--lh-title);
+  --color-bg: var(--cx-bg); --color-surface: var(--cx-surface); --color-surface-2: var(--cx-surface-2);
+  --color-text: var(--cx-text); --color-text-2: var(--cx-text-2); --color-text-3: var(--cx-text-3);
+  --color-line: var(--cx-line); --color-accent: var(--cx-accent); --color-critical: var(--cx-critical); --color-warning: var(--cx-warning); --color-ok: var(--cx-ok);
+}
+
+.cx-screen { background: var(--cx-bg); color: var(--cx-text); transition: background-color 300ms ease, color 300ms ease; font-weight: var(--cx-weight); }
+.cx-panel { background: var(--cx-surface); border-radius: var(--cx-radius); box-shadow: var(--cx-shadow); }
+.cx-hair { border-color: var(--cx-line); }
+.cx-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: .75rem; transition: transform 120ms ease-out, background-color 150ms ease-out, color 150ms ease-out, opacity 150ms; -webkit-tap-highlight-color: transparent; }
+.cx-btn:active { transform: scale(.97); }
+@media (hover: hover) { .cx-btn:hover { background-color: color-mix(in srgb, var(--cx-text) 6%, transparent); } }
+.cx-btn:disabled { opacity: .4; pointer-events: none; }
+.cx-btn[aria-pressed="true"], .cx-btn.is-on { color: var(--cx-accent); }
+.cx-chip { display: inline-flex; align-items: center; gap: .35rem; border-radius: .5rem; padding: .25rem .75rem; font-size: var(--text-xs); font-weight: 500; letter-spacing: .02em; }
+.cx-seg { display: inline-flex; padding: .25rem; gap: .25rem; border-radius: .75rem; background: var(--cx-surface-2); }
+.cx-seg > button { min-height: 3.5rem; padding: 0 1.5rem; border-radius: .6rem; font-size: var(--text-sm); color: var(--cx-text-2); transition: background-color 150ms, color 150ms; }
+.cx-seg > button[aria-checked="true"] { background: color-mix(in srgb, var(--cx-surface-2), #fff 14%); color: var(--cx-text); }
+.cx-switch { position: relative; width: 4.5rem; height: 2.6rem; border-radius: 999px; background: var(--cx-surface-2); transition: background-color 150ms; flex: none; }
+.cx-switch::after { content: ""; position: absolute; top: .3rem; left: .3rem; width: 2rem; height: 2rem; border-radius: 50%; background: #fff; box-shadow: 0 .1rem .3rem rgba(0,0,0,.25); transition: transform 200ms ease-out; }
+.cx-switch[aria-checked="true"] { background: var(--cx-accent); } .cx-switch[aria-checked="true"]::after { transform: translateX(1.9rem); }
+.cx-range { -webkit-appearance: none; appearance: none; height: .35rem; border-radius: 999px; background: var(--cx-surface-2); accent-color: var(--cx-accent); }
+.cx-range::-webkit-slider-thumb { -webkit-appearance: none; width: 1.4rem; height: 1.4rem; border-radius: 50%; background: #fff; border: .12rem solid var(--cx-line); box-shadow: 0 .1rem .3rem rgba(0,0,0,.2); }
+.cx-scroll { overflow: auto; scrollbar-width: thin; }
+.cx-sim { color: var(--cx-text-3); border: 1px solid var(--cx-line); }
+
+/* map chrome: keep the map filling its wrapper (maplibre's own CSS sets position: relative) */
+.maplibregl-map { position: absolute !important; inset: 0; }
+.maplibregl-ctrl-attrib { font-size: .6rem !important; background: color-mix(in srgb, var(--cx-surface) 80%, transparent) !important; }
+.maplibregl-ctrl-attrib a { color: var(--cx-text-2) !important; }
+.cx-car-marker { width: 2.4rem; height: 2.4rem; }
+.cx-dest-marker { width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--cx-accent); border: .3rem solid #fff; box-shadow: 0 .1rem .5rem rgba(0,0,0,.3); }
+.cx-charger-marker { display: inline-flex; align-items: center; gap: .2rem; padding: .15rem .45rem; border-radius: 999px; background: var(--cx-surface); color: var(--cx-text); font: 600 .7rem/1.4 inherit; box-shadow: 0 .1rem .4rem rgba(0,0,0,.2); white-space: nowrap; }
+
+/* 3D labels */
+.cx-3dlabel { font-size: var(--text-xs); font-weight: 500; letter-spacing: .06em; white-space: nowrap; padding: .2rem .55rem; border-radius: 999px; background: var(--cx-surface); color: var(--cx-text); box-shadow: 0 .1rem .5rem rgba(0,0,0,.15); cursor: pointer; user-select: none; }
+.cx-3dlabel.is-open { color: var(--cx-accent); } .cx-3dlabel.is-warn { color: var(--cx-warning); }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; } }
+
+/* One icon style everywhere: same stroke weight for lucide and our own glyphs, rounded caps, never filled by accident */
+.cx-screen svg:not([fill="currentColor"]):not(.cx-keep) { stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.cx-screen .cx-btn svg, .cx-screen nav svg { flex: none; }
+
+/* In-car type scale at 1920 x 1080 (16 px root): secondary 18-20 px, body 23 px, titles 28-34 px.
+   Design targets, not a claim of automotive compliance. Declared on .cx-screen too so the demo page's px overrides
+   (.px-ui) never shrink the cockpit. */
+
+
+.cx-dock-app { display: inline-grid; place-items: center; width: 4.5rem; height: 4.5rem; border-radius: .9rem; color: var(--cx-text-2); transition: background-color 150ms, color 150ms; }
+.cx-dock-app:active { transform: scale(.96); }
+.cx-dock-app[aria-pressed="true"] { background: var(--cx-surface-2); color: var(--cx-text); }
+.cx-scene { background: var(--cx-scene, var(--cx-surface)); }
+.cx-pane { position: relative; min-width: 0; height: 100%; overflow: hidden; border-radius: 1rem; background: var(--cx-surface); transition: flex-grow 220ms ease-out; }
+.cx-pane-handle { position: absolute; left: 50%; top: .25rem; z-index: 15; transform: translateX(-50%); display: grid; place-items: center; width: 5rem; height: 2.5rem; border-radius: .75rem; color: var(--cx-text-3); }
+.cx-pane-handle:hover { color: var(--cx-text-2); }
+.cx-dock-item { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: .25rem; min-width: 6rem; height: 4.5rem;
+  border-radius: .75rem; color: var(--cx-text-2); font-size: var(--text-xs); transition: background-color 150ms, color 150ms; }
+.cx-dock-item[aria-pressed="true"] { color: var(--cx-text); background: var(--cx-surface-2); }
+.cx-dock-item[aria-pressed="true"] svg { color: var(--cx-accent); }
+.cx-cat { display: flex; align-items: center; gap: .75rem; min-height: 4rem; padding: 0 1rem; border-radius: .75rem; color: var(--cx-text-2); font-size: var(--text-sm); text-align: left; }
+.cx-cat[aria-current="true"] { background: var(--cx-surface-2); color: var(--cx-text); box-shadow: inset 0 0 0 1px var(--cx-text-3); }
+.cx-cat[aria-current="true"] svg { color: var(--cx-accent); }
+.cx-enter { animation: cxEnter 200ms ease-out both; }
+@keyframes cxEnter { from { opacity: 0; transform: translateY(.5rem); } to { opacity: 1; transform: none; } }
+
+/* ---- E2E page chrome (phone, evidence, simulator) -------------------------------------------------------------------
+   The cockpit is scaled through the root font size. Everything else on the page stays in real pixels by overriding the
+   rem-based Tailwind scales on this wrapper, so text keeps a readable size at any cockpit scale. */
+html.e2e-page, html.e2e-page body, html.e2e-page #root { height: auto; min-height: 100%; overflow: auto; }
+.px-ui {
+  font-size: 16px; --spacing: 4px;
+  --text-xs: 12px; --text-sm: 14px; --text-base: 16px; --text-lg: 18px; --text-xl: 22px; --text-2xl: 28px; --text-3xl: 34px;
+  --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px; --radius-2xl: 22px; --radius-3xl: 28px;
+  background: var(--cx-bg); color: var(--cx-text);
+}
+.px-ui .px-card { background: var(--cx-surface); border: 1px solid var(--cx-line); border-radius: 14px; }
+.px-ui .px-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 10px; font-weight: 600; font-size: 14px; background: var(--cx-surface-2); color: var(--cx-text); border: 1px solid var(--cx-line); }
+.px-ui .px-btn:disabled { opacity: .45; }
+.px-ui .px-btn[aria-pressed="true"], .px-ui .px-btn.is-on { background: var(--cx-accent); color: #fff; border-color: var(--cx-accent); }
+.px-ui .px-btn.is-danger { background: var(--cx-critical); color: #fff; border-color: var(--cx-critical); }
+.px-ui .px-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: .03em; border: 1px solid var(--cx-line); color: var(--cx-text-2); background: var(--cx-surface-2); }
+.px-ui .px-chip.tone-ok { color: var(--cx-ok); border-color: var(--cx-ok); }
+.px-ui .px-chip.tone-warning { color: var(--cx-warning); border-color: var(--cx-warning); }
+.px-ui .px-chip.tone-critical { color: #fff; background: var(--cx-critical); border-color: var(--cx-critical); }
+.px-ui .px-k { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--cx-text-3); }
+.px-ui .px-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+
+/* ---- SU7 UI kit clone (Figma "Xiaomi SU7 Free UIkit", Jackywine, CC BY 4.0). Values are the kit's px at 1920x1200 / 16. */
+:root { --r-xl: 1.5rem; --r-lg: 1.25rem; --r-md: 1rem; --r-sm: .75rem; --ease-out: cubic-bezier(.2, .8, .2, 1); }
+/* SU7 brand-book tokens (Behance "Xiaomi SU7 Concept Brand Book", I. Inozemtsev): palette, MiSans Latin, hairlines */
+:root { --su-aqua: #08A9BD; --su-green: #7D8369; --su-basalt: #939290; --su-purple: #766680; --su-darkblue: #364562; --su-meteor: #3A5372;
+  --su-lava: #CD3E12; --su-pearl: #B3B8BC; --su-diamond: #232531; --su-hair: rgba(255, 255, 255, .07);
+  --spring: cubic-bezier(.22, 1.18, .36, 1); }
+.su-screen { background: radial-gradient(90% 70% at 50% -20%, #1b1d24 0%, #0d0e12 58%, #0a0b0d 100%); color: #fff;
+  font-family: "MiSans Latin", MiSans, Inter, system-ui, sans-serif; font-weight: 400; letter-spacing: .005em; -webkit-font-smoothing: antialiased; font-feature-settings: "tnum" 1, "ss01" 1; }
+.su-screen .su-num { font-weight: 500; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.su-screen .su-label { font-size: 1.25rem; font-weight: 500; letter-spacing: .06em; color: var(--cx-text-2); }
+.su-pane { position: relative; min-width: 0; overflow: hidden; border-radius: var(--r-xl); box-shadow: 0 1.5rem 3rem -1.5rem rgba(0, 0, 0, .6), inset 0 0 0 1px rgba(255, 255, 255, .04); background: #070913; transition: flex-grow 220ms ease-out; }
+.su-pane-car::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, #fafafa, #4f4f4f); opacity: .2; pointer-events: none; }
+.su-pane-map::before { content: ""; position: absolute; inset: 0; background: #d9d9d9; opacity: .2; pointer-events: none; z-index: 0; }
+.su-pane-music {  background:
+  radial-gradient(70% 38% at 62% -4%, rgba(224, 9, 61, .62), transparent 72%),
+  radial-gradient(75% 40% at 8% 104%, rgba(14, 49, 120, .75), transparent 70%),
+  linear-gradient(rgba(217, 217, 217, .2), rgba(217, 217, 217, .2)), #001540; }
+.su-dots { position: absolute; left: 50%; top: .875rem; z-index: 15; display: flex; gap: .25rem; transform: translateX(-50%); padding: .5rem 1rem; border-radius: .5rem; }
+.su-dots i { display: block; width: .5rem; height: .5rem; border-radius: 50%; background: #d9d9d9; opacity: .2; }
+.su-dots:hover i, .su-dots[aria-pressed="true"] i { opacity: .55; }
+.su-split { align-self: center; width: .5rem; height: 6.25rem; margin: 0 -.5rem; border-radius: .625rem; background: #d9d9d9; opacity: .3; flex: none; }
+.su-icon48 { display: inline-grid; place-items: center; width: 3rem; height: 3rem; border-radius: .75rem; }
+.su-icon72 { display: inline-grid; place-items: center; width: 4.5rem; height: 4.5rem; border-radius: 1rem; color: #fff; }
+.su-icon72[aria-pressed="true"] { background: rgba(255, 255, 255, .08); }
+.su-app { display: inline-grid; place-items: center; width: 4rem; height: 4rem; border-radius: var(--r-md); transition: transform 180ms var(--ease-out), box-shadow 180ms; box-shadow: 0 .4rem 1rem -.4rem rgba(0, 0, 0, .6); color: #fff; box-shadow: inset 0 -.15rem .3rem rgba(0, 0, 0, .18); }
+.su-app[aria-pressed="true"] { outline: .15rem solid rgba(255, 255, 255, .7); outline-offset: .2rem; }
+.su-dim { opacity: .5; } .su-dim8 { opacity: .8; }
+.su-black { background: rgba(0, 0, 0, .72); -webkit-backdrop-filter: blur(1.2rem) saturate(1.4); backdrop-filter: blur(1.2rem) saturate(1.4); border-radius: var(--r-md); box-shadow: 0 .2rem 1.9rem rgba(0, 0, 0, .31), 0 .5rem 3.5rem rgba(0, 0, 0, .25); }
+.su-cat { display: flex; align-items: center; gap: 1.5rem; min-height: 4.125rem; padding: 0 .3rem; border-radius: 1rem; color: rgba(255, 255, 255, .6); font-size: 1.75rem; text-align: left; }
+.su-cat .su-cat-ic { display: grid; place-items: center; width: 4.125rem; height: 4.125rem; border-radius: 1rem; background: rgba(255, 255, 255, .06); }
+.su-cat[aria-current="true"] { color: #fff; }
+.su-cat[aria-current="true"] .su-cat-ic { background: #0057EF; color: #fff; }
+
+/* motion and glass (all disabled by prefers-reduced-motion above) */
+.su-pane:nth-of-type(2), [data-pane="map"] { animation-delay: 60ms; } [data-pane="music"] { animation-delay: 120ms; }
+@keyframes suRise { from { opacity: 0; transform: translateY(1.2rem) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes suDrift { from { background-position: 0% 0%; } to { background-position: 100% 100%; } }
+.su-app:hover { transform: translateY(-.15rem); } .su-app:active { transform: scale(.94); }
+.su-app[aria-pressed="true"] { box-shadow: 0 0 0 .18rem rgba(255, 255, 255, .85), 0 .6rem 1.6rem -.3rem rgba(40, 120, 240, .55); outline: none; }
+.su-glass { background: rgba(28, 31, 38, .62); -webkit-backdrop-filter: blur(1.6rem) saturate(1.5); backdrop-filter: blur(1.6rem) saturate(1.5); border: 1px solid rgba(255, 255, 255, .08); }
+.su-dock { background: linear-gradient(180deg, rgba(8, 10, 12, 0), rgba(8, 10, 12, .85) 35%); }
+.su-sheet-in { animation: suSheet 260ms var(--ease-out) both; }
+@keyframes suSheet { from { opacity: 0; transform: scale(.985); filter: blur(.4rem); } to { opacity: 1; transform: none; filter: none; } }
+.cx-btn { border-radius: var(--r-sm); }
+.cx-seg { border-radius: var(--r-md); } .cx-seg > button { border-radius: var(--r-sm); }
+.su-cat .su-cat-ic { border-radius: var(--r-md); }
+
+/* parked scene: dusk sky, horizon glow, dark mirror floor (SU7 home look) */
+.su-scene { background:
+  radial-gradient(60% 30% at 50% 63%, rgba(214, 146, 128, .38), transparent 70%),
+  linear-gradient(180deg, #0a0e24 0%, #151a3c 30%, #3a3552 52%, #8c6b78 61%, #20212b 61.6%, #14151c 76%, #0c0d11 100%); }
+.su-star { position: absolute; border-radius: 50%; background: #fff; opacity: .55; pointer-events: none; }
+@keyframes suTwinkle { 0%, 100% { opacity: .1; transform: scale(.7); } 50% { opacity: .95; transform: scale(1.15); } }
+
+/* ---- softness pass: no flat plastic. Surfaces are translucent gradients with a faint top light and a hairline, icons are squircles. */
+.su-pane { background: linear-gradient(180deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .02)), #0d0f15;
+  box-shadow: inset 0 .06rem 0 rgba(255, 255, 255, .09), inset 0 0 0 .06rem var(--su-hair), 0 2rem 3.5rem -2rem rgba(0, 0, 0, .7); }
+.su-pane-car::before { background: radial-gradient(90% 55% at 50% 0%, rgba(150, 165, 200, .22), transparent 70%); opacity: 1; }
+.su-pane-map::before { background: linear-gradient(180deg, rgba(120, 130, 160, .12), transparent 40%); opacity: 1; }
+.su-pane-music { box-shadow: inset 0 .06rem 0 rgba(255, 255, 255, .14), inset 0 0 0 .06rem rgba(255, 255, 255, .06), 0 2rem 3.5rem -2rem rgba(60, 20, 90, .55); }
+.su-app { border-radius: 28%; background-blend-mode: soft-light; box-shadow: inset 0 .08rem 0 rgba(255, 255, 255, .35), inset 0 -.2rem .5rem rgba(0, 0, 0, .18), 0 .6rem 1.3rem -.5rem rgba(0, 0, 0, .65); }
+.su-app svg { filter: drop-shadow(0 .08rem .12rem rgba(0, 0, 0, .25)); }
+.su-icon72, .su-icon48 { border-radius: 30%; }
+.su-icon72[aria-pressed="true"] { background: rgba(255, 255, 255, .1); box-shadow: inset 0 .06rem 0 rgba(255, 255, 255, .12); }
+.su-black { background: rgba(14, 16, 22, .6); box-shadow: inset 0 .06rem 0 rgba(255, 255, 255, .1), inset 0 0 0 .06rem rgba(255, 255, 255, .05), 0 1rem 2.4rem -1rem rgba(0, 0, 0, .6); border-radius: var(--r-lg); }
+.su-glass { background: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .03)), rgba(22, 25, 32, .6); box-shadow: inset 0 .06rem 0 rgba(255, 255, 255, .14), 0 2rem 4rem -1.5rem rgba(0, 0, 0, .7); border: 0; }
+.cx-seg { background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 .06rem rgba(255, 255, 255, .05); }
+.cx-seg > button[aria-checked="true"] { background: rgba(255, 255, 255, .16); box-shadow: inset 0 .06rem 0 rgba(255, 255, 255, .2); }
+.cx-switch { background: rgba(255, 255, 255, .14); } .cx-switch[aria-checked="true"] { background: linear-gradient(160deg, #3d8bff, #1262ee); }
+.su-cat .su-cat-ic { background: rgba(255, 255, 255, .07); box-shadow: inset 0 .06rem 0 rgba(255, 255, 255, .1); }
+.su-cat[aria-current="true"] .su-cat-ic { background: linear-gradient(160deg, #2f86ff, #0057ef); box-shadow: inset 0 .08rem 0 rgba(255, 255, 255, .35), 0 .5rem 1.2rem -.4rem rgba(0, 87, 239, .6); }
+.su-screen h2, .su-screen h3 { font-weight: 400; letter-spacing: 0; }
+
+
+.su-pane.su-pane-music { background:
+  radial-gradient(70% 36% at 64% -4%, rgba(224, 9, 61, .55), transparent 72%),
+  radial-gradient(80% 42% at 6% 104%, rgba(14, 49, 120, .8), transparent 70%),
+  linear-gradient(rgba(217, 217, 217, .14), rgba(217, 217, 217, .14)), #001540; }
+
+/* ---- v4 layout (1920x1200 @16px root): panel gap/margin 24, radius 24, 56 px touch targets ---- */
+.su-dots { top: .4rem; width: 4.5rem; height: 3.5rem; padding: 0; border-radius: var(--r-sm); color: var(--cx-text-2); background: transparent; display: grid; place-items: center; }
+.su-dots:hover, .su-dots[aria-expanded="true"] { background: rgba(255, 255, 255, .08); color: var(--cx-text); }
+.su-dots i { display: none; }
+.su-split { width: .25rem; height: 5rem; margin: 0; opacity: .22; }
+.su-icon72 { width: 3.5rem; height: 3.5rem; } .su-icon48 { width: 3.5rem; height: 3.5rem; }
+.su-app { width: 4rem; height: 4rem; }
+
+.su-pane.su-pane-music { background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .015)), var(--cx-surface); }
+.su-pane.su-pane-car { background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .015)), var(--cx-surface); }
+.su-pane.su-pane-map { background: var(--cx-surface); }
+
+/* ---- v5 glass system. Layer order: environment/gradient -> content -> glass -> sharp text/icons.
+   Blur is backdrop-filter on the glass element only (never filter:blur on a container that holds content). */
+.su-glass { background: linear-gradient(180deg, rgba(255, 255, 255, .11), rgba(255, 255, 255, .03) 46%), rgba(12, 17, 26, .56);
+  -webkit-backdrop-filter: blur(28px) saturate(1.18); backdrop-filter: blur(28px) saturate(1.18);
+  border: 1px solid rgba(255, 255, 255, .13);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), inset 0 0 0 1px rgba(255, 255, 255, .02), 0 .35rem .8rem -.2rem rgba(0, 0, 0, .35), 0 1.6rem 3rem -1.2rem rgba(0, 0, 0, .7); }
+.su-glass-lite { background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02) 50%), rgba(18, 20, 30, .42);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1); backdrop-filter: blur(20px) saturate(1.1);
+  border: 1px solid rgba(255, 255, 255, .1); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 1.2rem 2.4rem -1rem rgba(0, 0, 0, .6); }
+/* alert surfaces stay solid enough for contrast and keep their semantic colour */
+.su-alert-critical { background: rgba(56, 16, 22, .94); border: 1px solid rgba(240, 82, 90, .5); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 1.2rem 2.4rem -1rem rgba(0, 0, 0, .7); }
+.su-alert-warning { background: rgba(52, 38, 14, .94); border: 1px solid rgba(232, 162, 58, .5); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 1.2rem 2.4rem -1rem rgba(0, 0, 0, .7); }
+/* fallbacks: no backdrop-filter support, or the user asked for less transparency */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .su-glass { background: rgba(26, 31, 42, .96); } .su-glass-lite { background: rgba(24, 27, 36, .94); } }
+@media (prefers-reduced-transparency: reduce) { .su-glass { background: rgba(26, 31, 42, .97); -webkit-backdrop-filter: none; backdrop-filter: none; } .su-glass-lite { background: rgba(24, 27, 36, .95); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+html[data-glass="off"] .su-glass, html[data-glass="off"] .su-glass-lite { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(26, 31, 42, .97); }
+.su-black { background: linear-gradient(180deg, rgba(255, 255, 255, .11), rgba(255, 255, 255, .03) 46%), rgba(12, 17, 26, .56); -webkit-backdrop-filter: blur(28px) saturate(1.18); backdrop-filter: blur(28px) saturate(1.18); border: 1px solid rgba(255, 255, 255, .13); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 1.4rem 2.6rem -1rem rgba(0, 0, 0, .65); }
+/* richer pane gradients (music: plum/indigo; vehicle/ADAS: petrol; shell stays neutral) */
+.su-pane.su-pane-music { background: radial-gradient(80% 45% at 70% 0%, rgba(120, 60, 150, .45), transparent 70%), radial-gradient(90% 50% at 0% 100%, rgba(40, 54, 140, .5), transparent 72%), linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .01)), #16141f; }
+.su-adas { background: linear-gradient(#04111a, #0c3140); }
+
+
+/* =====================================================================================================================
+   V6 — exact visual spec (docs/HMI_V6_EXACT_VISUAL_SPEC_VI_2026-10-16.md). Tokens are in rem with 1 rem = 16 px, so at the
+   reference viewport they read as the spec's CSS px. Breakpoint: viewport width 1600.
+   ===================================================================================================================== */
+:root {
+  --h-status: 4.5rem; --h-dock: 6rem; --margin: 1.5rem; --gap-v: .75rem; --gap-panel: 1rem; --pad: 1.5rem;
+  --r-panel: 1.5rem; --r-pop: 1.25rem; --r-ctl: .75rem; --touch: 3.5rem; --card-w: 25rem;
+  --fs-speed: 5rem; --lh-speed: 5.5rem; --fs-clock: 4rem; --lh-clock: 4.5rem; --fs-title: 2rem; --lh-title: 2.5rem;
+  --fs-body: 1.5rem; --lh-body: 2rem; --fs-label: 1.25rem; --lh-label: 1.75rem; --fs-status: 1.25rem; --lh-status: 1.75rem;
+  --dur: 180ms; --ease: cubic-bezier(.2, 0, 0, 1);
+  --r-sm: .75rem; --r-md: 1rem; --r-lg: 1.25rem; --r-xl: var(--r-panel);
+  --ease-out: var(--ease);
+}
+@media (max-width: 1599px) {
+  :root {
+    --h-status: 3.5rem; --h-dock: 5rem; --margin: 1rem; --gap-v: .5rem; --gap-panel: .75rem; --pad: 1rem;
+    --r-panel: 1.25rem; --card-w: 20rem;
+    --fs-speed: 4rem; --lh-speed: 4.5rem; --fs-clock: 3rem; --lh-clock: 3.5rem; --fs-title: 1.75rem; --lh-title: 2.25rem;
+    --fs-body: 1.25rem; --lh-body: 1.75rem; --fs-label: 1.125rem; --lh-label: 1.5rem; --fs-status: 1.125rem; --lh-status: 1.5rem;
+  }
+}
+.t-speed { font-size: var(--fs-speed); line-height: var(--lh-speed); font-weight: 500; letter-spacing: 0; }
+.su-screen .su-num.t-speed, .su-screen .su-num.t-title { font-weight: 500; }
+.t-clock { font-size: var(--fs-clock); line-height: var(--lh-clock); font-weight: 400; letter-spacing: 0; }
+.t-title { font-size: var(--fs-title); line-height: var(--lh-title); font-weight: 500; }
+.t-body { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 400; }
+.t-label { font-size: var(--fs-label); line-height: var(--lh-label); font-weight: 400; }
+.t-status { font-size: var(--fs-status); line-height: var(--lh-status); font-weight: 500; }
+.su-screen { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 400; letter-spacing: 0; }
+.su-screen .su-num { font-weight: inherit; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+
+/* glass (section 4): fixed values; one backdrop-filter layer per pixel; never on canvas / map / text */
+.su-glass, .su-black { background: rgba(13, 18, 26, .60); -webkit-backdrop-filter: blur(28px) saturate(120%); backdrop-filter: blur(28px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 12px 32px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .08); }
+.su-glass-card { background: rgba(13, 18, 26, .82); -webkit-backdrop-filter: blur(28px) saturate(120%); backdrop-filter: blur(28px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 12px 32px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .08); }
+.su-glass-lite { background: rgba(13, 18, 26, .60); -webkit-backdrop-filter: blur(28px) saturate(120%); backdrop-filter: blur(28px) saturate(120%); border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 12px 32px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .08); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .su-glass, .su-black, .su-glass-card, .su-glass-lite { background: #19222E; } }
+@media (prefers-reduced-transparency: reduce) { .su-glass, .su-black, .su-glass-card, .su-glass-lite { background: #19222E; -webkit-backdrop-filter: none; backdrop-filter: none; } }
+html[data-glass="off"] .su-glass, html[data-glass="off"] .su-black, html[data-glass="off"] .su-glass-card, html[data-glass="off"] .su-glass-lite { background: #19222E; -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* severity surfaces keep their colour (token severity unchanged) */
+.su-alert-critical { background: rgba(56, 16, 22, .94); border: 1px solid rgba(240, 82, 90, .5); box-shadow: 0 12px 32px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .08); }
+.su-alert-warning { background: rgba(52, 38, 14, .94); border: 1px solid rgba(232, 162, 58, .5); box-shadow: 0 12px 32px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .08); }
+
+/* focus, controls, motion */
+.su-screen :focus-visible { outline: 2px solid #63B8E8; outline-offset: 3px; }
+.su-screen button, .su-screen [role="switch"], .su-screen [role="radio"] { transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease), opacity var(--dur) var(--ease); }
+.cx-btn, .cx-btn:active, .cx-dock-app:active, .su-app:active, .su-app:hover { transform: none; }
+.cx-btn { border-radius: var(--r-ctl); transition-duration: var(--dur); transition-timing-function: var(--ease); }
+.cx-seg { border-radius: var(--r-ctl); } .cx-seg > button { border-radius: calc(var(--r-ctl) - 2px); font-size: var(--fs-label); line-height: var(--lh-label); min-height: var(--touch); }
+.su-icon72, .su-icon48 { width: var(--touch); height: var(--touch); border-radius: var(--r-md); display: inline-grid; place-items: center; }
+.su-app { width: var(--touch); height: var(--touch); border-radius: 1rem; }
+.su-pane { border-radius: var(--r-panel); animation: none; }
+.su-dots { top: .25rem; width: var(--touch); height: var(--touch); border-radius: var(--r-ctl); }
+.cx-chip { font-size: var(--fs-label); line-height: var(--lh-label); border-radius: var(--r-ctl); }
+.cx-3dlabel { font-size: var(--fs-label); line-height: var(--lh-label); }
+.cx-cat { font-size: var(--fs-body); line-height: var(--lh-body); min-height: var(--touch); border-radius: var(--r-ctl); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; } }
+
+/* music tint (section 8) on the shared surface */
+.su-pane.su-pane-music { background: linear-gradient(160deg, rgba(97, 75, 130, .12) 0%, rgba(25, 34, 46, 0) 60%), #19222E; }
+.su-pane.su-pane-car, .su-pane.su-pane-map { background: #19222E; }
+.su-pane { box-shadow: none; }
+.su-pane-car::before, .su-pane-map::before { display: none; }
+.su-adas { background: #19222E; }
+
+/* Text on the light accent (#63B8E8) is the shell colour #0D121A (8.7:1); white on it is only ~2:1. Beats .cx-btn[aria-pressed] and text-white. */
+.bg-accent.text-white, .cx-btn.bg-accent, .cx-btn.bg-accent[aria-pressed="true"] { color: #0D121A; }

@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
+    "dev:cockpit": "npm run dev --workspace @cabinsentinel/cockpit-web",
     "dev:operations": "npm run dev --workspace @cabinsentinel/operations-web",
     "build": "npm run build:web",
     "build:web": "node scripts/build-web-production.mjs",

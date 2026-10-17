@@ -1,0 +1,73 @@
+import { useEffect, useState } from 'react'
+import { AnimatePresence, MotionConfig } from 'motion/react'
+import { useVehicleSimulation } from '../../../hooks/useVehicleSimulation'
+import { useUi } from '../../../store/uiStore'
+import { useVehicle } from '../../../store/vehicleStore'
+import { CabinCareScreen } from '../../../e2e/CabinCareScreen'
+import { useE2e } from '../../../e2e/store'
+import { CameraPanel } from '../camera/CameraPanel'
+import { VinfastToasts } from './VinfastAlert'
+import { VinfastCabinDetail } from './VinfastCabin'
+import { VinfastCarMode } from './VinfastCarMode'
+import { VinfastClimatePanel } from './VinfastClimatePanel'
+import { VinfastDashboard } from './VinfastDashboard'
+import { VinfastLibrary, VinfastMediaPanel } from './VinfastPanels'
+import { VinfastPhoneFeature } from './VinfastPhoneFeature'
+import { VinfastSettings } from './VinfastSettings'
+import { useMode } from './useVinfast'
+
+/** Third independent shell (/cockpit/vinfast/). Reuses the same stores, read model, map and simulation guards as SU7 and Tesla. */
+/** Optional intro (?intro=1): draws the V once, has Skip, never runs by default and never delays an alert. */
+function Intro() {
+  const [on, setOn] = useState(() => new URLSearchParams(location.search).get('intro') === '1')
+  useEffect(() => { if (!on) return; const t = setTimeout(() => setOn(false), 2100); return () => clearTimeout(t) }, [on])
+  if (!on) return null
+  return <div className="vf-intro" data-testid="vf-intro"><svg width="300" height="160" viewBox="0 0 100 54" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M6 6 50 48 94 6" /></svg><button type="button" className="vf-btn vf-press" style={{ position: 'absolute', right: 40, bottom: 40 }} onClick={() => setOn(false)}>Bỏ qua</button></div>
+}
+
+export function VinfastExperience() {
+  useVehicleSimulation()
+  const overlay = useUi((s) => s.overlay), language = useUi((s) => s.language)
+  const gear = useVehicle((s) => s.gear)
+  const mode = useMode()
+  const careActive = useE2e((s) => s.state?.care?.status === 'ACTIVE')
+  useEffect(() => {
+    const el = document.documentElement
+    el.dataset.brand = 'vinfast'; el.dataset.mode = mode; el.lang = language
+    el.style.setProperty('--cx-accent', '#2395FF')   // the shared map reads the accent for the route line
+    return () => { el.style.removeProperty('--cx-accent') }
+  }, [mode, language])
+  useEffect(() => {   // reverse gear opens the rear camera, as on the other skins
+    const s = useUi.getState()
+    if (gear === 'R') s.set({ overlay: 'camera', cameraView: 'rear' })
+    else if (s.overlay === 'camera' && s.cameraView === 'rear') s.setOverlay(null)
+  }, [gear])
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return
+      if (e.key === 'Escape') useUi.getState().setOverlay(null)
+    }
+    addEventListener('keydown', onKey)
+    return () => removeEventListener('keydown', onKey)
+  }, [])
+  return (
+    <MotionConfig reducedMotion="user">
+      <VinfastDashboard>
+        <AnimatePresence mode="popLayout">
+          {overlay === 'climate' && <VinfastClimatePanel key="climate" />}
+          {overlay === 'vehicle' && <VinfastSettings key="vehicle" />}
+          {overlay === 'camera' && <CameraPanel key="camera" presentation="vinfast" />}
+          {overlay === 'cabin' && <VinfastCabinDetail key="cabin" />}
+          {overlay === 'cabinset' && <VinfastSettings key="cabinset" initial="cabin" />}
+          {overlay === 'phone' && <VinfastPhoneFeature key="phone" />}
+          {overlay === 'media' && <VinfastMediaPanel key="media" />}
+          {overlay === 'carmode' && <VinfastCarMode key="carmode" />}
+          {overlay === 'library' && <VinfastLibrary key="library" />}
+        </AnimatePresence>
+        {careActive && overlay !== 'cabin' && <div className="vf-abs vf-glass" style={{ left: 608, top: 88, width: 1288, height: 856, zIndex: 21, overflow: 'hidden' }} data-testid="vf-care"><CabinCareScreen /></div>}
+        <VinfastToasts />
+        <Intro />
+      </VinfastDashboard>
+    </MotionConfig>
+  )
+}

@@ -1,0 +1,131 @@
+[
+ {
+  "path": "apps/cockpit-web/public/vinfast/brand/vinfast-symbol.svg",
+  "purpose": "VinFast V symbol (dark, for light backgrounds)",
+  "vehicle_model": "n/a",
+  "dimensions_px": "svg",
+  "source": "https://commons.wikimedia.org/wiki/File:VinFast_logo_(simple_variant).svg",
+  "license": "Commons: public domain (text logo); tagged trademarked by the uploader. Brand use is the owner's call.",
+  "official_or_illustrative": "official logo as hosted on Wikimedia Commons (sourced from vinfastauto.us)",
+  "verification": "verified: file renders, geometry untouched"
+ },
+ {
+  "path": "apps/cockpit-web/public/vinfast/brand/vinfast-symbol-light.svg",
+  "purpose": "Same symbol recoloured #F4F8FF for dark UI (only fill changed)",
+  "vehicle_model": "n/a",
+  "dimensions_px": "svg",
+  "source": "derived from vinfast-symbol.svg",
+  "license": "as above",
+  "official_or_illustrative": "derived",
+  "verification": "verified"
+ },
+ {
+  "path": "apps/cockpit-web/public/vinfast/brand/vinfast-wordmark.svg",
+  "purpose": "VinFast wordmark, dark",
+  "vehicle_model": "n/a",
+  "dimensions_px": "svg",
+  "source": "https://commons.wikimedia.org/wiki/File:Vinfast_logo.svg",
+  "license": "as above (sourced from vinfastauto.eu)",
+  "official_or_illustrative": "official logo as hosted on Commons",
+  "verification": "verified render"
+ },
+ {
+  "path": "apps/cockpit-web/public/vinfast/brand/vinfast-wordmark-light.svg",
+  "purpose": "Wordmark recoloured #F4F8FF",
+  "vehicle_model": "n/a",
+  "dimensions_px": "svg",
+  "source": "derived",
+  "license": "as above",
+  "official_or_illustrative": "derived",
+  "verification": "verified"
+ },
+ {
+  "path": "apps/cockpit-web/public/vinfast/vehicle/vf8-front-3q.webp",
+  "purpose": "Hero: front three-quarter, background removed, soft contact shadow added",
+  "vehicle_model": "VF 8 (label on the plate; trim/year unknown)",
+  "dimensions_px": [
+   1000,
+   563
+  ],
+  "source": "image supplied by the project owner (10.png); background removal and shadow are ours",
+  "license": "unknown: owner-supplied, provenance not recorded",
+  "official_or_illustrative": "manufacturer-style render, authenticity not verified",
+  "verification": "NOT verified; 1000 px source, below the 2048 px target; edges slightly rough on roof/rear"
+ },
+ {
+  "path": "apps/cockpit-web/public/vinfast/vehicle/cockpit-front.webp",
+  "purpose": "Front cockpit overview (ambient lighting preview)",
+  "vehicle_model": "unconfirmed (owner-supplied; steering wheel and screen look like VinFast)",
+  "dimensions_px": [
+   2000,
+   1125
+  ],
+  "source": "owner-supplied (11.webp)",
+  "license": "unknown",
+  "official_or_illustrative": "manufacturer-style render, not verified",
+  "verification": "model NOT verified"
+ },
+ {
+  "path": "apps/cockpit-web/public/vinfast/vehicle/cockpit-front-960.webp",
+  "purpose": "960 px version of the cockpit image",
+  "vehicle_model": "same",
+  "dimensions_px": [
+   960,
+   540
+  ],
+  "source": "derived",
+  "license": "unknown",
+  "official_or_illustrative": "derived",
+  "verification": "model NOT verified"
+ },
+ {
+  "path": "apps/cockpit-web/public/vinfast/vehicle/interior-top.webp",
+  "purpose": "Top-down cabin, 3 seat rows",
+  "vehicle_model": "unconfirmed: three rows, so likely not a VF 8",
+  "dimensions_px": [
+   1200,
+   675
+  ],
+  "source": "owner-supplied (12.webp)",
+  "license": "unknown",
+  "official_or_illustrative": "illustrative only",
+  "verification": "model NOT verified; do not use as seat evidence"
+ },
+ {
+  "path": "apps/cockpit-web/public/vinfast/vehicle/_target-moodboard.webp",
+  "purpose": "Owner's 10-screen target mood board (reference only, not shipped in the UI)",
+  "vehicle_model": "n/a",
+  "dimensions_px": [
+   1586,
+   992
+  ],
+  "source": "owner-supplied (13.webp)",
+  "license": "unknown",
+  "official_or_illustrative": "illustrative concept",
+  "verification": "not verified"
+ },
+ {
+  "path": "apps/cockpit-web/public/vinfast/vehicle/car-top.png",
+  "purpose": "(older) top view crop",
+  "vehicle_model": "VF 8/9 Aurora A13",
+  "dimensions_px": [
+   320,
+   470
+  ],
+  "source": "Aurora Vietnam case, A13",
+  "license": "Aurora/VinFast IP, rights unverified",
+  "official_or_illustrative": "crop of reference raster",
+  "verification": "not verified"
+ },
+ {
+  "group": "unavailable",
+  "items": [
+   "Rear 3/4, left/right profile, front and rear views of the same VF 8 (only one exterior image exists)",
+   "Top-down vehicle render of the same VF 8 (the existing top view is an Aurora VF 8/9 crop)",
+   "Official hero render >= 2048 px",
+   "Verified official specs: trim, year, rated range, power, torque, usable battery",
+   "Seat/ventilation, charge-port and tyre-pressure technical diagrams (only a greyscale TPMS frame exists)",
+   "Rear seating photo for the same model"
+  ]
+ }
+]

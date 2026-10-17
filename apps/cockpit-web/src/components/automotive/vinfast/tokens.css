@@ -1,0 +1,15 @@
+/* VinFast HMI design tokens. PROPOSED design colours (not official VinFast specifications); calibrate after visual review.
+   Skin "blue" reads these through the --vf-* aliases below. Spacing follows an 8 px grid, radii 16 / 12 / 10. */
+:root {
+  --bg-primary: #06152F; --bg-secondary: #0A2250; --surface-primary: #102D66; --surface-elevated: #153B7C;
+  --accent-primary: #2375E8; --accent-active: #56AEFF;
+  --text-primary: #F4F8FF; --text-secondary: #ADC2E0; --text-muted: #819ABD;
+  --border-subtle: rgba(180, 210, 255, .12); --border-active: rgba(86, 174, 255, .60);
+  --success: #31C995; --warning: #F5B942; --danger: #F05C65;
+  /* 8-point spacing (4 px micro step) */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  /* radius scale; nested radius = parent radius - inset (concentric): panel 20 > card 16 > inner card 12 > control 12 > small 8 */
+  --radius-xs: 6px; --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 20px; --radius-2xl: 24px;
+  --radius-panel: var(--radius-lg); --radius-card: var(--radius-md); --radius-control: var(--radius-md);
+  --fs-heading: 28px; --fs-section: 20px; --fs-metric: 44px; --fs-card-title: 18px; --fs-body: 16px; --fs-label: 14px;
+}

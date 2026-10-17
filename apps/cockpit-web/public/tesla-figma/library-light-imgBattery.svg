@@ -1,0 +1,6 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="45.0003" height="20" viewBox="0 0 45.0003 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="battery">
+<path id="battery_2" fill-rule="evenodd" clip-rule="evenodd" d="M2 0C0.895431 0 0 0.895431 0 2V18C0 19.1046 0.89543 20 2 20H40C41.1046 20 42 19.1046 42 18V2C42 0.895431 41.1046 0 40 0H2ZM43.0003 15H42.6777V7H43.0003C44.1049 7 45.0003 7.89543 45.0003 9V13C45.0003 14.1046 44.1049 15 43.0003 15Z" fill="#D0D1D2"/>
+<rect id="level" x="2" y="2" width="33" height="16" fill="#5C5E62"/>
+</g>
+</svg>

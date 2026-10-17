@@ -1,0 +1,9 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="power station toggle">
+<circle id="Ellipse 11" cx="40" cy="40" r="40" fill="black" fill-opacity="0.9"/>
+<circle id="Ellipse 11_2" cx="40" cy="40" r="20" fill="white" fill-opacity="0.4"/>
+<g id="power">
+<path id="scale" fill-rule="evenodd" clip-rule="evenodd" d="M40.1319 37.625V29.7083L35.4314 40.9904C35.157 41.6491 35.6409 42.375 36.3545 42.375H39.8679V50.2917L44.5684 39.0096C44.8428 38.3509 44.3589 37.625 43.6453 37.625H40.1319Z" fill="white"/>
+</g>
+</g>
+</svg>

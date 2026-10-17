@@ -1,0 +1,3 @@
+[{"js":"await __sleep(6500);return 'parked'","shot":"s1-parked.png"},
+ {"js":"__vehicle.getState().set({gear:'D',speedOverride:30,parkingBrake:false});await __sleep(6500);return 'three'","shot":"s2-three.png"},
+ {"js":"document.querySelector('[data-pane=map] .su-dots').click();await __sleep(400);[...document.querySelectorAll('[role=menu] button')].find(b=>b.textContent.includes('Mở rộng')).click();await __sleep(1700);return 'two'","shot":"s3-two.png"}]

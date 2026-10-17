@@ -1,0 +1,2 @@
+[{"js":"await __sleep(6000);return 'ok'","shot":"car-parked.png"},
+ {"js":"__vehicle.getState().set({gear:'D',speedOverride:30,parkingBrake:false});await __sleep(5000);return 'ok'","shot":"car-driving.png"}]

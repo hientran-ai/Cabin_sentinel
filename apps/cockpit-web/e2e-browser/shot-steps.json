@@ -1,0 +1,4 @@
+[{"js":"await __sleep(4500);return 'ok'","shot":"home.png"},
+ {"js":"try{__click('Đỗ, khoá, 40');__click('Trẻ trong xe (clip')}catch(e){};await __sleep(7000);return 'ok'","shot":"critical.png"},
+ {"js":"document.querySelector('[data-testid=cockpit-chip]')?.click();await __sleep(1200);return 'ok'","shot":"cabin.png"},
+ {"js":"document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));await __sleep(400);const b=[...document.querySelectorAll('[data-testid=cockpit] nav button')][0];b.click();await __sleep(1200);return 'ok'","shot":"settings.png"}]
