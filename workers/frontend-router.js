@@ -34,17 +34,16 @@ export function adminAssetRequest(request, pathname) {
 }
 
 const legacyLoginPaths = new Set(['/', '/login', '/signin', '/sign-in', '/admin/signin', '/admin/sign-in'])
-// Family users (owners, caregivers) sign in on the Cabin Noir mobile web with their phone number.
+// Family-user entry points. They no longer go to Cabin Noir: they open the VinFast judge demo.
 const mobileLoginPaths = new Set(['/user', '/user/login', '/app'])
 
-export function mobileAppRedirect(env) {
-  try {
-    const target = new URL(env.MOBILE_APP_URL || 'https://cabin-noir.duckdns.org/app/')
-    if (target.protocol !== 'https:') return null
-    return Response.redirect(target.toString(), 302)
-  } catch {
-    return null
-  }
+// All user-facing entry points land on the VinFast judge demo (cockpit + owner phone side by side).
+const DEMO_PATH = '/cockpit/vinfast/'
+
+export function demoRedirect(request) {
+  const target = new URL(DEMO_PATH, request.url)
+  target.search = new URL(request.url).search   // keeps ?view=cockpit, ?skin=, ?debug=1
+  return Response.redirect(target.toString(), 302)
 }
 
 export function isBackendPath(pathname) {
@@ -59,24 +58,21 @@ export function isMobileLoginPath(pathname) {
   return mobileLoginPaths.has(pathname.replace(/\/+$/, '') || '/')
 }
 
-function unifiedLoginRedirect(request) {
-  const target = new URL('/admin/login', request.url)
-  return Response.redirect(target.toString(), 308)
-}
-
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url)
     if (isBackendPath(pathname)) return proxyBackend(request, env)
-    // Judge demo: one short, memorable URL for the VinFast cockpit + owner phone page (static assets under /cockpit/).
-    if (pathname.replace(/\/+$/, '') === '/demo') return Response.redirect(new URL('/cockpit/vinfast/', request.url).toString(), 302)
-    if (isMobileLoginPath(pathname)) return mobileAppRedirect(env) || unifiedLoginRedirect(request)
-    if (isLegacyLoginPath(pathname)) return unifiedLoginRedirect(request)
+    if (pathname === '/cockpit' || pathname.startsWith('/cockpit/')) return env.ASSETS.fetch(request)
+    // Operators keep their own console. Everything else (home, login, signup, app, unknown routes) is the demo.
     if (pathname === '/admin' || pathname.startsWith('/admin/')) {
       return env.ASSETS.fetch(adminAssetRequest(request, pathname))
     }
-    // The owner web application was retired in favor of Cabin Noir. Any
-    // non-admin frontend route now belongs to the family/mobile product.
-    return mobileAppRedirect(env) || unifiedLoginRedirect(request)
+    return demoRedirect(request)
+  },
+  // Keep-warm: free Hugging Face Spaces sleep when idle and the first judge would wait minutes. A health ping every
+  // 10 minutes (no user data, no cookies) keeps the model loaded. Errors are ignored on purpose.
+  async scheduled(_event, env) {
+    if (!env.BACKEND_ORIGIN) return
+    try { await fetch(backendUrl('https://warm.invalid/health', env.BACKEND_ORIGIN), { cf: { cacheTtl: 0 } }) } catch { /* sleeping or restarting */ }
   },
 }

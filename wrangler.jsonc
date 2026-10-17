@@ -6,9 +6,10 @@
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "not_found_handling": "single-page-application",
+    "not_found_handling": "none",
     "run_worker_first": ["/", "/login", "/user", "/user/login", "/app", "/signin", "/sign-in", "/demo", "/api/*", "/health", "/admin", "/admin/*"]
   },
+  "triggers": { "crons": ["*/10 * * * *"] },
   "vars": {
     "BACKEND_ORIGIN": "https://khanh3636-backend-p068.hf.space",
     "MOBILE_APP_URL": "https://cabin-noir.duckdns.org/app/"
