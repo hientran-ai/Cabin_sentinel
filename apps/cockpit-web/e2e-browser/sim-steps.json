@@ -1,0 +1,6 @@
+[
+ {"js": "try{__click('Mô phỏng')}catch(e){}await __sleep(500);__click('Lấy thời tiết thật');await __sleep(2500);return document.querySelector('[role=status]')?.innerText", "note": "real weather button"},
+ {"js": "const r=document.querySelector('input[aria-label=\"Nhiệt độ ngoài trời mô phỏng\"]');const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;set.call(r,'38');r.dispatchEvent(new Event('input',{bubbles:true}));await __sleep(300);__click('Đỗ, khoá, 25');__click('×60');__click('Trẻ trong xe (clip');await __sleep(15000);return document.body.innerText.match(/Cabin [\\d.]+ °C/)?.[0]", "note": "outside 38, x60, parked locked -> cabin heats"},
+ {"js": "const s=window.__e2e.getState().state;return JSON.stringify({risk:s.risk_level,rule:s.rule_id,temp:s.sensor_snapshot&&s.sensor_snapshot.temperature})", "note": "backend verdict", "shot": "sim-1.png"},
+ {"js": "return __ptext().slice(0,200)", "note": "phone"}
+]

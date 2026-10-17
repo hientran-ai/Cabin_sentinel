@@ -1,0 +1,12 @@
+[
+ {"js":"await __sleep(5000);return 'ok'","shot":"1-parked.png"},
+ {"js":"[...document.querySelectorAll('[data-testid=cockpit] nav button[aria-label=\"Xe\"]')][0].click();await __sleep(900);return 'ok'","shot":"2-settings.png"},
+ {"js":"const n=[...document.querySelectorAll('[data-testid=cockpit] .cx-cat')];n[4].click();await __sleep(600);return 'ok'","shot":"3-settings-display.png"},
+ {"js":"document.querySelector('[data-testid=cockpit] nav button[aria-label=Home]').click();__vehicle.getState().set({cabinTemperature:40,isLocked:true,gear:'P',speedOverride:0});window.__e2e.getState().setSim({engineOn:false,driverPresent:false});await __e2eCapture.startClip(__e2eCapture.CLIPS[0]);await __sleep(8000);return window.__e2e.getState().state?.risk_level","shot":"4-parked-critical.png"},
+ {"js":"document.querySelector('[data-testid=cockpit] nav button[aria-label=\"Giám sát cabin\"]').click();await __sleep(1500);return 'ok'","shot":"5-cabin-critical.png"},
+ {"js":"__e2eCapture.setCameraFault('BLOCKED');await __sleep(6000);return window.__e2e.getState().state?.risk_level","shot":"6-cabin-error.png"},
+ {"js":"__e2eCapture.setCameraFault(null);__e2eCapture.stopSource();await __sleep(9000);return String(window.__e2e.getState().state?.decision_current)","shot":"7-cabin-stale.png"},
+ {"js":"document.querySelector('[data-testid=cockpit] nav button[aria-label=Home]').click();__vehicle.getState().set({cabinTemperature:25,isLocked:false,gear:'D',speedOverride:30,parkingBrake:false});window.__e2e.getState().setSim({engineOn:true,driverPresent:true});await __e2eCapture.startClip(__e2eCapture.CLIPS[0]);await __sleep(7000);return window.__e2e.getState().state?.risk_level","shot":"8-driving.png"},
+ {"js":"document.querySelector('[data-pane=map] .cx-pane-handle').click();await __sleep(1200);return 'ok'","shot":"9-driving-map-wide.png"},
+ {"js":"document.querySelector('[data-pane=map] .cx-pane-handle').click();__vehicle.getState().set({cabinTemperature:40,isLocked:true,gear:'P',speedOverride:0});window.__e2e.getState().setSim({engineOn:false,driverPresent:false});await __sleep(7000);const s=window.__e2e.getState();await s.care((x)=>__e2eApi.careStart(x,{profile:'CHILD',music:'twinkle'},'PHONE'),'ok');await __sleep(2500);return window.__e2e.getState().state?.care?.status","shot":"10-care-child.png"}
+]

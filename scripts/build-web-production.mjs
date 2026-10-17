@@ -23,4 +23,5 @@ function run(args) {
 }
 
 run(['run', 'build', '--workspace', '@cabinsentinel/operations-web'])
+run(['run', 'build', '--workspace', '@cabinsentinel/cockpit-web'])
 await import('./assemble-web.mjs')

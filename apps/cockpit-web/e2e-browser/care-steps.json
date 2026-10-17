@@ -1,0 +1,6 @@
+[
+ {"js": "await __sleep(1500);__click('Đỗ, khoá, 40');await __sleep(300);__click('Trẻ trong xe (clip');await __sleep(7000);return document.querySelector('[data-testid=care-sheet]')?.innerText", "note": "care pill with countdown"},
+ {"js": "__click('Cabin Care',`[data-testid=care-sheet]`);await __sleep(400);__click('Trẻ em','[data-testid=care-sheet]');await __sleep(2500);return document.querySelector('[data-testid=care-sheet]').innerText.slice(0,400)", "note": "declared child", "shot": "care-1.png"},
+ {"js": "__click('Bật chăm sóc trẻ','[data-testid=care-sheet]');await __sleep(3500);const c=window.__e2e.getState().state;return JSON.stringify({care:c.care.status,by:c.care.started_by,risk:c.risk_level,incident:c.incident.status,screen:!!document.querySelector('[data-testid=care-child]')})", "note": "child care active, risk unchanged", "shot": "care-2.png"},
+ {"js": "await __sleep(6000);return document.querySelector('[data-testid=care-child]').innerText.replace(/\\n+/g,' | ')", "note": "child screen text (cabin cooling)"}
+]

@@ -1,0 +1,34 @@
+[
+ {
+  "js": "await __sleep(6000);return 'ok'",
+  "shot": "01-parked.png"
+ },
+ {
+  "js": "__vehicle.getState().set({gear:'D',speedOverride:30,parkingBrake:false});await __sleep(5500);return 'ok'",
+  "shot": "02-three-zones.png"
+ },
+ {
+  "js": "document.querySelector('[data-pane=map] .su-dots').click();await __sleep(400);[...document.querySelectorAll('[role=menuitem],[role=menu] button')].find(b=>b.textContent.includes('Mở rộng')).click();await __sleep(1600);return 'ok'",
+  "shot": "03-map-expanded.png"
+ },
+ {
+  "js": "[...document.querySelectorAll('button')].find(b=>b.textContent.includes('Về ba vùng')).click();await __sleep(900);document.querySelector('[data-testid=cockpit] nav button[aria-label=\"Giám sát cabin\"]').click();await __sleep(1500);return 'ok'",
+  "shot": "04-cabin-missing.png"
+ },
+ {
+  "js": "document.querySelector('[data-testid=cockpit] nav button[aria-label=Home]').click();__vehicle.getState().set({cabinTemperature:40,isLocked:true,gear:'P',speedOverride:0});window.__e2e.getState().setSim({engineOn:false,driverPresent:false});await __e2eCapture.startClip(__e2eCapture.CLIPS[0]);await __sleep(8000);return window.__e2e.getState().state?.risk_level",
+  "shot": "05-critical-home.png"
+ },
+ {
+  "js": "document.querySelector('[data-testid=cockpit] nav button[aria-label=\"Giám sát cabin\"]').click();await __sleep(1500);return 'ok'",
+  "shot": "06-cabin-critical.png"
+ },
+ {
+  "js": "__e2eCapture.stopSource();await __sleep(9000);return String(window.__e2e.getState().state?.decision_current)",
+  "shot": "07-cabin-stale.png"
+ },
+ {
+  "js": "document.querySelector('[data-testid=cockpit] nav button[aria-label=Home]').click();await __sleep(300);document.querySelector('[data-testid=cockpit] nav button[aria-label=\"Cài đặt\"]').click();await __sleep(2200);return 'ok'",
+  "shot": "08-settings.png"
+ }
+]

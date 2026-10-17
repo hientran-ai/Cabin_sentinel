@@ -1,0 +1,5 @@
+MiSans Latin (woff2: ExtraLight, Light, Regular, Medium, Semibold) — copied unmodified from the official
+MiSans_Latin.zip, https://hyperos.mi.com/font-download/MiSans_Latin.zip (downloaded 2026-10-16).
+Copyright Xiaomi. Free to use under the MiSans Fonts license (https://hyperos.mi.com/font/en/about/):
+apps using it must state that MiSans Fonts was used; the font files may not be modified, sold or
+redistributed on their own. Used here only as the app's web font. Decision to also deploy it: project owner, 2026-10-16.

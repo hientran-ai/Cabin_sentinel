@@ -1,0 +1,91 @@
+{
+ "pack": "/Users/mac/BUILD_PHASE/docs/vinfast-hmi-reference-pack-2026-10-16",
+ "assets": [
+  {
+   "file": "public/vinfast/car-top.png",
+   "from": "A13 crop (200,400,520,870)",
+   "use": "xe nhìn từ trên",
+   "note": "nền xanh nhạt của màn gốc còn lộ viền nhẹ ở theme tối"
+  },
+  {
+   "file": "public/vinfast/app-RC.png (18)",
+   "from": "A14 crops",
+   "use": "icon ứng dụng (camera=app-22, phone=12, music=13, EV=11, settings=04, radio=10, v.v.)",
+   "note": "cắt nguyên raster; không phải vector OEM"
+  },
+  {
+   "file": "public/vinfast/icons/*.png",
+   "from": "A13 crops tách nền (matte từ nền màn)",
+   "use": "pin, đèn/độ sáng, gạt mưa, cửa xe, ghế sưởi, mũi tên, sấy kính, quạt, lưới ứng dụng, V logo",
+   "note": "mono glyph bị đảo màu ở theme tối bằng CSS filter; chất lượng phụ thuộc độ phân giải A13"
+  },
+  {
+   "file": "public/vinfast/wallpaper-dark.jpg",
+   "from": "A01 crop (0,0,1920,520) phóng dọc + blur + sáng hơn",
+   "use": "wallpaper tối",
+   "note": "không có wallpaper sáng trong pack: theme sáng dùng gradient CSS (PROPOSED)"
+  },
+  {
+   "file": "public/fonts/mulish/Mulish-variable.ttf + OFL",
+   "from": "pack fonts (Google Fonts)",
+   "use": "font"
+  },
+  {
+   "colors": "#2395FF #FC3E21 #FCBD12 #0CC393 (A09 labels); bề mặt/alpha/radius PROPOSED"
+  },
+  {
+   "file": "public/vinfast/clips/{summon,autopark,cpd}.mp4 + posters",
+   "from": "Vimeo 820387196 \"3D Animation VinFast HMI\" (Aurora), 302 frames @0.125s via the public player, panel crops 752x422, ffmpeg minterpolate 8→24fps",
+   "use": "Cài đặt › Hỗ trợ lái (video minh hoạ)",
+   "rights": "Aurora/VinFast IP; demo nội bộ, quyền sử dụng UNVERIFIED"
+  },
+  {
+   "file": "public/vinfast/wall/thumb-0..7, wall-0..7",
+   "from": "Vimeo 820383806 @4.3s (Display Settings › Wallpaper grid), thumbnails upscaled",
+   "use": "chọn hình nền",
+   "rights": "UNVERIFIED"
+  },
+  {
+   "file": "public/vinfast/wall/aurora-band.jpg, snow-band.jpg",
+   "from": "Vimeo 820393171 @12.3s/@16.3s, vùng trời trên kính lái",
+   "use": "hình nền dải trên như ảnh VF8 thực",
+   "rights": "UNVERIFIED"
+  },
+  {
+   "file": "public/vinfast/ill/light-interior(-day).jpg",
+   "from": "Vimeo 820383806 @0.3s/@2.3s Light Settings",
+   "use": "Cài đặt › Ánh sáng; vòng màu sống phủ đúng vị trí vòng màu trong ảnh"
+  },
+  {
+   "file": "public/vinfast/ill/tpms-car.jpg",
+   "from": "Vimeo 820383806 @12.3s TPMS, đã chuyển xám (bỏ màu trạng thái lốp)",
+   "use": "Áp suất lốp, số liệu \"—\""
+  },
+  {
+   "file": "public/vinfast/ill/climate-car.jpg",
+   "from": "ảnh người dùng (màn VF8 climate), nắn phối cảnh",
+   "use": "màn điều hòa mới; nút luồng gió phủ lên nút gốc"
+  },
+  {
+   "file": "public/vinfast/ill/status-car.jpg",
+   "from": "ảnh người dùng (màn Status), nắn phối cảnh",
+   "use": "Cài đặt › Trạng thái; thanh pin vẽ lại theo % mô phỏng"
+  },
+  {
+   "file": "src/components/automotive/vinfast/glyphs.tsx",
+   "from": "vẽ lại vector theo icon A13/A14 và ảnh thực",
+   "use": "icon nét ở thanh dưới, cột trái, điều hòa, cài đặt",
+   "note": "không phải file icon gốc"
+  }
+ ],
+ "still_not_vinfast_icons": [
+  "Sidebar settings, nút bản đồ, transport media, close X, icon header (lucide) vì pack không có glyph đủ độ phân giải",
+  "Tile \"Giám sát cabin\" là extension tự thiết kế",
+  "Logo V: chỉ crop dấu V; hai đường cong ở status bar là SVG tự vẽ"
+ ],
+ "vimeo_blocked": "Các video 820386475, 820390483, 820385692, 820381076, 821511417 và loạt 8458xx/8468xx chưa lấy được: Vimeo bật trang kiểm tra người dùng (Cloudflare); không vượt CAPTCHA.",
+ "not_done": [
+  "Chưa xem video YouTube về màn hình chính VF6/7/8/9; chỉ xem các video Aurora lấy được",
+  "HUD settings chưa clone"
+ ]
+}
