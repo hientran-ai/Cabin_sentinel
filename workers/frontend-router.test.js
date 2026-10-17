@@ -41,41 +41,50 @@ describe('Cloudflare frontend router', () => {
     expect(new URL(asset.url).pathname).toBe('/admin/assets/app.js')
   })
 
-  it('redirects legacy admin login URLs to the unified admin login', async () => {
-    const response = await router.fetch(new Request('https://frontend.example/login'), {
-      ASSETS: { fetch: () => Promise.reject(new Error('assets should not be called')) },
-    })
+  const noAssets = { ASSETS: { fetch: () => Promise.reject(new Error('assets should not be called')) } }
+  const DEMO = 'https://frontend.example/cockpit/vinfast/'
 
-    expect(response.status).toBe(308)
-    expect(response.headers.get('location')).toBe('https://frontend.example/admin/login')
+  it.each(['/', '/login', '/signin', '/sign-in', '/user', '/user/login', '/app', '/demo', '/vehicles/VF8', '/anything/else'])(
+    'sends user-facing route %s to the VinFast judge demo',
+    async (path) => {
+      const response = await router.fetch(new Request(`https://frontend.example${path}`), noAssets)
+      expect(response.status).toBe(302)
+      expect(response.headers.get('location')).toBe(DEMO)
+    },
+  )
+
+  it('keeps the query string when redirecting to the demo', async () => {
+    const response = await router.fetch(new Request('https://frontend.example/?view=cockpit&debug=1'), noAssets)
+    expect(response.headers.get('location')).toBe(`${DEMO}?view=cockpit&debug=1`)
   })
 
-  it('redirects family login URLs to the configured Cabin Noir app', async () => {
-    const response = await router.fetch(new Request('https://frontend.example/user/login'), {
-      MOBILE_APP_URL: 'https://cabin-noir.duckdns.org/app/',
-      ASSETS: { fetch: () => Promise.reject(new Error('assets should not be called')) },
-    })
-
-    expect(response.status).toBe(302)
-    expect(response.headers.get('location')).toBe('https://cabin-noir.duckdns.org/app/')
+  it('serves the cockpit entries (SU7, Tesla, VinFast) as static assets, not as redirects', async () => {
+    const seen = []
+    const env = { ASSETS: { fetch: async (request) => { seen.push(new URL(request.url).pathname); return new Response('asset') } } }
+    for (const path of ['/cockpit/', '/cockpit/tesla/', '/cockpit/vinfast/', '/cockpit/assets/app.js']) {
+      const response = await router.fetch(new Request(`https://frontend.example${path}`), env)
+      expect(response.status).toBe(200)
+    }
+    expect(seen).toEqual(['/cockpit/', '/cockpit/tesla/', '/cockpit/vinfast/', '/cockpit/assets/app.js'])
   })
 
-  it('redirects retired owner routes to Cabin Noir', async () => {
-    const response = await router.fetch(new Request('https://frontend.example/vehicles/VF8'), {
-      MOBILE_APP_URL: 'https://cabin-noir.duckdns.org/app/',
-      ASSETS: { fetch: () => Promise.reject(new Error('assets should not be called')) },
+  it('keeps the operator console and the API proxy unchanged', async () => {
+    const asset = await router.fetch(new Request('https://frontend.example/admin/incidents'), {
+      ASSETS: { fetch: async (request) => new Response(new URL(request.url).pathname) },
     })
-
-    expect(response.status).toBe(302)
-    expect(response.headers.get('location')).toBe('https://cabin-noir.duckdns.org/app/')
+    expect(await asset.text()).toBe('/admin/index.html')
+    const noBackend = await router.fetch(new Request('https://frontend.example/api/v1/e2e/status'), noAssets)
+    expect(noBackend.status).toBe(503)
   })
 
-  it('sends /demo to the VinFast judge demo and does not touch login routes', async () => {
-    const env = { ASSETS: { fetch: async () => new Response('asset') }, MOBILE_APP_URL: 'https://app.example/app/' }
-    const demo = await router.fetch(new Request('https://c4.example/demo'), env)
-    expect(demo.status).toBe(302)
-    expect(demo.headers.get('location')).toBe('https://c4.example/cockpit/vinfast/')
-    const login = await router.fetch(new Request('https://c4.example/user/login'), env)
-    expect(login.headers.get('location')).toBe('https://app.example/app/')
+  it('pings the backend health endpoint on the keep-warm schedule and survives a failure', async () => {
+    const calls = []
+    const realFetch = globalThis.fetch
+    globalThis.fetch = async (url) => { calls.push(String(url)); throw new Error('sleeping') }
+    try {
+      await router.scheduled({}, { BACKEND_ORIGIN: 'https://backend.example' })
+      await router.scheduled({}, {})
+    } finally { globalThis.fetch = realFetch }
+    expect(calls).toEqual(['https://backend.example/health'])
   })
 })
