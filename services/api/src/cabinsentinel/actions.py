@@ -23,8 +23,29 @@ class MockActions:
         return result
 
 
-class ChannelActions(MockActions):
-    """Mock actions plus a real message on ntfy/Telegram for the two notification tools."""
+class DemoActions(MockActions):
+    """MockActions plus a per-demo-vehicle failure switch so delivery failure can be shown honestly.
+
+    Nothing real is sent either way; a switched tool raises and the service records ``failed``.
+    """
+
+    def __init__(self):
+        self.failing: dict[str, set[str]] = {}
+
+    def set_failing(self, vehicle_id: str, tools: set[str]) -> None:
+        if tools:
+            self.failing[vehicle_id] = set(tools)
+        else:
+            self.failing.pop(vehicle_id, None)
+
+    def execute(self, tool: str, vehicle_id: str) -> dict:
+        if tool in self.failing.get(vehicle_id, ()):
+            raise RuntimeError("simulated provider failure")
+        return super().execute(tool, vehicle_id)
+
+
+class ChannelActions(DemoActions):
+    """Demo actions plus a real message on ntfy/Telegram for the two notification tools."""
 
     MESSAGES = {
         "send_notification": ("CabinSentinel: có người trong xe", "Xe {vehicle}: phát hiện người trong cabin khi xe đã tắt máy. Hãy kiểm tra ngay."),
@@ -54,4 +75,4 @@ def card_for(vehicle_id: str) -> bytes:
 
 
 def build_actions() -> MockActions:
-    return ChannelActions() if notify.configured() else MockActions()
+    return ChannelActions() if notify.configured() else DemoActions()

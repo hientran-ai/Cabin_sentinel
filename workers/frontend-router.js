@@ -68,6 +68,8 @@ export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url)
     if (isBackendPath(pathname)) return proxyBackend(request, env)
+    // Judge demo: one short, memorable URL for the VinFast cockpit + owner phone page (static assets under /cockpit/).
+    if (pathname.replace(/\/+$/, '') === '/demo') return Response.redirect(new URL('/cockpit/vinfast/', request.url).toString(), 302)
     if (isMobileLoginPath(pathname)) return mobileAppRedirect(env) || unifiedLoginRedirect(request)
     if (isLegacyLoginPath(pathname)) return unifiedLoginRedirect(request)
     if (pathname === '/admin' || pathname.startsWith('/admin/')) {
