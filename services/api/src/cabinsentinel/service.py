@@ -64,6 +64,11 @@ class CabinService:
                 session_id TEXT PRIMARY KEY, vehicle_id TEXT NOT NULL UNIQUE,
                 token_hash TEXT NOT NULL, created_at TEXT NOT NULL
             )""")
+            # One row per accepted client frame: a retried frame returns this reply without new inference.
+            self._db.execute("""CREATE TABLE IF NOT EXISTS demo_observations (
+                vehicle_id TEXT NOT NULL, frame_id TEXT NOT NULL, response_json TEXT NOT NULL,
+                PRIMARY KEY (vehicle_id, frame_id)
+            )""")
 
     def ingest_sensor(self, payload: SensorPayload) -> dict:
         return self._ingest(payload.vehicle_id, sensor=payload)
@@ -98,6 +103,73 @@ class CabinService:
 
     def ingest_demo(self, sensor_values: dict, vision: VisionPayload) -> dict:
         return self._ingest(vision.vehicle_id, vision=vision, simulated_sensor=sensor_values)
+
+    def delete_demo_session(self, vehicle_id: str) -> bool:
+        """Erase everything stored for one demo session (owner erasure and retention share this path)."""
+        if not vehicle_id.startswith("DEMO_"):
+            raise ValueError("Only demo sessions can be deleted here")
+        with self._lock, self._db:
+            self._db.execute("BEGIN IMMEDIATE")
+            for table in ("events", "action_ledger", "demo_observations", "vehicles"):
+                self._db.execute(f"DELETE FROM {table} WHERE vehicle_id=?", (vehicle_id,))
+            return self._db.execute("DELETE FROM demo_sessions WHERE vehicle_id=?", (vehicle_id,)).rowcount > 0
+
+    def purge_expired_demo(self, retention: timedelta) -> int:
+        """Delete demo sessions with no sensor or vision update, nor creation, within ``retention``."""
+        cutoff = self.clock() - retention
+        with self._lock:
+            rows = self._db.execute(
+                """SELECT s.vehicle_id, s.created_at, v.sensor_time, v.vision_time FROM demo_sessions s
+                LEFT JOIN vehicles v ON v.vehicle_id = s.vehicle_id"""
+            ).fetchall()
+        expired = [
+            row["vehicle_id"] for row in rows
+            if max(datetime.fromisoformat(t) for t in (row["created_at"], row["sensor_time"], row["vision_time"]) if t) < cutoff
+        ]
+        for vehicle_id in expired:
+            self.delete_demo_session(vehicle_id)
+        return len(expired)
+
+    def ingest_simulated_sensor(self, vehicle_id: str, values: dict) -> dict | None:
+        """Commit SIMULATED telemetry stamped with this service's clock; risk is still derived, never supplied."""
+        return self._ingest(vehicle_id, simulated_sensor=values)
+
+    def observation_get(self, vehicle_id: str, frame_id: str) -> dict | None:
+        with self._lock:
+            row = self._db.execute(
+                "SELECT response_json FROM demo_observations WHERE vehicle_id=? AND frame_id=?", (vehicle_id, frame_id),
+            ).fetchone()
+            return json.loads(row["response_json"]) if row else None
+
+    def observation_put(self, vehicle_id: str, frame_id: str, response: dict) -> None:
+        with self._lock, self._db:
+            self._db.execute(
+                "INSERT OR IGNORE INTO demo_observations VALUES (?,?,?)", (vehicle_id, frame_id, json.dumps(response)),
+            )
+
+    def vision_frame_committed(self, vehicle_id: str, frame_id: str) -> bool:
+        """True while this frame is the vision input behind the committed state."""
+        with self._lock:
+            row = self._db.execute("SELECT vision_frame FROM vehicles WHERE vehicle_id=?", (vehicle_id,)).fetchone()
+            return bool(row and row["vision_frame"] == frame_id)
+
+    def evaluation_at(self, vehicle_id: str, revision: int) -> dict | None:
+        """The committed evaluation that produced a revision (acknowledgments reuse the prior one)."""
+        with self._lock:
+            row = self._db.execute(
+                """SELECT payload_json FROM events WHERE vehicle_id=? AND event_type='evaluation'
+                AND json_extract(payload_json,'$.revision') <= ? ORDER BY id DESC LIMIT 1""", (vehicle_id, revision),
+            ).fetchone()
+            return json.loads(row["payload_json"]) if row else None
+
+    def events_after(self, vehicle_id: str, after_id: int, *, limit: int = 200) -> list[dict]:
+        """Ascending page of events newer than ``after_id`` for incremental history readers."""
+        with self._lock:
+            rows = self._db.execute(
+                "SELECT id, event_type, payload_json FROM events WHERE vehicle_id=? AND id>? ORDER BY id ASC LIMIT ?",
+                (vehicle_id, after_id, limit),
+            ).fetchall()
+            return [{"event_id": r["id"], "event_type": r["event_type"], **json.loads(r["payload_json"])} for r in rows]
 
     def tick(self, vehicle_id: str) -> dict | None:
         """Reassess freshness when sources stop publishing."""

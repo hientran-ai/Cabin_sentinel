@@ -69,4 +69,13 @@ describe('Cloudflare frontend router', () => {
     expect(response.status).toBe(302)
     expect(response.headers.get('location')).toBe('https://cabin-noir.duckdns.org/app/')
   })
+
+  it('sends /demo to the VinFast judge demo and does not touch login routes', async () => {
+    const env = { ASSETS: { fetch: async () => new Response('asset') }, MOBILE_APP_URL: 'https://app.example/app/' }
+    const demo = await router.fetch(new Request('https://c4.example/demo'), env)
+    expect(demo.status).toBe(302)
+    expect(demo.headers.get('location')).toBe('https://c4.example/cockpit/vinfast/')
+    const login = await router.fetch(new Request('https://c4.example/user/login'), env)
+    expect(login.headers.get('location')).toBe('https://app.example/app/')
+  })
 })
