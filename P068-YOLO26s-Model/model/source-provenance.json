@@ -1,0 +1,130 @@
+{
+  "source_branch": "BaoTam",
+  "source_head": "f0d6447",
+  "includes_uncommitted_workspace_model_changes": true,
+  "transformations": [
+    "Rename src.vision imports/references to the independent p068_vision namespace.",
+    "Allow explicit YuNet asset paths in AgeClassifier and FacePreview.",
+    "Adjust source-checkout fallback model paths for the package directory depth.",
+    "Add a public integration wrapper; preserve selected inference algorithms.",
+    "Sort exported imports for lint; split four semicolon-separated test assignments.",
+    "Normalize exported text to LF and trim one trailing space in the copied torchvision license.",
+    "Post-export CPU integration tuning: reuse full-frame faces before ROI rescue, bound the YuNet long side to 768 pixels, and select a documented 512-pixel detector integration profile."
+  ],
+  "modules": {
+    "src/vision/video.py": {
+      "source_sha256": "5a4f9f6a7ff0335e3e39c6c6d30c491946c7e77f56f8b73fccf9f2a6ef7a355f",
+      "exported_path": "model/src/p068_vision/video.py",
+      "exported_sha256": "5519f636ac5599bcc64e20a7d3b1ece38767b4de0d795ce135bd0e67d94c8979"
+    },
+    "src/vision/overlay.py": {
+      "source_sha256": "de9f78329b24908907199af13199a6b2245f28ba570ef7b731aabe0b5a80e9a5",
+      "exported_path": "model/src/p068_vision/overlay.py",
+      "exported_sha256": "b5b74c38dcdaea9f165d2c780d6f4f7267d925adf724688589f34d8cfc0e5b1f"
+    },
+    "src/vision/cabin_geometry.py": {
+      "source_sha256": "e445d64269975b3ef6f89fad834cd751d9b4445bda17a5ad3128abaca0846cf3",
+      "exported_path": "model/src/p068_vision/cabin_geometry.py",
+      "exported_sha256": "e445d64269975b3ef6f89fad834cd751d9b4445bda17a5ad3128abaca0846cf3"
+    },
+    "src/vision/preview.py": {
+      "source_sha256": "2f22b877dc03c59cadb12aafbdc619d48ce22a604b8b7c29337baf9d5921c94e",
+      "exported_path": "model/src/p068_vision/preview.py",
+      "exported_sha256": "4a149b69f845a428530418ecf8a5bf3a5184337c7c7a0af1754649e11c74968e"
+    },
+    "src/vision/privacy.py": {
+      "source_sha256": "e043e98527ac40942d64b575d394ad5b1fddfde54d6e7bcffc90a1553e0663a4",
+      "exported_path": "model/src/p068_vision/privacy.py",
+      "exported_sha256": "1e66cbd81b2476df2b4457434693f5b5e846c1ff23677bad8cc9bdafd2273b8f"
+    },
+    "src/vision/decoded_image.py": {
+      "source_sha256": "e9a5fceea9add1aee42ea1a13845cf62fd0b162f610e58144b3557dd0e7c3092",
+      "exported_path": "model/src/p068_vision/decoded_image.py",
+      "exported_sha256": "e9a5fceea9add1aee42ea1a13845cf62fd0b162f610e58144b3557dd0e7c3092"
+    },
+    "src/vision/age.py": {
+      "source_sha256": "3e9c8211491bfc063d584e24e1b4a20af83e9ec1065ba17b1b983155afaec52b",
+      "exported_path": "model/src/p068_vision/age.py",
+      "exported_sha256": "c1299e07ab77c86941fc7a3a8d38456dc6dfd99238a132bfe18dbd79bae889cf"
+    },
+    "src/vision/tracking.py": {
+      "source_sha256": "3a4a87cad85ec908a4ceb018809ee5ebc5b515052acc25a4f9eb31c5e68867b3",
+      "exported_path": "model/src/p068_vision/tracking.py",
+      "exported_sha256": "3a4a87cad85ec908a4ceb018809ee5ebc5b515052acc25a4f9eb31c5e68867b3"
+    },
+    "src/vision/yunet_gpu.py": {
+      "source_sha256": "527bc65047223778d37b55165f7ceb0fe1ed8144a2d870e69a2317bd31e63647",
+      "exported_path": "model/src/p068_vision/yunet_gpu.py",
+      "exported_sha256": "682d7d54e91ca66c48d4395c6a5a576ae071717390ae0e16721de85890025b6c"
+    },
+    "src/vision/tensorrt_age.py": {
+      "source_sha256": "aff0947d7968311e0649c12281a4127ef0acdc3f692f699937aa9188f45243e8",
+      "exported_path": "model/src/p068_vision/tensorrt_age.py",
+      "exported_sha256": "c2a89f41fdd939aad560283569ed917efd50ba34c5598fceb4ad75a14fb949d6"
+    },
+    "src/vision/provider.py": {
+      "source_sha256": "257b446771f1d845abab34f053d1945c2e775545716cf58559f1f0fc33571c2b",
+      "exported_path": "model/src/p068_vision/provider.py",
+      "exported_sha256": "00f5abaf263953e2eee0781c210544824ec01c104889415cbe96df095c500740"
+    },
+    "src/vision/cabin_segmentation.py": {
+      "source_sha256": "983a8030c4fb91706d87f872935af61691d6a0145f7f45c4ebf347b42232cbd2",
+      "exported_path": "model/src/p068_vision/cabin_segmentation.py",
+      "exported_sha256": "8b5271321747ef8f99031fee19b089ec0e5fc127ad2335c5a8a324df2b97d9ec"
+    },
+    "src/vision/age_fusion.py": {
+      "source_sha256": "62a848c0b4160d4749fc4c736c81df159b9a81ae8b6cd7cb71016fbc1fa654c9",
+      "exported_path": "model/src/p068_vision/age_fusion.py",
+      "exported_sha256": "c8a8b5ed1dc01362701fb2729140e8fe087847625be8ef93e7f3d065ad9bb406"
+    },
+    "src/vision/pet_temporal.py": {
+      "source_sha256": "900b73a5f248a1069a04de465975e94be812c99e11e0fdabc288e24cb63ba043",
+      "exported_path": "model/src/p068_vision/pet_temporal.py",
+      "exported_sha256": "7f5109169fa617eee437e37ca0a83ded7083281ba43f219fd67b695b99971075"
+    },
+    "src/vision/grounded_person.py": {
+      "source_sha256": "86f704b61e92b77df7eeadc3f639c234e9be6b0878afc14f9eeb7b5a938ad8b4",
+      "exported_path": "model/src/p068_vision/grounded_person.py",
+      "exported_sha256": "26c798f488401466d341aa195790745378e5c4054733438ada7726c518e96c3c"
+    },
+    "src/vision/evaluation.py": {
+      "source_sha256": "be4c9e1f4594679eec882c7ab3a62187f4601ff6b4f3d91cc5c2214082f326a8",
+      "exported_path": "model/src/p068_vision/evaluation.py",
+      "exported_sha256": "34791150c04fe88a386b235368bf3a529f360f11a4b2e1998fe597e150853bde"
+    },
+    "src/vision/person_rescue.py": {
+      "source_sha256": "442a8ab6121e99ba372b6c1feb272e009e077977a71c1e4fa64b55359625cffe",
+      "exported_path": "model/src/p068_vision/person_rescue.py",
+      "exported_sha256": "a12fae8103e3f0d6d4c1263bcfd47a11cb4645c0e8891ee000848e0b73dea8c9"
+    },
+    "src/vision/parallel.py": {
+      "source_sha256": "ac4a4d8d3ce507f1e3f75b9bfcde32700a35438fb2a25331268e507948dc4773",
+      "exported_path": "model/src/p068_vision/parallel.py",
+      "exported_sha256": "ac4a4d8d3ce507f1e3f75b9bfcde32700a35438fb2a25331268e507948dc4773"
+    },
+    "src/vision/labels.py": {
+      "source_sha256": "75b5b60e6b81534dd21d82598cfce201f397bb89c388e1f281a6e9f99898036d",
+      "exported_path": "model/src/p068_vision/labels.py",
+      "exported_sha256": "75b5b60e6b81534dd21d82598cfce201f397bb89c388e1f281a6e9f99898036d"
+    },
+    "src/vision/belongings.py": {
+      "source_sha256": "aadea4dc6827553cfba15c3e7825e560dafd0b77274598c56c606f55e6dff799",
+      "exported_path": "model/src/p068_vision/belongings.py",
+      "exported_sha256": "aadea4dc6827553cfba15c3e7825e560dafd0b77274598c56c606f55e6dff799"
+    },
+    "src/vision/resources.py": {
+      "source_sha256": "ccf8bfe205304d80ae17d5726b9bf435867fd76cccfcddc1c9857519b1abf9df",
+      "exported_path": "model/src/p068_vision/resources.py",
+      "exported_sha256": "aa96d3855e3c1d4ec2dbbd53d83f228be2fc943ed52581925bf08fd8e276cd8d"
+    }
+  },
+  "observed_environment": {
+    "torch": "2.14.0",
+    "torchvision": "0.29.0",
+    "ultralytics": "8.4.159",
+    "opencv-python": "5.0.0.93",
+    "numpy": "2.4.6",
+    "Pillow": "12.3.0",
+    "psutil": "7.2.2"
+  }
+}

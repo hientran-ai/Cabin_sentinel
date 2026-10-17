@@ -1,0 +1,21 @@
+{
+  "profile": "yolo26s-single",
+  "detector": "models/selection-20261015/yolo26s.pt",
+  "age_classifier": "models/age/cabin-age-repair-20261015.pt",
+  "face_detector": "models/face_detection_yunet_2023mar.onnx",
+  "confidence": 0.25,
+  "imgsz": 512,
+  "quality_imgsz": 640,
+  "child_threshold": 0.7,
+  "adult_threshold": 0.8,
+  "child_age_max": 9,
+  "device": "cpu",
+  "half": false,
+  "face_backend": "cpu",
+  "face_max_side": 768,
+  "opencv_threads": 4,
+  "torch_threads": 4,
+  "parallel_inference": true,
+  "additional_detectors_enabled": false,
+  "cabin_geometry": null
+}

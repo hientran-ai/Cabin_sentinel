@@ -1,0 +1,235 @@
+{
+  "format_version": 1,
+  "profile": "yolo26s-single",
+  "created_date": "2026-10-17",
+  "integration_status": "READY_FOR_BACKEND_INTEGRATION_TESTING",
+  "production_accuracy_certified": false,
+  "assets_root": "repository root containing models/",
+  "backend_files_modified": false,
+  "files": {
+    "model/.gitattributes": {
+      "bytes": 81,
+      "sha256": "371aa010e582283d5a1e8a08d6b1289b77415487a67731ecfdb880b9c9ab8fee"
+    },
+    "model/MODEL_CARD.md": {
+      "bytes": 3432,
+      "sha256": "d10f31ba2ab3e47741fa36480eadbabbaab3460f061a466cad6e53017fdeef82"
+    },
+    "model/README.md": {
+      "bytes": 7470,
+      "sha256": "c8026552b3cd1af16f00d26ad9cb2cb4c110be65f69704d1e3dea48cccad2f89"
+    },
+    "model/SELECTION.md": {
+      "bytes": 2550,
+      "sha256": "199f3a4e2d8a8985e3cfed167983a42d47b93ae2f4cf96c0e1063701e33fb8b5"
+    },
+    "model/THIRD_PARTY.md": {
+      "bytes": 1135,
+      "sha256": "8f5caded17558a1be294a529135ca5e546a983f75c87dc51927335e589c1d8ae"
+    },
+    "model/cabin-geometry.schema.json": {
+      "bytes": 801,
+      "sha256": "013b6231e17acb8aae32b146ae16a37f65d6142de59abf05f88182e4f5378ae2"
+    },
+    "model/licenses/P068-LICENSE": {
+      "bytes": 1074,
+      "sha256": "71a5ffe6fa29620e343321bac64a521d49fd9c6697af5981a84aac3f94a2f0ca"
+    },
+    "model/licenses/TORCHVISION-LICENSE.txt": {
+      "bytes": 1516,
+      "sha256": "2b63e4f6569e0e58260881a1f7ea8b1d9802859ab3cb4b32a45cba246245c8da"
+    },
+    "model/licenses/ULTRALYTICS-LICENSE.txt": {
+      "bytes": 34523,
+      "sha256": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0"
+    },
+    "model/licenses/YUNET-LICENSE": {
+      "bytes": 1085,
+      "sha256": "c83b8120c50ccbd4c4f96edf53141bdd566ebb8f8e9227e415326aa1b1aba958"
+    },
+    "model/profile.json": {
+      "bytes": 577,
+      "sha256": "0d0e45afd48c6716410b7eadf71c380c261905be41c74b34ffbc416abb03308b"
+    },
+    "model/pyproject.toml": {
+      "bytes": 758,
+      "sha256": "2e0885fcaaf4cca0249d4ca3ba0530e31351d115d9418b2e92d0698be549000d"
+    },
+    "model/smoke-validation.json": {
+      "bytes": 1378,
+      "sha256": "882dd0f30fe3f3ddc7a4294674b4113aff9895083da0a12e35abb4bbb6d620df"
+    },
+    "model/source-provenance.json": {
+      "bytes": 7075,
+      "sha256": "b5a32a6ecb8af0b4e34fd5d6b3f9210df4d041e88aeba3f5b4dc451039b69911"
+    },
+    "model/src/p068_vision/__init__.py": {
+      "bytes": 174,
+      "sha256": "bc93d58a83622f0dead08cb2b5e3120370da636fc4ed740bdd511c9dc267633e"
+    },
+    "model/src/p068_vision/__main__.py": {
+      "bytes": 1511,
+      "sha256": "51f89dbdffedf0d36c26d66e0f0a297f488350b2e7816641cb756c3be3dc6688"
+    },
+    "model/src/p068_vision/age.py": {
+      "bytes": 24472,
+      "sha256": "c1299e07ab77c86941fc7a3a8d38456dc6dfd99238a132bfe18dbd79bae889cf"
+    },
+    "model/src/p068_vision/age_fusion.py": {
+      "bytes": 5254,
+      "sha256": "c8a8b5ed1dc01362701fb2729140e8fe087847625be8ef93e7f3d065ad9bb406"
+    },
+    "model/src/p068_vision/assets.json": {
+      "bytes": 835,
+      "sha256": "42068ca6b98a081b958cd3dec0dd1f2ee2c038f28c4837a51efd7562794a5520"
+    },
+    "model/src/p068_vision/belongings.py": {
+      "bytes": 7408,
+      "sha256": "aadea4dc6827553cfba15c3e7825e560dafd0b77274598c56c606f55e6dff799"
+    },
+    "model/src/p068_vision/cabin_geometry.py": {
+      "bytes": 3163,
+      "sha256": "e445d64269975b3ef6f89fad834cd751d9b4445bda17a5ad3128abaca0846cf3"
+    },
+    "model/src/p068_vision/cabin_segmentation.py": {
+      "bytes": 4783,
+      "sha256": "8b5271321747ef8f99031fee19b089ec0e5fc127ad2335c5a8a324df2b97d9ec"
+    },
+    "model/src/p068_vision/decoded_image.py": {
+      "bytes": 1088,
+      "sha256": "e9a5fceea9add1aee42ea1a13845cf62fd0b162f610e58144b3557dd0e7c3092"
+    },
+    "model/src/p068_vision/evaluation.py": {
+      "bytes": 5448,
+      "sha256": "34791150c04fe88a386b235368bf3a529f360f11a4b2e1998fe597e150853bde"
+    },
+    "model/src/p068_vision/grounded_person.py": {
+      "bytes": 3123,
+      "sha256": "26c798f488401466d341aa195790745378e5c4054733438ada7726c518e96c3c"
+    },
+    "model/src/p068_vision/labels.py": {
+      "bytes": 2901,
+      "sha256": "75b5b60e6b81534dd21d82598cfce201f397bb89c388e1f281a6e9f99898036d"
+    },
+    "model/src/p068_vision/overlay.py": {
+      "bytes": 5084,
+      "sha256": "b5b74c38dcdaea9f165d2c780d6f4f7267d925adf724688589f34d8cfc0e5b1f"
+    },
+    "model/src/p068_vision/parallel.py": {
+      "bytes": 1211,
+      "sha256": "ac4a4d8d3ce507f1e3f75b9bfcde32700a35438fb2a25331268e507948dc4773"
+    },
+    "model/src/p068_vision/person_rescue.py": {
+      "bytes": 1969,
+      "sha256": "a12fae8103e3f0d6d4c1263bcfd47a11cb4645c0e8891ee000848e0b73dea8c9"
+    },
+    "model/src/p068_vision/pet_temporal.py": {
+      "bytes": 2221,
+      "sha256": "7f5109169fa617eee437e37ca0a83ded7083281ba43f219fd67b695b99971075"
+    },
+    "model/src/p068_vision/pipeline.py": {
+      "bytes": 5381,
+      "sha256": "b3da278a052a138a94109d76647df246716ca757d226181e9b65ec2cb03e1345"
+    },
+    "model/src/p068_vision/preview.py": {
+      "bytes": 5194,
+      "sha256": "4a149b69f845a428530418ecf8a5bf3a5184337c7c7a0af1754649e11c74968e"
+    },
+    "model/src/p068_vision/privacy.py": {
+      "bytes": 8307,
+      "sha256": "1e66cbd81b2476df2b4457434693f5b5e846c1ff23677bad8cc9bdafd2273b8f"
+    },
+    "model/src/p068_vision/provider.py": {
+      "bytes": 31516,
+      "sha256": "00f5abaf263953e2eee0781c210544824ec01c104889415cbe96df095c500740"
+    },
+    "model/src/p068_vision/resources.py": {
+      "bytes": 7280,
+      "sha256": "aa96d3855e3c1d4ec2dbbd53d83f228be2fc943ed52581925bf08fd8e276cd8d"
+    },
+    "model/src/p068_vision/tensorrt_age.py": {
+      "bytes": 3630,
+      "sha256": "c2a89f41fdd939aad560283569ed917efd50ba34c5598fceb4ad75a14fb949d6"
+    },
+    "model/src/p068_vision/tracking.py": {
+      "bytes": 11433,
+      "sha256": "3a4a87cad85ec908a4ceb018809ee5ebc5b515052acc25a4f9eb31c5e68867b3"
+    },
+    "model/src/p068_vision/video.py": {
+      "bytes": 1548,
+      "sha256": "5519f636ac5599bcc64e20a7d3b1ece38767b4de0d795ce135bd0e67d94c8979"
+    },
+    "model/src/p068_vision/yunet_gpu.py": {
+      "bytes": 9845,
+      "sha256": "682d7d54e91ca66c48d4395c6a5a576ae071717390ae0e16721de85890025b6c"
+    },
+    "model/tests/conftest.py": {
+      "bytes": 353,
+      "sha256": "b7d131b3774b3dcb52135f649a45c728ccda1286958f3fb7ebf421d246189842"
+    },
+    "model/tests/test_pipeline_contract.py": {
+      "bytes": 2360,
+      "sha256": "9b7e8fbee54792faa2779ba1ec360b7175c44ad3ddb207fb951be9af97f6efaa"
+    },
+    "model/tests/test_pipeline_image_reuse.py": {
+      "bytes": 2856,
+      "sha256": "15694d13e8fdb4f88c612027814b3474d46de4af737337733a661f0c3413f14d"
+    },
+    "model/tests/test_tam_vision_provider.py": {
+      "bytes": 5675,
+      "sha256": "a3eb4644237334d9b567ba94acc32e7c193d27dbf85d066c147fd488ec82ac30"
+    },
+    "model/tests/test_vision_age_adapter.py": {
+      "bytes": 3061,
+      "sha256": "bf25589c19e916f166ce31751321913585341329615e93216d258e46185b5d00"
+    },
+    "model/tests/test_vision_overlay.py": {
+      "bytes": 2015,
+      "sha256": "1514ec551824474f20aa62ca3ddb88faa00b1faf0bbe0df535b1a7530edc0e5e"
+    },
+    "model/tests/test_vision_pipeline_v3.py": {
+      "bytes": 9749,
+      "sha256": "0136127e994db8c18e784871498a4ec2f92bcf63bdc5c3d3c311822f8f665b68"
+    },
+    "model/tests/test_vision_privacy.py": {
+      "bytes": 3340,
+      "sha256": "228b23b24d5d8e896cb853f909d610eb974ca135de7691879940058d8f23fdb0"
+    },
+    "model/tests/test_vision_resources.py": {
+      "bytes": 2583,
+      "sha256": "0d972b66bf6f7e594a66d7dd776c1cd1d9d2a2a205b6bf4f8d1e8810a87c102c"
+    },
+    "model/tests/test_vision_runtime_optimizations.py": {
+      "bytes": 6101,
+      "sha256": "805e1408a1d7cc439d2c860627751c58c520f490ca8210edef6c07c6a601b132"
+    },
+    "model/tests/test_vision_video.py": {
+      "bytes": 3230,
+      "sha256": "ed070b884c7354c474898e6ef574ce111238c51cf8ce358a60345bf40f932689"
+    },
+    "model/validation/detector-benchmark.json": {
+      "bytes": 2434,
+      "sha256": "f6da81ee72df2a398a38ff7f93b6c8596c138545b4f872914ada95060e986d99"
+    },
+    "model/validation/handoff-checks.json": {
+      "bytes": 1084,
+      "sha256": "af5fb9ce6bbc1b783734497566700d3b0809757c1754d43aff961a0160e4e030"
+    },
+    "model/verify_handoff.py": {
+      "bytes": 990,
+      "sha256": "37c522718b79ba8647a4788da7bc0c13a5fe3d5af2f649d4552c11a916cd4631"
+    },
+    "models/age/cabin-age-repair-20261015.pt": {
+      "bytes": 6212555,
+      "sha256": "145325c87c5581871980b425b2b4ace3452120d7b57edfb8c05d84732e5f6ef3"
+    },
+    "models/face_detection_yunet_2023mar.onnx": {
+      "bytes": 232589,
+      "sha256": "8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4"
+    },
+    "models/selection-20261015/yolo26s.pt": {
+      "bytes": 20422725,
+      "sha256": "646f8bc3fe0a656803d95c294f7852321748cb29d13466a1af8862e2db384a1b"
+    }
+  }
+}

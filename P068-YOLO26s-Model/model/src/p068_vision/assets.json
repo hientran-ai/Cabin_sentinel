@@ -1,0 +1,20 @@
+{
+  "models/selection-20261015/yolo26s.pt": {
+    "sha256": "646f8bc3fe0a656803d95c294f7852321748cb29d13466a1af8862e2db384a1b",
+    "bytes": 20422725,
+    "role": "object_detector",
+    "description": "Ultralytics YOLO26s stock; person, cat, dog and supported personal items"
+  },
+  "models/age/cabin-age-repair-20261015.pt": {
+    "sha256": "145325c87c5581871980b425b2b4ace3452120d7b57edfb8c05d84732e5f6ef3",
+    "bytes": 6212555,
+    "role": "age_classifier",
+    "description": "MobileNetV3-Small face classifier; child age <10, adult age >=10, unknown permitted"
+  },
+  "models/face_detection_yunet_2023mar.onnx": {
+    "sha256": "8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4",
+    "bytes": 232589,
+    "role": "face_detector",
+    "description": "YuNet; shared face evidence for age and privacy preview"
+  }
+}

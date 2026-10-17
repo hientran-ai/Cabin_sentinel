@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-17",
+  "platform": "Windows, Python 3.11, CPU FP32",
+  "tests": {
+    "passed": 57,
+    "subtests_passed": 7,
+    "command": "python -m pytest -c model/pyproject.toml --confcutdir=model model/tests -q"
+  },
+  "lint": {
+    "passed": true,
+    "command": "ruff check model/src model/tests model/verify_handoff.py"
+  },
+  "real_weights_smoke": {
+    "passed": true,
+    "details": "smoke-validation.json",
+    "raw_inputs_bundled": false
+  },
+  "wheel_install_smoke": {
+    "passed": true,
+    "checks": [
+      "build wheel without dependency installation",
+      "install wheel into separate target directory",
+      "verify bundled asset manifest and license files",
+      "load selected real CPU weights from installed package outside repository",
+      "infer BGR frame and encoded JPEG, generate preview, reject invalid encoded input",
+      "use default writable config directory",
+      "no src or src.* backend modules imported"
+    ]
+  },
+  "limits": [
+    "No CUDA deployment validation performed.",
+    "No new full accuracy benchmark performed."
+  ]
+}

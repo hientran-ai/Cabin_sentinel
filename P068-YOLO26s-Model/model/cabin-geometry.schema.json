@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Camera-specific cabin footprint excluding window openings",
+  "type": "object",
+  "required": ["camera_id", "reference_size", "cabin", "windows"],
+  "properties": {
+    "camera_id": {"type": "string", "minLength": 1},
+    "reference_size": {"type": "array", "items": {"type": "integer", "minimum": 1}, "minItems": 2, "maxItems": 2},
+    "cabin": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/polygon"}},
+    "windows": {"type": "array", "items": {"$ref": "#/$defs/polygon"}},
+    "note": {"type": "string"}
+  },
+  "$defs": {
+    "polygon": {"type": "array", "minItems": 3, "items": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": {"type": "number", "minimum": 0, "maximum": 1}
+    }}
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "verified_assets": {
+    "object_detector": "models\\selection-20261015\\yolo26s.pt",
+    "age_classifier": "models\\age\\cabin-age-repair-20261015.pt",
+    "face_detector": "models\\face_detection_yunet_2023mar.onnx"
+  },
+  "samples": [
+    {
+      "name": "empty",
+      "detection_classes": [],
+      "age_groups": [],
+      "branches": {
+        "detector": {
+          "latency_ms": 740.4003000119701,
+          "status": "ok"
+        },
+        "faces": {
+          "latency_ms": 16.070100013166666,
+          "status": "ok"
+        }
+      },
+      "preview_status": "PROCESSED",
+      "masked_regions": 0
+    },
+    {
+      "name": "development_cabin",
+      "detection_classes": [
+        "person",
+        "dog",
+        "person",
+        "cat",
+        "backpack",
+        "bottle",
+        "person"
+      ],
+      "age_groups": [
+        "adult",
+        "adult",
+        "adult"
+      ],
+      "branches": {
+        "detector": {
+          "latency_ms": 335.9109000302851,
+          "status": "ok"
+        },
+        "faces": {
+          "latency_ms": 106.59609991125762,
+          "status": "ok"
+        },
+        "age": {
+          "latency_ms": 127.71789997350425,
+          "status": "ok"
+        }
+      },
+      "preview_status": "PROCESSED",
+      "masked_regions": 3
+    }
+  ],
+  "encoded_jpeg_preview": "passed",
+  "backend_modules_imported": false
+}

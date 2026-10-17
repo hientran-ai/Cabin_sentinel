@@ -1,0 +1,71 @@
+{
+  "source_report": "eval/yolo26s-evaluation-20261017-fresh/yolo26s/report.json",
+  "source_report_sha256": "69a0f1b18fce76e366447120316995e55db2aa34c69e9ef03b7257f683fd9871",
+  "source_protocol_sha256": "dbbe4656b729e884a29c5c8208cd86eec7c8caac553fed6ce782051e1affa93f",
+  "model": "yolo26s",
+  "checkpoint_sha256": "646f8bc3fe0a656803d95c294f7852321748cb29d13466a1af8862e2db384a1b",
+  "checkpoint_bytes": 20422725,
+  "parameters": 10009784,
+  "evaluation_completed_at": "2026-10-17T16:36:44.170604+07:00",
+  "environment": {
+    "platform": "Windows-10-10.0.26200-SP0",
+    "cpu": "Intel64 Family 6 Model 151 Stepping 2, GenuineIntel",
+    "logical_cpus": 12,
+    "torch": "2.14.0+cpu",
+    "ultralytics": "8.4.159",
+    "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+    "effective_torch_threads": 4,
+    "effective_opencv_threads": 4
+  },
+  "person_metrics": {
+    "real_cabin_person": {
+      "tp": 64,
+      "fp": 9,
+      "fn": 0,
+      "precision": 0.8767123287671232,
+      "recall": 1.0,
+      "f1": 0.9343065693430657,
+      "ap50": 0.9993999399939993,
+      "ap75": 0.9793452156726195,
+      "person_ap50_95": 0.9017137935194514,
+      "ap_by_iou": {
+        "0.50": 0.9993999399939993,
+        "0.55": 0.9993999399939993,
+        "0.60": 0.9895718266429319,
+        "0.65": 0.9870741728117661,
+        "0.70": 0.9793452156726195,
+        "0.75": 0.9793452156726195,
+        "0.80": 0.9450473394141125,
+        "0.85": 0.9265760370906536,
+        "0.90": 0.8493402245960446,
+        "0.95": 0.3620380233057667
+      },
+      "gt_boxes": 64
+    },
+    "synthetic_person": {
+      "tp": 50,
+      "fp": 6,
+      "fn": 9,
+      "precision": 0.8928571428571429,
+      "recall": 0.847457627118644,
+      "f1": 0.8695652173913043,
+      "ap50": 0.8937704932146744,
+      "ap75": 0.8305249403058121,
+      "person_ap50_95": 0.8018658831079104,
+      "ap_by_iou": {
+        "0.50": 0.8937704932146744,
+        "0.55": 0.8897700975033181,
+        "0.60": 0.8897700975033181,
+        "0.65": 0.8792306755327581,
+        "0.70": 0.872762347903524,
+        "0.75": 0.8305249403058121,
+        "0.80": 0.7871494262532861,
+        "0.85": 0.7348012468901276,
+        "0.90": 0.6867123433347057,
+        "0.95": 0.5541671626375793
+      },
+      "gt_boxes": 59
+    }
+  },
+  "scope": "Historical detector-only development benchmark, not a validation of the packaged pipeline or backend."
+}
