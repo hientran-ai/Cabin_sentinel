@@ -2,15 +2,19 @@
 
 import logging
 import threading
-from datetime import UTC, datetime
+import time
+from datetime import UTC, datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
 
 class SafetyTimer:
-    def __init__(self, service, *, interval=1.0):
+    def __init__(self, service, *, interval=1.0, retention: timedelta | None = None, purge_every_s=600.0):
         self.service = service
         self.interval = interval
+        self.retention = retention
+        self.purge_every_s = purge_every_s
+        self._last_purge = time.monotonic()
         self._stop = threading.Event()
         self._thread = None
         self.last_tick_at = None
@@ -23,6 +27,11 @@ class SafetyTimer:
     def evaluate(self):
         try:
             self.service.tick_all()
+            if self.retention is not None and time.monotonic() - self._last_purge >= self.purge_every_s:
+                self._last_purge = time.monotonic()
+                purged = self.service.purge_expired_demo(self.retention)
+                if purged:
+                    logger.info("Purged %d expired demo sessions", purged)
             self.last_error = None
             self.last_tick_at = datetime.now(UTC).isoformat()
         except Exception as exc:

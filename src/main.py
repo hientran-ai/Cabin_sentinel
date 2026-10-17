@@ -2,7 +2,7 @@ import logging
 import sqlite3
 import time
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI
@@ -15,6 +15,7 @@ from src.cabinsentinel.admin_api import router as admin_router
 from src.cabinsentinel.api import get_cabin_service
 from src.cabinsentinel.api import router as cabin_router
 from src.cabinsentinel.demo_api import router as demo_router
+from src.cabinsentinel.e2e_api import router as e2e_router
 from src.cabinsentinel.fleet_api import router as fleet_router
 from src.cabinsentinel.monitoring import metrics
 from src.cabinsentinel.mqtt import SensorSubscriber
@@ -66,7 +67,7 @@ async def lifespan(app: FastAPI):
             logger.info("Bootstrap admin created")
         except ValueError:
             pass  # already exists
-    timer = SafetyTimer(get_cabin_service())
+    timer = SafetyTimer(get_cabin_service(), retention=timedelta(hours=getattr(settings, "demo_retention_hours", 24)))
     timer.start()
     app.state.safety_timer = timer
     subscriber = None
@@ -112,6 +113,7 @@ app.add_middleware(
 app.include_router(router, prefix="/api/v1")
 app.include_router(cabin_router)
 app.include_router(demo_router)
+app.include_router(e2e_router)
 app.include_router(fleet_router)
 app.include_router(platform_router)
 app.include_router(admin_router)

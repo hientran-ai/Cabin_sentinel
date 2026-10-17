@@ -1,0 +1,5 @@
+[
+ {"js": "await __sleep(1500);__click('Đỗ, khoá, 40');await __sleep(300);__click('Trẻ trong xe (clip');await __sleep(50000);return document.querySelector('[data-testid=care-sheet]')?.innerText", "note": "nobody responds: countdown"},
+ {"js": "await __sleep(48000);const c=window.__e2e.getState().state;return JSON.stringify({care:c.care.status,by:c.care.started_by,profile:c.care.profile,risk:c.risk_level,rule:c.rule_id,incident:c.incident.status,screen:!!document.querySelector('[data-testid=care-child]'),climate:window.__e2e&&0})", "note": "auto-started after 90 s", "shot": "care-auto.png"},
+ {"js": "await __sleep(20000);const c=window.__e2e.getState().state;return JSON.stringify({risk:c.risk_level,rule:c.rule_id,temp:c.sensor_snapshot.temperature,incident:c.incident.status,care:c.care.status})", "note": "after cooling 20 s"}
+]

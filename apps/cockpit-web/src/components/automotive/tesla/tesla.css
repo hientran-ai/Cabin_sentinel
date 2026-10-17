@@ -1,0 +1,222 @@
+@import '../../../../public/tesla-figma/fonts/fonts.css';
+.tesla-viewport { position: relative; width: 100%; height: 100%; overflow: hidden; background: #000; color: #fff; }
+.tesla-artboard { position: absolute; width: 1920px; height: 1200px; transform-origin: top left; overflow: hidden; font-family: Montserrat, sans-serif; font-size: 16px; line-height: normal; background: #0e0e0e; }
+.tesla-artboard button { cursor: pointer; }
+.tesla-artboard [data-control] { transition: filter 140ms ease, opacity 140ms ease; }
+.tesla-artboard [data-control][aria-pressed="true"] { filter: brightness(1.22); }
+.tesla-source-frame { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.tesla-source-frame [data-control], .tesla-source-frame .tesla-music-handle { pointer-events: auto; }
+.tesla-source-frame[data-map-open="true"] [data-control="map"], .tesla-source-frame[data-map-open="true"] [data-control="north"], .tesla-source-frame[data-map-open="true"] [data-control="zoom-in"], .tesla-source-frame[data-map-open="true"] [data-control="zoom-out"], .tesla-source-frame[data-map-open="true"] [data-control="chargers"] { visibility: hidden; }
+.tesla-artboard > .tesla-cabin-slot, .tesla-simulation-label, .tesla-reference-label, .tesla-library-button { z-index: 8; }
+.tesla-music-handle { position: absolute; top: 0; left: 590px; z-index: 10; display: grid; place-items: center; width: 120px; height: 30px; touch-action: none; background: transparent; }
+.tesla-music-handle span { width: 64px; height: 4px; border-radius: 4px; background: #777; }
+@media (prefers-reduced-motion: reduce) { .tesla-artboard *, .tesla-handle-position { transition-duration: 0ms !important; animation-duration: 0ms !important; } }
+.tesla-artboard button:focus-visible { outline: 3px solid #63b8e8; outline-offset: 4px; z-index: 4; }
+.tesla-artboard [data-control]:hover { filter: brightness(1.18); }
+.tesla-artboard [data-control="favorite"][aria-pressed="true"] { filter: sepia(1) saturate(8) hue-rotate(310deg); }
+.tesla-artboard [data-control="play"][data-playing="false"] img { visibility: hidden; }
+.tesla-artboard [data-control="play"][data-playing="false"]::after { content: ''; position: absolute; left: 16px; top: 12px; border-left: 23px solid white; border-top: 13px solid transparent; border-bottom: 13px solid transparent; }
+.tesla-cabin-slot { position: absolute; left: 20px; top: 755px; width: 540px; z-index: 8; }
+.tesla-cabin-slot [data-testid="cockpit-chip"] { padding: 12px 16px; gap: 12px; background: #202020; border-radius: 12px; }
+.tesla-cabin-slot [data-testid="cockpit-chip"] .t-label { font-size: 18px; line-height: 24px; }
+.tesla-cabin-slot [data-testid="cockpit-chip"] .t-body { font-size: 22px; line-height: 29px; }
+.tesla-cabin-slot [data-testid="cockpit-chip"].su-alert-critical { background: #381016; }
+.tesla-cabin-slot [data-testid="cockpit-chip"].su-alert-warning { background: #34260e; }
+.tesla-cabin-mock { display: flex; align-items: center; gap: 14px; width: 100%; padding: 16px; border: 1px solid #444; border-radius: 12px; background: #202020; text-align: left; font-size: 22px; }
+.tesla-cabin-mock span span { display: block; margin-top: 6px; font-size: 16px; color: #b7b7b7; }
+.tesla-simulation-label { position: absolute; left: 610px; top: 77px; padding: 3px 8px; border-radius: 4px; background: #000b; color: #d0d0d0; font: 13px/20px Inter, sans-serif; pointer-events: none; }
+.tesla-reference-label { position: absolute; left: 610px; top: 77px; color: #ccc; font: 12px/16px Inter, sans-serif; background: #000a; padding: 2px 4px; }
+.tesla-library-button { position: absolute; top: 12px; right: 358px; width: 46px; height: 46px; display: grid; place-items: center; background: #0008; border-radius: 50%; }
+.tesla-library { position: absolute; z-index: 55; inset: 70px 20px 140px 600px; padding: 28px 36px; background: #202020; color: #fff; border: 1px solid #444; border-radius: 12px; font-family: Inter, sans-serif; }
+.tesla-library header { display: flex; justify-content: space-between; gap: 24px; }
+.tesla-library h2 { margin: 0 0 8px; font-size: 28px; font-weight: 600; }
+.tesla-library header p, .tesla-library-credit { color: #bbb; font-size: 16px; line-height: 24px; }
+.tesla-library header button { align-self: flex-start; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; background: #383838; }
+.tesla-library-cards { display: flex; justify-content: center; gap: 40px; margin: 28px 0 20px; }
+.tesla-library-cards figure { margin: 0; width: 378px; }
+.tesla-library-cards figcaption { margin-bottom: 12px; color: #ddd; font-size: 18px; }
+.tesla-library-card { width: 378px; height: 648px; position: relative; }
+.tesla-library-card > div { position: absolute; top: 0; left: 0; transform: scale(.6); transform-origin: top left; }
+.tesla-shell [role="region"] { background: var(--cx-surface); border-radius: 12px; }
+.tesla-shell .su-pane { background: var(--cx-surface); }
+.tesla-shell .cx-cat { border-radius: 4px; }
+/* Source artboards are 1300 × 1120; the original dock masks the last 120 px. */
+.tesla-shell .tesla-settings { position: absolute; inset: 0; border-radius: 10px 10px 0 0; overflow: hidden; background: #090909; }
+.tesla-settings-frame { position: absolute; width: 1300px; height: 1120px; top: 0; left: 0; }
+.tesla-settings [data-settings-tab]::before { content: ''; position: absolute; left: 24px; top: calc(var(--tesla-hit-top) - 12px); width: 450px; height: 72px; border-radius: 8px; transition: background 140ms; }
+.tesla-settings [data-settings-tab]:hover::before { background: #8881; }
+.tesla-settings [data-settings-tab]:active::before { background: #8883; }
+.tesla-settings [data-settings-tab]:focus-visible::before { outline: 2px solid #62b8e8; }
+.tesla-settings button:focus-visible { outline-offset: 0; }
+.tesla-settings [data-choice] { transition: background 180ms, box-shadow 180ms; }
+.tesla-settings [hidden] { display: none !important; }
+.tesla-brightness { position: absolute; display: block; background: #272727; border-radius: 50px; overflow: hidden; color: white; }
+.tesla-brightness > span { position: absolute; height: 100%; left: 0; background: #6c6c6c; border-radius: 50px; transition: width 100ms; }
+.tesla-brightness > b { position: absolute; left: 0; top: 0; width: 150px; height: 60px; display: grid; place-items: center; font-weight: 500; font-size: 20px; }
+.tesla-brightness input { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: ew-resize; margin: 0; }
+.tesla-brightness:focus-within { outline: 3px solid #62b8e8; outline-offset: -3px; }
+[data-mode="light"] .tesla-brightness { background: #dedede; color: black; }
+[data-mode="light"] .tesla-brightness > span { background: white; box-shadow: 0 3px 4px #0004; }
+.tesla-settings-notice { position: absolute; left: 560px; bottom: 14px; right: 40px; font: 14px/20px Inter,sans-serif; color: #999; pointer-events: none; }
+.tesla-shell .tesla-climate { position: absolute; left: 0; right: 0; bottom: -20px; height: 760px; background: transparent; border-radius: 12px 12px 0 0; color: #555; font-family: Inter, sans-serif; }
+.tesla-climate-handle { position: absolute; top: -115px; left: 550px; width: 200px; height: 32px; display: grid; place-items: center; touch-action: none; }
+.tesla-climate-handle span { width: 75px; height: 5px; border-radius: 5px; background: #aaa; box-shadow: 0 1px 2px #0005; }
+.tesla-climate-park-modes { display: flex; position: absolute; width: 500px; height: 78px; top: -78px; left: 400px; background: #f1f1f1f5; box-shadow: 0 -4px 18px #0002; border-radius: 10px 10px 0 0; padding: 5px 8px; }
+.tesla-climate-park-modes .tesla-climate-button { flex: 1; font-size: 20px; gap: 8px; }
+.tesla-climate-park-modes .tesla-climate-button svg { width: 22px; height: 22px; }
+.tesla-climate-surface { position: absolute; inset: 0; overflow: hidden; border-radius: 12px 12px 0 0; background: #ddd; box-shadow: 0 -10px 30px #0003; }
+.tesla-climate-interior { position: absolute; left: 0; top: 0; width: 1300px; height: 650px; user-select: none; pointer-events: none; }
+.tesla-climate-top { position: absolute; top: 0; left: 20px; right: 20px; height: 90px; display: flex; align-items: center; gap: 14px; z-index: 2; background: linear-gradient(#e4e4e4f2,#e4e4e433); }
+.tesla-climate-button { display: flex; flex-direction: column; justify-content: center; align-items: center; min-width: 66px; height: 66px; border-radius: 7px; background: transparent; font: 20px/1.2 Inter,sans-serif; color: #62666a; transition: color 150ms, background 150ms; touch-action: manipulation; }
+.tesla-climate-button svg { width: 32px; height: 32px; flex-shrink: 0; }
+.tesla-climate-button[aria-pressed="true"] { color: #247bcb; }
+.tesla-climate-button:hover { background: #ffffff65; }
+.tesla-climate-button small { display: block; font-size: 13px; margin-top: 3px; }
+.tesla-climate-flow { display: flex; margin-left: 10px; gap: 14px; }
+.tesla-climate-cabin-tabs { display: flex; margin-left: 22px; }
+.tesla-climate-cabin-tabs .tesla-climate-button { min-width: 90px; }
+.tesla-climate-cabin-tabs [aria-pressed="true"] { color: #333; }
+.tesla-climate-schedule { margin-left: auto; flex-direction: row; gap: 12px; font-size: 18px; }
+.tesla-climate-schedule svg { width: 24px; }
+.tesla-climate-bottom { position: absolute; top: 580px; left: 22px; right: 22px; height: 72px; display: flex; gap: 16px; align-items: center; z-index: 2; }
+.tesla-climate-fan { display: flex; align-items: center; gap: 12px; margin-left: 10px; }
+.tesla-climate-fan .tesla-climate-button { min-width: 36px; }
+.tesla-climate-fan > svg { width: 28px; height: 28px; }
+.tesla-climate-fan input { width: 160px; height: 30px; accent-color: #6b6b6b; cursor: ew-resize; }
+.tesla-climate-fan output { width: 24px; text-align: center; font-size: 20px; font-variant-numeric: tabular-nums; }
+.tesla-climate-bottom-spacer { flex: 1; }
+.tesla-climate-temperature { position: absolute; left: 170px; right: 170px; top: 664px; display: flex; align-items: center; justify-content: space-between; }
+.tesla-climate-temperature > div { display: flex; align-items: center; gap: 14px; }
+.tesla-climate-temperature output { min-width: 100px; font-size: 35px; font-weight: 300; text-align: center; color: #333; font-variant-numeric: tabular-nums; }
+.tesla-climate-temperature > button { font-size: 17px; font-weight: 600; letter-spacing: .5px; }
+.tesla-climate-caption { position: absolute; left: 26px; bottom: 7px; margin: 0; font-size: 12px; color: #73777b; pointer-events: none; }
+.tesla-vent { position: absolute; left: 150px; top: 225px; width: 260px; height: 160px; transition: opacity 220ms; }
+.tesla-vent.is-passenger { left: 890px; }
+.tesla-air-plume { width: 230px; height: 170px; transform-origin: bottom center; }
+.tesla-air-plume i { display: block; position: absolute; top: 0; width: 60px; height: 165px; border-radius: 60%; background: linear-gradient(0deg,#ffffffb3,#ffffff55 60%,#fff0); filter: blur(9px); transform-origin: bottom center; }
+.tesla-vent-touch { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; touch-action: none; background: transparent; }
+.tesla-vent-dot { position: absolute; left: 110px; bottom: 15px; width: 8px; height: 8px; border-radius: 50%; background: #fff9; box-shadow: 0 0 0 5px #ffffff40; }
+.tesla-vent-touch:active { cursor: grabbing; }
+[data-mode="dark"] .tesla-climate-interior { filter: brightness(.46) contrast(1.15); }
+[data-mode="dark"] .tesla-climate-surface { background: #343434; }
+[data-mode="dark"] .tesla-climate-top { background: linear-gradient(#343434ee,#34343400); }
+[data-mode="dark"] .tesla-climate-park-modes { background: #333f; }
+[data-mode="dark"] .tesla-climate-button { color: #ccc; }
+[data-mode="dark"] .tesla-climate-button[aria-pressed="true"] { color: #65b7ff; }
+[data-mode="dark"] .tesla-climate-button:hover { background: #ffffff12; }
+[data-mode="dark"] .tesla-climate-temperature output { color: #eee; }
+[data-mode="dark"] .tesla-climate-caption { color: #aaa; }
+.tesla-settings-nav-hit { position: absolute; z-index: 2; background: transparent; border-radius: 8px; }
+.tesla-settings-nav-hit:hover { background: #8881; }
+.tesla-settings [data-nav-visual] > :not(button) { pointer-events: none; }
+.tesla-settings [data-name="brightness"] { z-index: 2; pointer-events: none; }
+.tesla-artboard [hidden] { display: none !important; }
+[data-mode="light"] .tesla-cabin-mock, [data-mode="light"] .tesla-cabin-slot [data-testid="cockpit-chip"] { background: #fff; color: #222; border-color: #ddd; }
+[data-mode="light"] .tesla-cabin-mock span span { color: #666; }
+[data-mode="light"] .tesla-artboard [data-control="play"][data-playing="false"]::after { border-left-color: #111; }
+.tesla-shell .tesla-camera { position: absolute; left: 0; right: 0; top: 100px; height: 790px; display: flex; flex-direction: column-reverse; background: transparent; border-radius: 10px; overflow: hidden; color: #eee; }
+.tesla-camera [data-camera-feed] { margin: 0; border-radius: 10px; box-shadow: 0 8px 24px #0005; }
+.tesla-camera [data-camera-toolbar] { min-height: 90px; padding: 12px 20px; background: #151515f2; margin-top: 12px; border-radius: 10px; }
+.tesla-camera [data-camera-toolbar] .cx-seg { background: #282828; border-radius: 7px; padding: 4px; }
+.tesla-camera [data-camera-toolbar] .cx-seg button { min-width: 88px; min-height: 50px; border-radius: 5px; font: 18px Inter,sans-serif; }
+.tesla-camera [data-camera-toolbar] .cx-seg button[aria-checked="true"] { background: #555; color: white; }
+.tesla-camera [data-camera-feed] > .absolute.left-3.top-3 { left: 70px; top: 18px; }
+.tesla-camera-close { position: absolute; z-index: 3; left: 12px; top: 12px; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: #0007; color: white; }
+.tesla-camera-close svg { width: 30px; height: 30px; }
+.tesla-shell .tesla-phone { position: absolute; inset: 0; display: flex; flex-direction: column; overflow: hidden; background: #f1f1f1; color: #222; border-radius: 10px 10px 0 0; font: 24px/1.4 Inter,sans-serif; box-shadow: 0 6px 24px #0003; }
+.tesla-phone header { display: flex; align-items: center; justify-content: space-between; height: 80px; padding: 0 20px; border-bottom: 1px solid #ccc; flex-shrink: 0; }
+.tesla-phone header button, .tesla-phone header > span { width: 48px; height: 48px; display: grid; place-items: center; }
+.tesla-phone header h2 { margin: 0; font-size: 26px; font-weight: 600; }
+.tesla-phone svg { width: 30px; height: 30px; }
+.tesla-phone-columns { flex: 1; min-height: 0; display: grid; grid-template-columns: 50% 50%; }
+.tesla-phone-list { position: relative; padding: 12px 56px 24px 24px; overflow-y: auto; border-right: 1px solid #ccc; }
+.tesla-phone-list > button { width: 100%; min-height: 94px; text-align: left; display: flex; align-items: center; gap: 18px; padding: 16px 12px; border-radius: 6px; }
+.tesla-phone-list > button:hover, .tesla-phone-list > button[aria-pressed="true"] { background: #e8e8e8; }
+.tesla-phone-list small { display: block; font-size: 18px; color: #888; margin-top: 6px; max-width: 480px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.tesla-phone-list h3 { font-size: 21px; font-weight: 500; margin: 20px 10px; color: #888; }
+.tesla-phone-list > p { color: #777; margin: 28px 10px; font-size: 22px; }
+.tesla-phone-list > p > span { display: block; font-size: 17px; margin-top: 12px; }
+.tesla-phone-alphabet { position: absolute; right: 15px; top: 105px; display: flex; flex-direction: column; align-items: center; padding: 8px 6px; border-radius: 24px; background: #e6e6e6; font-size: 15px; line-height: 21px; color: #999; }
+.tesla-phone-detail { padding: 28px 40px; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+.tesla-phone-detail h3 { font-size: 40px; font-weight: 500; margin: 0; line-height: 1.2; }
+.tesla-phone-contact-title { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.tesla-phone-contact-title button { display: grid; place-items: center; width: 54px; height: 54px; color: #999; }
+.tesla-phone-contact-row { display: flex; gap: 20px; align-items: center; margin-top: 60px; }
+.tesla-phone-contact-row > div { flex: 1; }
+.tesla-phone-contact-row span { color: #999; font-size: 22px; }
+.tesla-phone-contact-row p { margin: 16px 0 0; font-size: 27px; }
+.tesla-phone-contact-row small { display: block; margin-top: 15px; font-size: 17px; color: #999; }
+.tesla-phone-contact-row button { width: 64px; height: 64px; display: grid; place-items: center; border: 1px solid #ccc; border-radius: 50%; }
+.tesla-phone nav { display: grid; grid-template-columns: repeat(4,1fr); height: 100px; flex-shrink: 0; }
+.tesla-phone nav button { display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center; color: #999; font-size: 22px; }
+.tesla-phone nav button[aria-current="page"] { color: #222; }
+.tesla-phone-simulation { flex-shrink: 0; padding: 9px 24px 12px; margin: 0; font-size: 13px; color: #888; }
+.tesla-phone button { transition: background 160ms, color 160ms, transform 160ms; }
+.tesla-phone button:hover { background: #8881; }
+.tesla-phone button:active { transform: scale(.96); }
+.tesla-phone button:disabled { opacity: .35; cursor: default; }
+.tesla-dialer { width: 400px; margin: 0 auto; }
+.tesla-dialer-number { height: 100px; display: flex; align-items: center; justify-content: center; gap: 20px; }
+.tesla-dialer-number output { font-size: 31px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tesla-dialer-number button { width: 44px; height: 44px; flex-shrink: 0; }
+.tesla-dialer-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+.tesla-dialer-grid button { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 95px; border-radius: 50%; font-size: 39px; font-weight: 300; }
+.tesla-dialer-grid small { display: block; font-size: 13px; height: 16px; letter-spacing: 2px; }
+.tesla-dialer-call { width: 88px; height: 72px; display: grid; place-items: center; margin: 25px auto; border-radius: 40px; background: #3f9950; color: white; }
+.tesla-dialer-call:hover { background: #4aa75a !important; }
+.tesla-phone-messages { flex: 1; min-height: 0; overflow-y: auto; margin-top: 30px; }
+.tesla-phone-messages > p { padding: 20px; border-radius: 12px; background: #ddd; margin: 0 0 16px; font-size: 22px; }
+.tesla-phone-messages small { display: block; font-size: 12px; color: #888; margin-top: 8px; }
+.tesla-phone-compose { display: flex; gap: 12px; flex-shrink: 0; }
+.tesla-phone-compose input { min-width: 0; flex: 1; height: 60px; border-radius: 6px; padding: 0 15px; border: 1px solid #ccc; background: transparent; font-size: 20px; }
+.tesla-phone-compose button { width: 60px; display: grid; place-items: center; }
+.tesla-phone-call-overlay { position: absolute; z-index: 4; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #171717f5; color: white; gap: 25px; backdrop-filter: blur(12px); }
+.tesla-phone-call-overlay h3 { font-size: 42px; margin: 10px 0 0; }
+.tesla-phone-call-overlay p { margin: 0; font-size: 27px; color: #aaa; }
+.tesla-phone-call-overlay > span { color: #aaa; font-size: 19px; }
+.tesla-phone-call-overlay button { width: 90px; height: 90px; display: grid; place-items: center; border-radius: 50%; background: #c63637; margin-top: 35px; }
+[data-mode="dark"] .tesla-shell .tesla-phone { background: #151515; color: #eee; }
+[data-mode="dark"] .tesla-phone header, [data-mode="dark"] .tesla-phone-list { border-color: #333; }
+[data-mode="dark"] .tesla-phone-list > button[aria-pressed="true"], [data-mode="dark"] .tesla-phone-alphabet, [data-mode="dark"] .tesla-phone-messages > p { background: #252525; }
+[data-mode="dark"] .tesla-phone nav button[aria-current="page"] { color: white; }
+.tesla-shell .tesla-navigation { position: absolute; left: 580px; top: 70px; width: 1340px; height: 1010px; background: #151515; border-radius: 0; overflow: hidden; font-family: Montserrat,sans-serif; }
+.tesla-navigation [data-nav-search] { left: 20px; top: 10px; width: 340px; gap: 20px; }
+.tesla-navigation .su-black { background: #0e0e0ef5; border-radius: 40px; color: white; }
+.tesla-navigation [data-nav-search] > .su-black > div:first-child { padding: 0 18px; height: 80px; }
+.tesla-navigation [data-nav-search] > .su-black > div:first-child > button:not(:first-child) { display: none; }
+.tesla-navigation [data-nav-search] > .su-black > div:first-child > button:first-child { min-width: 0; height: 80px; gap: 14px; }
+.tesla-navigation .su-black .t-body { font: 20px/1.4 Montserrat,sans-serif; }
+.tesla-navigation .cx-panel { border-radius: 10px; background: #0e0e0ef5; padding: 24px 18px; box-shadow: 0 5px 10px #0005; }
+.tesla-navigation .cx-panel .t-body { font-size: 23px; }
+.tesla-navigation .cx-panel .text-xs { font-size: 14px; }
+.tesla-navigation [data-nav-tools] { inset: 0; transform: none; pointer-events: none; }
+.tesla-navigation [data-nav-tools] > button { position: absolute; right: 20px; width: 80px; height: 80px; border-radius: 50%; pointer-events: auto; box-shadow: 0 4px 10px #0003; }
+.tesla-navigation [data-nav-tools] > button:nth-child(3) { top: 20px; }
+.tesla-navigation [data-nav-tools] > button:nth-child(1) { top: 120px; border-radius: 40px 40px 0 0; }
+.tesla-navigation [data-nav-tools] > button:nth-child(2) { top: 200px; border-radius: 0 0 40px 40px; }
+.tesla-navigation [data-nav-tools] > button:nth-child(4) { bottom: 230px; }
+.tesla-navigation [data-nav-tools] > button:nth-child(5) { bottom: 330px; }
+.tesla-navigation [data-nav-tools] > button:nth-child(6) { bottom: 430px; }
+.tesla-navigation-close { position: absolute; left: 380px; top: 25px; width: 50px; height: 50px; display: grid; place-items: center; border-radius: 50%; background: #151515da; color: white; z-index: 12; }
+.tesla-navigation-label { position: absolute; left: 20px; bottom: 6px; padding: 3px 8px; font: 12px Inter,sans-serif; color: #ddd; background: #0009; pointer-events: none; }
+[data-mode="light"] .tesla-navigation .su-black, [data-mode="light"] .tesla-navigation .cx-panel { background: #f0f0f0f5; color: #333; }
+[data-mode="light"] .tesla-navigation .su-black .text-white { color: #333; }
+
+.tesla-navigation .maplibregl-ctrl-bottom-right { bottom: 190px; right: 8px; }
+.tesla-navigation .maplibregl-ctrl-attrib { font: 12px/20px Inter,sans-serif; }
+/* Tailwind's individual translate property must also be cleared for the source tool positions. */
+.tesla-navigation [data-nav-tools] { translate: none; }
+.tesla-source-frame[data-map-open="true"] [data-node-id="37:3561"], .tesla-source-frame[data-map-open="true"] [data-node-id="497:14008"] { visibility: hidden; }
+.tesla-simulation-label, .tesla-reference-label { top: 866px; }
+.tesla-navigation [data-nav-search]:has([aria-expanded="true"]) { width: 480px; }
+.tesla-navigation:has([aria-expanded="true"]) .tesla-navigation-close { left: 520px; }
+.tesla-navigation [data-nav-search] ul { max-height: 390px; }
+.tesla-navigation [data-nav-search] li button { height: auto; min-height: 92px; }
+.tesla-navigation [data-nav-search] li .t-label { font: 19px/1.35 Montserrat,sans-serif; }
+.tesla-navigation [data-nav-search] li .text-xs { font: 14px/1.4 Montserrat,sans-serif; }
+.tesla-navigation [data-nav-search] li .grow { min-width: 0; }
+.tesla-navigation [data-nav-search] li > button > span:last-child { white-space: nowrap; }
+
+.tesla-navigation [data-nav-end] { display: none; }
+
+[data-mode="light"] .tesla-navigation .cx-panel .text-text-2, [data-mode="light"] .tesla-navigation .cx-panel .text-text-3 { color: #666; }

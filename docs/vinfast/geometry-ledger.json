@@ -1,0 +1,127 @@
+{
+ "canvas": [
+  1920,
+  1080
+ ],
+ "native_vehicle_resolution": "UNVERIFIED",
+ "regions": [
+  {
+   "id": "status",
+   "x": 0,
+   "y": 0,
+   "w": 1920,
+   "h": 64,
+   "status": "SOURCE_LABEL",
+   "source_or_note": "A06"
+  },
+  {
+   "id": "airbag",
+   "x": 1724,
+   "y": 0,
+   "w": 196,
+   "h": 64,
+   "status": "SOURCE_LABEL",
+   "source_or_note": "A06; slot shows \"chưa có dữ liệu\""
+  },
+  {
+   "id": "ipc",
+   "x": 0,
+   "y": 64,
+   "w": 584,
+   "h": 245,
+   "status": "SOURCE_LABEL",
+   "source_or_note": "A06"
+  },
+  {
+   "id": "prompt",
+   "x": 104,
+   "y": 309,
+   "w": 480,
+   "h": 132,
+   "status": "PROPOSED",
+   "source_or_note": "A06 label 584x132, inset by rail"
+  },
+  {
+   "id": "carBuddy",
+   "x": 0,
+   "y": 309,
+   "w": 584,
+   "h": 659,
+   "status": "PROPOSED",
+   "source_or_note": "A06 label 584x723 overlaps IPC/notification"
+  },
+  {
+   "id": "rail",
+   "x": 0,
+   "y": 309,
+   "w": 96,
+   "h": 575,
+   "status": "SOURCE_LABEL",
+   "source_or_note": "A06"
+  },
+  {
+   "id": "notification",
+   "x": 104,
+   "y": 724,
+   "w": 480,
+   "h": 244,
+   "status": "PROPOSED",
+   "source_or_note": "A06 label 584x284, inset by rail"
+  },
+  {
+   "id": "navigation",
+   "x": 608,
+   "y": 88,
+   "w": 632,
+   "h": 856,
+   "status": "SOURCE_LABEL",
+   "source_or_note": "A06; expands to 1288x856 when opened"
+  },
+  {
+   "id": "multimedia",
+   "x": 1264,
+   "y": 88,
+   "w": 632,
+   "h": 416,
+   "status": "SOURCE_LABEL",
+   "source_or_note": "A06"
+  },
+  {
+   "id": "launcher",
+   "x": 1264,
+   "y": 528,
+   "w": 632,
+   "h": 416,
+   "status": "PROPOSED",
+   "source_or_note": "A06 shows 3x2 tiles"
+  },
+  {
+   "id": "quick",
+   "x": 0,
+   "y": 968,
+   "w": 144,
+   "h": 112,
+   "status": "SOURCE_LABEL",
+   "source_or_note": "A06"
+  },
+  {
+   "id": "climate",
+   "x": 144,
+   "y": 968,
+   "w": 1632,
+   "h": 112,
+   "status": "SOURCE_LABEL",
+   "source_or_note": "A06"
+  },
+  {
+   "id": "library",
+   "x": 1776,
+   "y": 968,
+   "w": 144,
+   "h": 112,
+   "status": "SOURCE_LABEL",
+   "source_or_note": "A06"
+  }
+ ],
+ "note": "Không có x/y gốc từ A06; vị trí là đề xuất. Chưa đo anchor ≤4px so với golden (UNVERIFIED)."
+}

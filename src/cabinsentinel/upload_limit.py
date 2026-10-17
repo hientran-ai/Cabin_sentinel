@@ -11,6 +11,15 @@ class _UploadLimitError(Exception):
     pass
 
 
+def is_image_upload(scope) -> bool:
+    """POST routes that accept a camera image and therefore get admission control and a byte cap."""
+    path = scope["path"]
+    return scope["method"] == "POST" and (
+        path == "/api/v1/demo/analyze"
+        or (path.startswith("/api/v1/e2e/sessions/") and path.endswith("/observations"))
+    )
+
+
 class DemoUploadLimitMiddleware:
     def __init__(self, app, *, max_concurrent_requests: int | None = None):
         self.app = app
@@ -24,7 +33,7 @@ class DemoUploadLimitMiddleware:
         self._active_demo_requests = 0
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] != "http" or scope["method"] != "POST" or scope["path"] != "/api/v1/demo/analyze":
+        if scope["type"] != "http" or not is_image_upload(scope):
             await self.app(scope, receive, send)
             return
 

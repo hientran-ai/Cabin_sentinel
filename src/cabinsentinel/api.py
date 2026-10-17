@@ -4,6 +4,7 @@ from functools import lru_cache
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
+from src.cabinsentinel.actions import DemoActions
 from src.cabinsentinel.auth import authorize_demo_vehicle, session_bearer
 from src.cabinsentinel.models import VisionPayload
 from src.cabinsentinel.service import CabinService
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/api/v1", tags=["CabinSentinel"], dependencies=[Depen
 
 @lru_cache
 def get_cabin_service() -> CabinService:
-    return CabinService(get_settings().cabinsentinel_db_path)
+    return CabinService(get_settings().cabinsentinel_db_path, actions=DemoActions())
 
 
 def _authorize_fleet(request: Request, vehicle_id: str, *, write: bool) -> None:

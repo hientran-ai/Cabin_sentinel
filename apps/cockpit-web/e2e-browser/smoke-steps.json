@@ -1,0 +1,47 @@
+[
+ {
+  "js": "await __sleep(2500);return __ptext()",
+  "note": "phone before any data (must not say safe)"
+ },
+ {
+  "js": "__click('Đỗ, khoá, 40');await __sleep(400);__click('Trẻ trong xe (clip');",
+  "wait": 7000,
+  "note": "start hot + child clip"
+ },
+ {
+  "js": "return __ptext()",
+  "note": "phone critical",
+  "shot": "smoke-1.png"
+ },
+ {
+  "js": "__pclick('Xử lý ngay');await __sleep(2500);return __ptext().slice(0,200)",
+  "note": "incident"
+ },
+ {
+  "js": "__pclick('Đã xem');await __sleep(2500);return __ptext().includes('đã xem')",
+  "note": "acknowledged, still open"
+ },
+ {
+  "js": "const d=__pdoc();[...d.querySelectorAll('input[type=checkbox]')].forEach(c=>c.click());await __sleep(300);__pclick('Gửi xác nhận');await __sleep(3000);const t=__pdoc().body.innerText;return t.includes('Vẫn phát hiện')",
+  "note": "resolve rejected while occupant is seen",
+  "shot": "smoke-2.png"
+ },
+ {
+  "js": "__click('Cabin trống');await __sleep(300);__click('Đỗ, khoá, 25');",
+  "wait": 7000,
+  "note": "empty clip, cool"
+ },
+ {
+  "js": "const d=__pdoc();[...d.querySelectorAll('input[type=checkbox]')].forEach(c=>{if(!c.checked)c.click()});await __sleep(300);__pclick('Gửi lại xác nhận');await __sleep(3000);return __ptext().includes('Đã đóng sự cố')",
+  "note": "resolve accepted with fresh empty evidence",
+  "shot": "smoke-3.png"
+ },
+ {
+  "js": "__pclick('Lịch sử');await __sleep(2500);return __ptext().includes('Đã đóng sau kiểm tra cabin')",
+  "note": "history lists the closed incident"
+ },
+ {
+  "js": "__click('Camera bị che');await __sleep(5000);return __text('[data-testid=cockpit-chip]')",
+  "note": "camera blocked on cockpit"
+ }
+]

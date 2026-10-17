@@ -1,0 +1,95 @@
+{
+ "status": "PROPOSED_WEB_TIMING_NOT_OEM",
+ "items": [
+  {
+   "interaction": "press",
+   "spec": "scale 1→.975, 100ms/140ms",
+   "where": ".vf-press",
+   "basis": "prompt §6 (PROPOSED)"
+  },
+  {
+   "interaction": "tab",
+   "spec": "underline 160ms, content y8 180ms",
+   "where": ".vf-tabs",
+   "basis": "PROPOSED"
+  },
+  {
+   "interaction": "panel open/close",
+   "spec": "x32→0 260ms (.2,.8,.2,1); 200ms (.4,0,1,1)",
+   "where": "Panel, CameraPanel",
+   "basis": "PROPOSED"
+  },
+  {
+   "interaction": "climate sheet",
+   "spec": "y36→0 280ms; drag handle, dismiss ≥96px or .65px/ms",
+   "where": "VinfastClimateSheet, gesture.ts (unit tested)",
+   "basis": "PROPOSED"
+  },
+  {
+   "interaction": "toast swipe",
+   "spec": "same thresholds on x; only hides toast, never ACK/resolve",
+   "where": "VinfastToasts",
+   "basis": "PROPOSED"
+  },
+  {
+   "interaction": "map expand",
+   "spec": "rect transition 260ms, one canvas",
+   "where": "VinfastMapLayer",
+   "basis": "PROPOSED"
+  },
+  {
+   "interaction": "theme",
+   "spec": "colour crossfade 240ms, no wipe",
+   "where": ".vf-glass/.vf-wall",
+   "basis": "PROPOSED"
+  },
+  {
+   "interaction": "count change",
+   "spec": "crossfade 120ms",
+   "where": "Num",
+   "basis": "PROPOSED"
+  },
+  {
+   "interaction": "safety alert",
+   "spec": "0ms delay: prompt/tile render with the committed state",
+   "where": "VinfastPrompt, VinfastCabinTile",
+   "basis": "invariant"
+  },
+  {
+   "interaction": "reduced motion",
+   "spec": "MotionConfig reducedMotion=user + CSS media query",
+   "where": "VinfastExperience, vinfast.css",
+   "basis": "prompt §6"
+  },
+  {
+   "interaction": "leaf wallpaper",
+   "spec": "translate(-10,4)px + opacity .55-.9, 14s alternate, transform/opacity only",
+   "where": ".vf-leaf",
+   "basis": "PROPOSED, inspired by line-art in the real display photo; photo shows no motion"
+  },
+  {
+   "interaction": "car headlight glow",
+   "spec": "opacity .45-.9, 4.5s alternate",
+   "where": ".vf-glow",
+   "basis": "PROPOSED"
+  },
+  {
+   "interaction": "card entrance (home load)",
+   "spec": "y14 to 0 + fade, 420ms, delay 0/120ms; never on alert tile, prompt or toasts",
+   "where": ".vf-map, .vf-media (blue)",
+   "basis": "PROPOSED"
+  },
+  {
+   "interaction": "optional intro ?intro=1",
+   "spec": "V stroke draw 1100ms, closes ~2.1s, Skip button, off by default",
+   "where": "Intro",
+   "basis": "PROPOSED"
+  }
+ ],
+ "not_done": [
+  "Không trích keyframe/easing từ video Vimeo; không đo FPS",
+  "Không có intro/showcase",
+  "Vimeo clips not downloaded or embedded (pack: link-only); motion rebuilt with CSS/motion"
+ ],
+ "vimeo_used": "none directly; VIMEO_MOTION_GUIDE read as guidance only"
+}

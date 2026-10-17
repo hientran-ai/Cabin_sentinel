@@ -1,0 +1,6 @@
+[
+ {"js": "try{__click('Mô phỏng')}catch(e){}await __sleep(500);__click('Đỗ, khoá, 40');await __sleep(400);__click('Camera máy');await __sleep(1000);return document.body.innerText.includes('Cần đồng ý')", "note": "camera refused before consent"},
+ {"js": "const c=[...document.querySelectorAll('input[type=checkbox]')].find(x=>x.parentElement.innerText.includes('camera của máy'));c.click();await __sleep(300);__click('Camera máy');await __sleep(8000);return document.body.innerText.slice(0,0)+JSON.stringify(window.__e2e?window.__e2e.getState().source:null)", "note": "consent then device camera running"},
+ {"js": "return JSON.stringify(window.__e2e.getState().metrics.lastReply)", "note": "backend reply for device frames", "shot": "camera-1.png"},
+ {"js": "return __ptext().slice(0,300)", "note": "phone view"}
+]

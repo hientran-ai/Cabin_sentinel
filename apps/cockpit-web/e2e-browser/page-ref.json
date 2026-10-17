@@ -1,0 +1,1 @@
+[{"js":"await __sleep(5000);__click('Đỗ, khoá, 40');__click('Trẻ trong xe (clip');await __sleep(8000);return window.__e2e.getState().state?.risk_level","shot":"09-demo-page.png"}]

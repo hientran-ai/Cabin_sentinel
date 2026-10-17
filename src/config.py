@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     max_upload_size_bytes: int = Field(default=5 * 1024 * 1024, ge=1)
     max_image_pixels: int = Field(default=20_000_000, ge=1)
     max_concurrent_demo_requests: int = Field(default=1, ge=1)
+    demo_retention_hours: int = Field(default=24, ge=1, le=24 * 30)  # demo sessions: telemetry-class data (24 h, COMPLIANCE §2.1)
     model_path: str = ""
     model_confidence: float = Field(default=0.25, gt=0, le=1)
     age_classifier_path: str = ""

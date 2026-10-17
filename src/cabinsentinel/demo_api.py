@@ -128,6 +128,26 @@ def get_vision_provider(request: Request) -> VisionProvider:
     return provider
 
 
+def validate_image_bytes(image_data: bytes, content_type: str | None) -> None:
+    """Reject empty, oversized, mislabeled or undecodable uploads; shared by every image endpoint."""
+    if content_type not in IMAGE_TYPES:
+        raise HTTPException(status_code=415, detail="Only JPEG and PNG images are supported")
+    if not image_data:
+        raise HTTPException(status_code=422, detail="Image is empty")
+    if len(image_data) > get_settings().max_upload_size_bytes:
+        raise HTTPException(status_code=413, detail="Image exceeds upload limit")
+    try:
+        # Vision may replace Image.open later; validation keeps Pillow's decoder.
+        with open_image(BytesIO(image_data)) as decoded:
+            if decoded.format != IMAGE_TYPES[content_type]:
+                raise HTTPException(status_code=422, detail="Image format and content type differ")
+            if decoded.width * decoded.height > get_settings().max_image_pixels:
+                raise HTTPException(status_code=413, detail="Image exceeds pixel limit")
+            decoded.verify()
+    except (Image.DecompressionBombError, UnidentifiedImageError, OSError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail="Image cannot be decoded") from exc
+
+
 @router.post("/analyze", response_model=DemoResponse)
 async def analyze_image(
     request: Request,
@@ -140,20 +160,7 @@ async def analyze_image(
     if image.content_type not in IMAGE_TYPES:
         raise HTTPException(status_code=415, detail="Only JPEG and PNG images are supported")
     image_data = await image.read(get_settings().max_upload_size_bytes + 1)
-    if not image_data:
-        raise HTTPException(status_code=422, detail="Image is empty")
-    if len(image_data) > get_settings().max_upload_size_bytes:
-        raise HTTPException(status_code=413, detail="Image exceeds upload limit")
-    try:
-        # Vision may replace Image.open later; validation keeps Pillow's decoder.
-        with open_image(BytesIO(image_data)) as decoded:
-            if decoded.format != IMAGE_TYPES[image.content_type]:
-                raise HTTPException(status_code=422, detail="Image format and content type differ")
-            if decoded.width * decoded.height > get_settings().max_image_pixels:
-                raise HTTPException(status_code=413, detail="Image exceeds pixel limit")
-            decoded.verify()
-    except (Image.DecompressionBombError, UnidentifiedImageError, OSError, ValueError) as exc:
-        raise HTTPException(status_code=422, detail="Image cannot be decoded") from exc
+    validate_image_bytes(image_data, image.content_type)
     session_token = None
     try:
         if session_id:

@@ -1,0 +1,4 @@
+[{"js":"await __sleep(5000);const t=__three;t.controls.enabled=false;const set=(az,pol,r)=>{const tg=t.controls.target;t.camera.position.set(tg.x+r*Math.sin(pol)*Math.cos(az),tg.y+r*Math.cos(pol),tg.z+r*Math.sin(pol)*Math.sin(az));t.camera.lookAt(tg)};window.__set=set;set(0.7,1.3,9);await __sleep(600);return 'front-ish'","shot":"o1.png"},
+ {"js":"__set(Math.PI*0.5,1.5,9);await __sleep(600);return 'side'","shot":"o2.png"},
+ {"js":"__set(Math.PI,1.45,9);await __sleep(600);return 'rear'","shot":"o3.png"},
+ {"js":"__set(0.3,1.52,7);await __sleep(600);return 'low front'","shot":"o4.png"}]

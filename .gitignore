@@ -84,3 +84,6 @@ out/
 runs/
 Ultralytics/
 eval/sviro-age-audit/manifest.jsonl
+
+# wrangler local dev state
+.wrangler/
