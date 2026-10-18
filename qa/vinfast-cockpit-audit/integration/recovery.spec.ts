@@ -1,14 +1,23 @@
 import { expect, test } from '@playwright/test'
-import { CRITICAL, mockBackend, openDemo, phone, tile } from '../tests/helpers'
+import { CRITICAL, SAFE, mockBackend, openDemo, phone, tile } from '../tests/helpers'
 
 test('critical state interrupts comfort audio (API fixture, not detection evidence)', async ({ page }) => {
-  await mockBackend(page, CRITICAL.state); await openDemo(page)
+  const care = {
+    status: 'ACTIVE', profile: 'ADULT', incident_id: 'audio-fixture', auto_consent: false,
+    responded_at: null, started_by: 'COCKPIT', started_at: '2026-10-18T00:00:00Z', music: null,
+    ended_at: null, ended_by: null, end_reason: null, plan: [], simulated: true,
+    can_start: true, occupancy_evidence: true, target_c: 25, never_resolves_incident: true,
+    countdown: { armed: false, remaining_s: null, after_s: 30 }, suggestion: null, notes: [],
+  }
+  const mock = await mockBackend(page, { ...SAFE.state, care }); await openDemo(page)
+  // Use the production audio UI: source .ts URLs only exist on the dev server.
+  const music = page.getByTestId('care-adult').getByRole('button', { name: 'Nhạc thư giãn (không lời)', exact: true })
+  await music.click()
+  await expect(music).toHaveAttribute('aria-pressed', 'true')
+  mock.state = { ...CRITICAL.state, care }
   await page.waitForFunction(() => (window as any).__e2e.getState().state?.risk_level === 'CRITICAL')
-  const playing = await page.evaluate(async () => {
-    const audio = await import('/cockpit/src/e2e/comfortAudio.ts')
-    audio.play('ambient')
-    return audio.audioState().playing
-  })
+  await expect(music).toHaveAttribute('aria-pressed', 'false')
+  const playing = await music.getAttribute('aria-pressed').then(value => value === 'true' ? 'ambient' : null)
   expect(playing).toBeNull()
 })
 
