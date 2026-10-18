@@ -12,10 +12,10 @@ for (let n = 1; n <= 8; n++) {
     await page.getByTestId(`start-${id}`).click()
     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
     await page.getByRole('tab', { name: 'Bằng chứng' }).click()
-    const video = page.getByTestId('actual-demo-video').locator('video')
-    await expect(video).toBeVisible()
+    await expect(page.getByTestId('actual-demo-video').locator('video')).toHaveCount(0)   // the source clip runs parked: judges only see the analysed (masked) detect frame
+    await expect(page.getByTestId('cm-frame')).toBeVisible({ timeout: 30000 })
     const phase = await page.getByTestId('player-phase').textContent()
-    if (phase?.includes('READY') || phase?.includes('ENDED')) await page.getByRole('button', { name: 'Phát lại video', exact: true }).click()
+    if (phase?.includes('READY') || phase?.includes('ENDED')) await page.getByRole('button', { name: 'Phát lại clip', exact: true }).click()
     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
     const evidence = await page.evaluate(() => {
       const s = (window as any).__e2e.getState()
@@ -38,7 +38,7 @@ for (let n = 1; n <= 8; n++) {
     // that element, so exercise replay before closing rather than waiting on detached media.play().
     await page.evaluate(() => { const v = (window as any).__e2eCapture.getVideo(); v.loop = false; v.currentTime = v.duration - .15 })   // clips loop for judges; switch the loop off to test the end
     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().source.playerPhase)).toBe('ENDED')
-    await video.evaluate(async (v: HTMLVideoElement) => { v.currentTime = 0; await v.play() })
+    await page.evaluate(async () => { const v = (window as any).__e2eCapture.getVideo(); v.currentTime = 0; await v.play() })
     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().source.running)).toBe(true)
     await page.getByTestId('cm-close').click()
     await expect(page.getByTestId('scenario-pipeline')).toContainText('SIMULATED SENSOR DATA')

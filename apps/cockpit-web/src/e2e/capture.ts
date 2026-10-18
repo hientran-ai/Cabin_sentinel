@@ -32,12 +32,13 @@ let sourceEpoch = 0
 
 /** The last frame this browser SENT and got an answer for: the exact picture the model analysed, with its geometry and source. */
 /** masked: the picture is the backend's face-masked copy (YuNet + person fallback). false = the raw local frame (model without a masker). */
-export interface ThumbInfo { url: string; kind: 'UPLOAD' | 'CLIP_FRAME' | 'DEVICE_CAMERA'; frameId: string; width: number; height: number; at: number; mediaTimeS?: number; masked: boolean; maskedRegions?: number }
+export interface ThumbInfo { url: string; kind: 'UPLOAD' | 'CLIP_FRAME' | 'DEVICE_CAMERA'; frameId: string; width: number; height: number; at: number; mediaTimeS?: number; masked: boolean; maskedRegions?: number; obscured?: boolean }
 const thumbListeners = new Set<(url: string | null) => void>()
 const infoListeners = new Set<(i: ThumbInfo | null) => void>()
 let thumbInfo: ThumbInfo | null = null
 
 export const getVideo = () => video
+export const getThumbInfo = () => thumbInfo
 export function onThumb(l: (u: string | null) => void) { thumbListeners.add(l); l(thumbInfo?.url ?? null); return () => { thumbListeners.delete(l) } }
 export function onThumbInfo(l: (i: ThumbInfo | null) => void) { infoListeners.add(l); l(thumbInfo); return () => { infoListeners.delete(l) } }
 function setThumb(blob: Blob | null, meta?: Omit<ThumbInfo, 'url'>) {
@@ -98,6 +99,21 @@ function toJpeg(source: CanvasImageSource, w: number, h: number): Promise<Blob |
   return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.8))
 }
 
+/** Backend without a face masker: never show the raw frame. Pixelate the whole picture on this device (no canvas filter, so it works on iOS Safari too). */
+export async function obscure(blob: Blob): Promise<Blob | null> {
+  try {
+    const bmp = await createImageBitmap(blob)
+    const small = document.createElement('canvas'); small.width = Math.max(1, Math.round(bmp.width / 26)); small.height = Math.max(1, Math.round(bmp.height / 26))
+    small.getContext('2d')?.drawImage(bmp, 0, 0, small.width, small.height)
+    const big = document.createElement('canvas'); big.width = bmp.width; big.height = bmp.height
+    const ctx = big.getContext('2d'); if (!ctx) return null
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'low'
+    ctx.drawImage(small, 0, 0, big.width, big.height)
+    bmp.close()
+    return await new Promise((r) => big.toBlob(r, 'image/jpeg', 0.7))
+  } catch { return null }
+}
+
 async function send(blob: Blob, capturedAtPerf: number, kind: 'UPLOAD' | 'CLIP_FRAME' | 'DEVICE_CAMERA', label: string, encodeMs: number, size: { width: number; height: number; mediaTimeS?: number }) {
   const st = useE2e.getState(); const session = st.session
   if (!session) return
@@ -113,11 +129,12 @@ async function send(blob: Blob, capturedAtPerf: number, kind: 'UPLOAD' | 'CLIP_F
     if (mine !== sourceEpoch) return   // the source changed while this frame was in flight: its answer belongs to the old source
     if (reply.accepted) {
       // show the face-masked copy the backend made of this exact frame; only without a masker does the raw local frame stay on screen
-      let shown: Blob = blob, masked = false
+      let shown: Blob | null = null, masked = false
       const pv = reply.preview
-      if (pv?.status === 'PROCESSED' && pv.data_url) { try { shown = await (await fetch(pv.data_url)).blob(); masked = true } catch { /* keep the raw frame, labelled unmasked */ } }
+      if (pv?.status === 'PROCESSED' && pv.data_url) { try { shown = await (await fetch(pv.data_url)).blob(); masked = true } catch { shown = null } }
+      if (!shown) shown = await obscure(blob)   // no masker (or it failed): the raw frame is never displayed, only a pixelated copy
       if (mine !== sourceEpoch) return
-      setThumb(shown, { kind, frameId: id, width: size.width, height: size.height, at: Date.now(), mediaTimeS: size.mediaTimeS, masked, maskedRegions: pv?.masked_regions })
+      if (shown) setThumb(shown, { kind, frameId: id, width: size.width, height: size.height, at: Date.now(), mediaTimeS: size.mediaTimeS, masked, maskedRegions: pv?.masked_regions, obscured: !masked })
     }
     useE2e.getState().patchMetrics((m) => ({
       accepted: m.accepted + (reply.accepted ? 1 : 0), ignored: m.ignored + (reply.accepted ? 0 : 1), replayed: m.replayed + (reply.replayed ? 1 : 0),

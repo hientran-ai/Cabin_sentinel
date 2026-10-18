@@ -64,6 +64,7 @@ def main() -> None:
     shutil.copy2(HERE / "extra" / "apple.css", OUT / "apple.css")                           # Apple look, loaded after styles.css
     shutil.copy2(HERE / "extra" / "modes.js", OUT / "js" / "views" / "modes.js")            # "Cá nhân hoá" tab (profiles, named modes, schedule)
     shutil.copy2(LOGIC / "modesLogic.js", OUT / "js" / "views" / "modesLogic.js")
+    patch("js/views/incident.js", "Người được phát hiện đã được làm mờ ngay trên thiết bị. Ảnh tự xóa sau 24 giờ.", "Khung hình mô phỏng do xe vừa phân tích, đã che mặt hoặc làm mờ toàn khung. Chỉ giữ trong bộ nhớ trình duyệt, mất khi đóng trang.")
     # 1. the bridge runs before Noir's own module and the manifest/service worker are not used
     patch("index.html", '<link rel="manifest" href="manifest.webmanifest">\n', "")
     patch("index.html", '<link rel="stylesheet" href="styles.css">', '<link rel="stylesheet" href="styles.css">\n<link rel="stylesheet" href="apple.css">')
@@ -78,7 +79,17 @@ def main() -> None:
     patch("js/views/incident.js", r'\n    \["owner", "confirm"\]\.includes\(S\.status && S\.status\.role\) && livePanel\(inc\.vehicle_id\),\n    canAct && h\("a", \{ class: "btn block", href: "#/check" \}[^\n]*\n', "\n", regex=True)
     patch("js/views/incident.js", "“Đã xem” chỉ dừng nhắc lặp lại. Sự cố chỉ đóng", "“Đã xem” chỉ ghi nhận bạn đã xem, không đóng sự cố và không dừng nhắc lặp. Sự cố chỉ đóng")
     patch("js/views/incident.js", r'\n    r\.code === "presence" && h\("button", \{ class: "btn small ghost needs-checks".*?"Hệ thống nhầm\? Đóng thủ công…"\)\);', ");", regex=True)
-    patch("js/views/incident.js", "    evidence(inc),\n", "")   # the alert card is drawn by Noir's backend from seat data this backend does not have
+    # the seat-map alert card is drawn by Noir's backend from seat data this backend does not have: show only the report frame the car just analysed
+    patch("js/views/incident.js", "    evidence(inc),\n", "    reportFrame(inc),\n")
+    patch("js/views/incident.js", "export async function render(ctx) {", """function reportFrame(inc) {
+  const photos = inc.alert_photos || [];
+  if (!photos.length) return null;
+  return h("section", { class: "card gap report-frame" }, h("h3", {}, "Khung hình báo cáo từ xe"),
+    photos.map((id) => pic(`photo:${id}`, `/v1/vehicles/${inc.vehicle_id}/photos/${id}`, "Khung hình báo cáo, đã che mặt hoặc làm mờ", "alert-photo")),
+    h("p", { class: "small muted", style: "margin:0" }, "Khung hình mô phỏng do xe vừa phân tích, đã che mặt hoặc làm mờ toàn khung. Chỉ giữ trong bộ nhớ trình duyệt, mất khi đóng trang."));
+}
+
+export async function render(ctx) {""")
     # 4. home: no pause, no camera view, no exit-check on this backend
     patch("js/views/home.js", r'\n      \(s\.role === "owner" \|\| s\.role === "confirm"\) && h\("button", \{ class: "btn", on: \{ click: \(\) => camera\(s\) \} \}[^\n]*', "", regex=True)
     patch("js/views/home.js", r': \(s\.role === "owner" \|\| s\.role === "confirm"\) && !inc && h\("button", \{ class: "btn", on: \{ click: \(\) => pauseSheet\(s, refresh\) \} \}[^\n]*\)\),', ": null),", regex=True)

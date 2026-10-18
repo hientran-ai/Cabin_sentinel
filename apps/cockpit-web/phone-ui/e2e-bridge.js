@@ -99,7 +99,8 @@
     if (withDetail) {
       out.escalation = escalation(state);
       out.events = s.history.map(eventOf).filter((e) => e && e.at).filter((e) => e.at >= (out.created_at || 0) - 1);
-      out.alert_photos = [];
+      const lf = B().latestFrame && B().latestFrame();
+      out.alert_photos = lf ? ["e2e-" + lf.frameId] : [];
     }
     return out;
   }
@@ -178,6 +179,11 @@
     if (method === "GET" && path === "/v1/vehicles/" + VEHICLE_ID + "/status") return json(200, status(s));
     if (method === "GET" && path === "/v1/vehicles/" + VEHICLE_ID + "/trips") return json(200, []);
     if (method === "GET" && path === "/v1/vehicles/" + VEHICLE_ID + "/photos") return json(200, []);
+    if (method === "GET" && path.indexOf("/v1/vehicles/" + VEHICLE_ID + "/photos/") === 0) {
+      const lf = B().latestFrame && B().latestFrame();
+      if (!lf) return fail(404, "no_photo", "Chưa có khung hình đã che.");
+      try { const r = await fetch(lf.url); return new Response(await r.blob(), { status: 200, headers: { "Content-Type": "image/jpeg" } }); } catch (e) { return fail(404, "no_photo", "Không đọc được khung hình."); }
+    }
     if (method === "GET" && path === "/v1/vehicles/" + VEHICLE_ID + "/camera") return json(200, { available: false, message: "Điện thoại không xem camera. Camera và suy luận chạy ở xe (ở demo này: máy chủ demo)." });
     const DH = window.__demoHistory, V = "/v1/vehicles/" + VEHICLE_ID;
     const nowS = () => Date.now() / 1000;

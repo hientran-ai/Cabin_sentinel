@@ -280,23 +280,16 @@ function useFullscreen(target: React.RefObject<HTMLElement | null>, video: React
   return { on, supported, toggle }
 }
 
-function ManagedSampleVideo() {
-  const host = useRef<HTMLDivElement>(null), source = useE2e((s) => s.source)
-  useEffect(() => {
-    const v = getVideo(), root = host.current
-    if (!v || !root) return
-    v.controls = true; v.muted = true; v.removeAttribute('aria-hidden'); v.setAttribute('aria-label', 'DEMO VIDEO · video đang dùng để suy luận'); v.style.width = '100%'; v.style.maxHeight = '52dvh'; v.style.objectFit = 'contain'
-    root.append(v)
-    void resumeManagedClip()
-    return () => { if (v.parentElement === root) parkVideo(v); v.controls = false; v.setAttribute('aria-hidden', 'true') }   // parked, not removed: a detached video would pause and stop the analysis
-  }, [source.runId])
+/** The source clip keeps playing off-screen (parked) so the analysis continues; judges only see the detect frame below. */
+function ClipControls() {
+  const source = useE2e((s) => s.source)
+  useEffect(() => { const v = getVideo(); if (v) { parkVideo(v); void resumeManagedClip() } }, [source.runId])
   const selected = CLIPS.find((c) => c.id === source.scenarioId || c.label === source.label)
-  return <section className="cm-card"><h4>DEMO VIDEO</h4><div ref={host} data-testid="actual-demo-video" />
-    <p role="status" data-testid="player-phase">{source.playerPhase ?? 'IDLE'} · Âm thanh bản ghi đã tắt. Frame video thật được trích ở tối đa 1 Hz.</p>
-    {selected && <button type="button" className="cm-btn" onClick={() => void startClip(selected)}>Phát lại video</button>}
+  return <div className="cm-source-bar" data-testid="actual-demo-video">
+    <p role="status" data-testid="player-phase" className="cm-note">{source.playerPhase ?? 'IDLE'} · Clip mẫu chạy nền, chỉ hiện khung đã phân tích. Âm thanh tắt, tối đa 1 khung/giây.</p>
+    {selected && <button type="button" className="cm-btn" onClick={() => void startClip(selected)}>Phát lại clip</button>}
     <button type="button" className="cm-btn" onClick={() => stopSource()}>Dừng nguồn demo</button>
-    <p className="cm-note">Video bên trên là nguồn phát. Khung AI bên dưới là chính ảnh JPEG backend đã phân tích; bounding box chỉ vẽ trên đúng frame đó.</p>
-  </section>
+  </div>
 }
 
 function Evidence() {
@@ -350,7 +343,7 @@ function Evidence() {
         ? <label className="cm-consent"><input type="checkbox" checked={source.consent} onChange={(e) => setSource({ consent: e.target.checked })} />Tôi đồng ý gửi mỗi giây một khung hình từ camera này tới máy chủ demo (máy này) để chạy model. Không lưu sau khi phân tích.</label>
         : <p className="cm-note">Camera của bạn chỉ hiển thị trên máy này và không được gửi đi. Ảnh tải lên và clip mẫu được gửi tới máy chủ demo để chạy model: đừng dùng ảnh có mặt người thật.</p>}
       {source.error && !failed && <p role="alert" className="cm-error">{source.error}</p>}
-      {source.kind === 'clip' && <ManagedSampleVideo />}
+      {source.kind === 'clip' && <ClipControls />}
 
       <figure className="cm-viewer" ref={stage} data-testid="cm-viewer" data-source={src.badge}>
         <div className="cm-stage">
@@ -378,7 +371,7 @@ function Evidence() {
               {src.analysis === 'running' && belongs && <span className="cm-chip ok">Đã phân tích</span>}
               {(src.badge === 'DEMO' || src.badge === 'UPLOAD') && frame && (frame.masked
                 ? <span className="cm-chip ok" data-testid="cm-masked">Đã che mặt ({frame.maskedRegions ?? 0} vùng) · chưa đảm bảo che hết</span>
-                : <span className="cm-chip" data-testid="cm-unmasked">CHƯA che mặt (model không có bộ che)</span>)}
+                : <span className="cm-chip ok" data-testid="cm-unmasked">Đã làm mờ toàn khung (máy chủ chưa có bộ che mặt)</span>)}
             </div>)}
           {src.badge !== 'NONE' && (
             <div className="cm-overlay-bottom">

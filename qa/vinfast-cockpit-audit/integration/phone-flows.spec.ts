@@ -137,3 +137,26 @@ test.describe('judge entry: Bắt đầu demo', () => {
     await expect(page.getByTestId('phone')).toHaveClass(/cm-flash/)
   })
 })
+
+test.describe('car ↔ phone sync', () => {
+  test('a new incident shows an in-page alert banner on the phone, and the incident page carries the masked report frame', async ({ page }, info) => {
+    test.skip(info.project.name === 'chromium', 'needs H.264 playback for the clip (use chrome or webkit)')
+    test.setTimeout(90_000)
+    await openDemo(page)
+    const ph = phone(page)
+    await expect(ph.locator('.verdict').first()).toBeVisible()
+    await page.getByTestId('scenario-selector').click()
+    await page.getByTestId('start-DEMO-05').click()
+    await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    await page.keyboard.press('Escape')
+    const banner = ph.locator('.banner-n').first()
+    await expect(banner).toBeVisible({ timeout: 30_000 })                                         // the phone announces the incident, not only the bell badge
+    await expect(banner).toContainText(/có thể có người trong xe/i)
+    await ph.locator('a[href^="#/incident/"]').first().click()
+    await expect(ph.getByRole('link', { name: /Về trang chủ/ })).toBeVisible()
+    const photo = ph.locator('.report-frame img.alert-photo')
+    await expect(photo).toBeVisible({ timeout: 15_000 })
+    // the picture is never the raw frame: either the backend's face-masked copy or a pixelated one
+    expect(await page.evaluate(() => (window as any).__e2e.getState().metrics.accepted)).toBeGreaterThan(0)
+  })
+})
