@@ -41,11 +41,26 @@ test.describe('vehicle controls (simulated store)', () => {
     expect(await vehicle(page, 'climate.seatHeatDriver')).toBe(3)
   })
 
-  test('car wash mode cannot start with a door open', async ({ page }) => {
+  test('car wash mode closes an open door (simulated) and then turns on', async ({ page }) => {
     await page.evaluate(() => (window as any).__vehicle.getState().toggleDoor('frontLeft'))
     await page.getByTestId('vf-modewidget').click()
     await page.locator('[data-testid=vf-carmode] [data-mode=wash][role=radio]').click()
-    await expect(page.locator('[data-testid=vf-carmode] [role=switch][aria-label="Chế độ rửa xe"]')).toBeDisabled()
+    const wash = page.locator('[data-testid=vf-carmode] [role=switch][aria-label="Chế độ rửa xe"]')
+    await expect(wash).toBeEnabled()
+    await wash.click()
+    await expect(wash).toHaveAttribute('aria-checked', 'true')
+    expect(await page.evaluate(() => Object.values((window as any).__vehicle.getState().doors).some(Boolean))).toBe(false)
+  })
+
+  test('all four vehicle modes can be switched on and off', async ({ page }) => {
+    await page.getByTestId('vf-modewidget').click()
+    for (const [mode, label] of [['camping', 'Chế độ cắm trại'], ['baby', 'Chế độ bé'], ['pet', 'Chế độ thú cưng'], ['wash', 'Chế độ rửa xe']]) {
+      await page.locator(`[data-testid=vf-carmode] [data-mode=${mode}][role=radio]`).click()
+      const sw = page.locator(`[data-testid=vf-carmode] [role=switch][aria-label="${label}"]`)
+      await expect(sw).toBeEnabled()
+      await sw.click(); await expect(sw).toHaveAttribute('aria-checked', 'true')
+      await sw.click(); await expect(sw).toHaveAttribute('aria-checked', 'false')
+    }
   })
 
   test('map search, route and end route', async ({ page }) => {

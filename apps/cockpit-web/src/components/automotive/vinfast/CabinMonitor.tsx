@@ -31,7 +31,8 @@ const TABS: { id: Tab; label: string; test: string }[] = [
   { id: 'how', label: 'Cách hoạt động', test: 'vf-tab-intro' },
   { id: 'evidence', label: 'Bằng chứng', test: 'vf-tab-evidence' },
 ]
-const DET_VI: Record<string, string> = { person: 'người', dog: 'chó', cat: 'mèo', backpack: 'ba lô', 'cell phone': 'điện thoại' }
+const DET_VI: Record<string, string> = { person: 'người', dog: 'thú cưng', cat: 'thú cưng', backpack: 'ba lô', 'cell phone': 'điện thoại' }
+const AGE_VI: Record<string, string> = { child: 'có thể là trẻ em', infant: 'có thể là em bé', adult: 'có thể là người lớn' }   // age is secondary evidence from a small model: never state it as fact
 const CAMERA_VI: Record<string, string> = { OK: 'Hoạt động', BLOCKED: 'Bị che', DISCONNECTED: 'Mất kết nối', NO_FEED: 'Không có hình', ERROR: 'Lỗi' }
 const fmt = (n: number | null | undefined) => (n == null ? '—' : String(n))
 const stamp = (iso?: string | null) => {
@@ -307,6 +308,9 @@ function Evidence() {
   const boxFrame = (src.badge === 'DEMO' || src.badge === 'UPLOAD') && frame && obs && obs.frame_id === frame.frameId ? frame : null
   const boxes = boxFrame ? dets.map((d) => ({ d, box: normalizeBox(d.bbox, boxFrame.width, boxFrame.height) })).filter((x) => x.box) : []
 
+  // DEMO-08: the detectors cannot see the backpack (dark, behind the seat). This box is a scripted annotation of the footage, NOT a model output; it is drawn only while the model reports no backpack itself.
+  const scripted = source.scenarioId === 'DEMO-08' && src.badge === 'DEMO' && frame && frame.kind === 'CLIP_FRAME' && !(obs?.vision?.items ?? []).some((i) => i.class === 'backpack') ? { x: 655 / 1280, y: 440 / 720, w: 110 / 1280, h: 230 / 720 } : null
+
   let analysisText = '—'
   if (src.analysis === 'preview-only') analysisText = 'AI chưa khả dụng cho camera trực tiếp trên bản này: hình chỉ hiển thị trên máy bạn, không gửi đi. Không có kết quả giả.'
   else if (src.analysis === 'running') analysisText = obs?.timings_ms?.infer_detector != null ? `Đã chạy model · ${obs.timings_ms.infer_detector} ms (máy chủ demo)` : 'Đã chạy model'
@@ -359,7 +363,8 @@ function Evidence() {
               <div className="cm-fit" style={{ ['--ar' as string]: frame.width / frame.height }}>
                 <img className="cm-media-img" src={frame.url} alt={`Khung hình đã phân tích từ ${src.badge === 'DEMO' ? 'clip mẫu' : 'ảnh tải lên'}`} data-testid="cm-frame" />
                 {boxes.map(({ d, box }, i) => box && (
-                  <span key={i} className="cm-box" style={{ left: `${box.x * 100}%`, top: `${box.y * 100}%`, width: `${box.w * 100}%`, height: `${box.h * 100}%` }} data-testid="cm-box"><i>{DET_VI[d.class] ?? d.class} {(d.confidence * 100).toFixed(0)}%</i></span>))}
+                  <span key={i} className="cm-box" style={{ left: `${box.x * 100}%`, top: `${box.y * 100}%`, width: `${box.w * 100}%`, height: `${box.h * 100}%` }} data-testid="cm-box" role="img" aria-label={`${DET_VI[d.class] ?? d.class} ${(d.confidence * 100).toFixed(0)}%`} />))}
+                {scripted && <span className="cm-box cm-box-script" style={{ left: `${scripted.x * 100}%`, top: `${scripted.y * 100}%`, width: `${scripted.w * 100}%`, height: `${scripted.h * 100}%` }} data-testid="cm-box-script" role="img" aria-label="ba lô (chú thích kịch bản)" />}
               </div>)
             : <StageMessage busy title="Đang chờ khung hình đầu tiên…" hint="Mỗi giây một khung được trích và chạy model." />)}
           {src.badge === 'SIM' && <SimBlockedPreview />}
@@ -369,9 +374,10 @@ function Evidence() {
             <div className="cm-overlay-top"><Badge kind={`feed-${src.badge}`}>{BADGE_TEXT[src.badge]}</Badge>
               {src.analysis === 'preview-only' && <span className="cm-chip">AI chưa khả dụng · hình không rời thiết bị</span>}
               {src.analysis === 'running' && belongs && <span className="cm-chip ok">Đã phân tích</span>}
-              {(src.badge === 'DEMO' || src.badge === 'UPLOAD') && frame && (frame.masked
-                ? <span className="cm-chip ok" data-testid="cm-masked">Đã che mặt ({frame.maskedRegions ?? 0} vùng) · chưa đảm bảo che hết</span>
-                : <span className="cm-chip ok" data-testid="cm-unmasked">Đã làm mờ toàn khung (máy chủ chưa có bộ che mặt)</span>)}
+              {scripted && <span className="cm-chip" data-testid="cm-script-chip">Hộp ba lô vàng: chú thích kịch bản</span>}
+              {(src.badge === 'DEMO' || src.badge === 'UPLOAD') && frame && <span className="cm-chip ok" data-testid="cm-privacy" data-method={frame.maskMethod ?? 'FULL'}>
+                {frame.maskMethod === 'YUNET' ? `Đã che mặt bằng YuNet (${frame.maskedRegions ?? 0} vùng)` : frame.maskMethod === 'HEAD' ? 'Đã che vùng đầu theo khung phát hiện' : frame.maskMethod === 'NONE' ? 'Clip mẫu công khai: không phát hiện mặt nên không che' : 'Làm mờ toàn khung (không có vùng để che)'} · chưa đảm bảo che hết
+              </span>}
             </div>)}
           {src.badge !== 'NONE' && (
             <div className="cm-overlay-bottom">
@@ -394,7 +400,7 @@ function Evidence() {
           <dt>Thời điểm trong video</dt><dd>{belongs && obs?.media_time_s != null ? `${obs.media_time_s.toFixed(3)}s` : '—'}</dd>
           <dt>Phát hiện</dt>
           <dd data-testid="cm-detections">{belongs && connection === 'ok' && counts.status === 'CURRENT'
-            ? dets.length ? dets.map((d) => `${DET_VI[d.class] ?? d.class} ${(d.confidence * 100).toFixed(0)}%${d.age_group ? ` (${d.age_group})` : ''}`).join(', ') : 'Không phát hiện người/thú trong khung này (chưa chứng minh xe trống)'
+            ? dets.length ? dets.map((d) => `${DET_VI[d.class] ?? d.class} ${(d.confidence * 100).toFixed(0)}%${d.age_group && AGE_VI[d.age_group] ? ` (${AGE_VI[d.age_group]})` : ''}`).join(', ') : 'Không phát hiện người/thú trong khung này (chưa chứng minh xe trống)'
             : 'Chưa có kết quả phân tích cho nguồn này'}</dd>
           <dt>Ngoài cabin</dt><dd data-testid="cm-exterior">{belongs && obs?.vision?.exterior_count ? `${obs.vision.exterior_count} người ở ngoài cabin theo hiệu chuẩn demo: không tính là người trong xe` : '—'}</dd>
           <dt>Vùng phát hiện</dt><dd>{boxes.length ? `Đã vẽ ${boxes.length} khung từ tọa độ backend` : belongs && dets.length ? 'Backend chưa trả tọa độ vùng nên chưa vẽ khung' : '—'}</dd>

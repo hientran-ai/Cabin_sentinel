@@ -6,7 +6,6 @@ import { useE2e } from '../../../e2e/store'
 import { BRANDS, formatSpeed, formatTemp, rangeKm } from '../../../lib/vehicleSimulation'
 import { AppImg } from './VinfastHomeWidgets'
 import { UserRound } from 'lucide-react'
-import { api } from '../../../e2e/api'
 import { GTent } from './glyphs'
 import { useCarUi } from './carUi'
 import { useVinfast } from './useVinfast'
@@ -105,11 +104,12 @@ export function BlueBottom() {
 /** Function widget next to the V mark. Shows the vehicle mode that is running and is its own button: with camping on it stops camping (backend Cabin Care,
  *  simulated command); otherwise it opens the Vehicle Modes screen. It never resolves or hides a cabin incident. */
 function ModeWidget() {
-  const care = useE2e((s) => s.state?.care), run = useE2e((s) => s.care), ui = useUi(), petOn = useCarUi((s) => s.petOn), washOn = useCarUi((s) => s.washOn)
+  const care = useE2e((s) => s.state?.care), ui = useUi(), petOn = useCarUi((s) => s.petOn), washOn = useCarUi((s) => s.washOn), campSim = useCarUi((s) => s.campSim), babySim = useCarUi((s) => s.babySim)
   const cared = care?.status === 'ACTIVE' ? care.profile : null
   const careName = cared === 'ADULT' ? 'cắm trại' : cared === 'CHILD' ? 'bé' : cared === 'PET' ? 'thú cưng' : null
-  const label = careName ? `Tắt chế độ ${careName}` : petOn ? 'Tắt chế độ thú cưng' : washOn ? 'Tắt chế độ rửa xe' : 'Chế độ xe'
-  const act = () => { if (careName) void run((s) => api.careStop(s, 'COCKPIT'), `Đã tắt chế độ ${careName}.`); else if (petOn) useCarUi.getState().set({ petOn: false }); else if (washOn) useCarUi.getState().set({ washOn: false }); else ui.setOverlay('carmode') }
-  const on = !!careName || petOn || washOn
+  const active = careName ?? (campSim ? 'cắm trại' : babySim ? 'bé' : petOn ? 'thú cưng' : washOn ? 'rửa xe' : null)
+  const label = active ? `Chế độ: ${active}` : 'Chế độ xe'
+  const act = () => ui.setOverlay('carmode')   // always opens the Vehicle Modes screen; switching a mode off happens there (it used to switch the running mode off from this button)
+  const on = !!careName || petOn || washOn || campSim || babySim
   return <button type="button" className={`vf-modewidget vf-press ${on ? 'on' : ''}`} onClick={act} aria-label={`${label} (mô phỏng)`} data-testid="vf-modewidget"><GTent size={30} /><span>{label}</span></button>
 }

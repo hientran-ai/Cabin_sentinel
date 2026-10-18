@@ -241,6 +241,43 @@ def _detections(frame: dict, vision: VisionPayload) -> list[dict]:
     ]
 
 
+def _point_in_polygon(x: float, y: float, poly: list[list[float]]) -> bool:
+    inside = False
+    for (x1, y1), (x2, y2) in zip(poly, poly[1:] + poly[:1], strict=True):
+        if (y1 > y) != (y2 > y) and x < (x2 - x1) * (y - y1) / (y2 - y1) + x1:
+            inside = not inside
+    return inside
+
+
+def _demo_exterior_split(frame: dict, data: bytes) -> dict:
+    """Demo calibration (DEMO-01/02 camera): a person whose box centre lies inside a window region is outside the cabin, not an occupant."""
+    import json
+    from io import BytesIO
+    from pathlib import Path
+
+    from PIL import Image
+
+    detections = frame.get("detections") or []
+    if not detections:
+        return frame
+    try:
+        geometry = json.loads((Path(__file__).resolve().parent.parent / "vision" / "geometry" / "demo-wide-01.json").read_text())
+        with Image.open(BytesIO(data)) as im:
+            width, height = im.size
+    except (OSError, ValueError):
+        return frame
+    inside, outside = [], []
+    for detection in detections:
+        box = detection.get("bbox")
+        centred = isinstance(box, (list, tuple)) and len(box) == 4
+        cx, cy = ((box[0] + box[2]) / 2 / width, (box[1] + box[3]) / 2 / height) if centred else (0.5, 0.5)
+        in_window = detection.get("class") == "person" and any(_point_in_polygon(cx, cy, w) for w in geometry["windows"])
+        (outside if in_window else inside).append(detection)
+    if not outside:
+        return frame
+    return {**frame, "detections": inside, "exterior_count": int(frame.get("exterior_count") or 0) + len(outside)}
+
+
 @protected.post("/sessions/{session_id}/observations")
 async def post_observation(
     session_id: str, request: Request,
@@ -273,7 +310,10 @@ async def post_observation(
             camera = "DEMO-WIDE-01" if source_label.startswith(("DEMO-01", "DEMO-02")) else None
             frame = await run_in_threadpool(provider.infer, data, f"{vehicle_id}:{run}", camera)
         else:
-            frame = await run_in_threadpool(provider.infer, data)
+            clip = source == "CLIP_FRAME" and getattr(provider, "supports_clip_sample", False)
+            frame = await (run_in_threadpool(provider.infer, data, True) if clip else run_in_threadpool(provider.infer, data))
+            if source_label.startswith(("DEMO-01", "DEMO-02")):
+                frame = _demo_exterior_split(frame, data)   # same demo calibration as DEMO-WIDE-01, for providers without geometry support
     except Exception as exc:
         logger.exception("Vision inference failed")
         raise HTTPException(status_code=503, detail="Vision inference unavailable") from exc

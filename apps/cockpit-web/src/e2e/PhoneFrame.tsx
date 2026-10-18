@@ -23,8 +23,8 @@ function installBridge() {
     resolve: (seenRevision?: number) => useE2e.getState().resolve('PHONE', seenRevision),
     refresh: () => pollOnce(),
     delivered: (id: number) => useE2e.getState().confirmDelivered(id),
-    // the face-masked (or fully pixelated) frame the backend analysed last; the phone shows it as the incident's report picture
-    latestFrame: () => { const t = getThumbInfo(); return t && (t.kind === 'CLIP_FRAME' || t.kind === 'UPLOAD') ? { url: t.url, frameId: t.frameId, at: t.at, masked: t.masked } : null },
+    // the same processed YuNet/head-masked (or fully pixelated) frame the backend analysed last; the phone shows it as the incident's report picture
+    latestFrame: () => { const t = getThumbInfo(); return t && (t.kind === 'CLIP_FRAME' || t.kind === 'UPLOAD') ? { url: t.url, frameId: t.frameId, at: t.at, masked: t.masked, maskMethod: t.maskMethod } : null },
     petCareAvailable: () => petCareAvailable(useE2e.getState().state?.care),
     startPetCare,
     startCareProfile,

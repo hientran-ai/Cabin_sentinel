@@ -62,6 +62,7 @@ def main() -> None:
     shutil.copy2(LOGIC / "demo-history.js", OUT / "demo-history.js")                         # simulated sample history for judges
     shutil.copy2(HERE / "extra" / "login.js", OUT / "js" / "views" / "login.js")             # iOS-style demo sign-in (replaces Noir's OTP screen)
     shutil.copy2(HERE / "extra" / "apple.css", OUT / "apple.css")                           # Apple look, loaded after styles.css
+    shutil.copy2(HERE / "extra" / "livecam.js", OUT / "js" / "views" / "livecam.js")        # live masked frame card on the owner's home
     shutil.copy2(HERE / "extra" / "modes.js", OUT / "js" / "views" / "modes.js")            # "Cá nhân hoá" tab (profiles, named modes, schedule)
     shutil.copy2(LOGIC / "modesLogic.js", OUT / "js" / "views" / "modesLogic.js")
     patch("js/views/incident.js", "Người được phát hiện đã được làm mờ ngay trên thiết bị. Ảnh tự xóa sau 24 giờ.", "Khung hình mô phỏng do xe vừa phân tích, đã che mặt hoặc làm mờ toàn khung. Chỉ giữ trong bộ nhớ trình duyệt, mất khi đóng trang.")
@@ -93,6 +94,8 @@ export async function render(ctx) {""")
     # 4. home: no pause, no camera view, no exit-check on this backend
     patch("js/views/home.js", r'\n      \(s\.role === "owner" \|\| s\.role === "confirm"\) && h\("button", \{ class: "btn", on: \{ click: \(\) => camera\(s\) \} \}[^\n]*', "", regex=True)
     patch("js/views/home.js", r': \(s\.role === "owner" \|\| s\.role === "confirm"\) && !inc && h\("button", \{ class: "btn", on: \{ click: \(\) => pauseSheet\(s, refresh\) \} \}[^\n]*\)\),', ": null),", regex=True)
+    patch("js/views/home.js", 'import { addVehicle, setupCard } from "./setup.js";\n', 'import { addVehicle, setupCard } from "./setup.js";\nimport { liveCard } from "./livecam.js";\n')
+    patch("js/views/home.js", "  if (s.device) out.push(", "  out.push(liveCard());\n  if (s.device) out.push(")
     patch("js/views/home.js", "const setup = setupCard(s, ctx);", "const setup = null;")   # onboarding: add vehicle, pair device, enable push
     patch("js/views/home.js", 'import { loadMap } from "./map.js";\n', "const loadMap = () => {};\n")
     # Pet chip next to the people/items chips: owner declares PET and starts the pet comfort plan through the parent page's bridge

@@ -173,3 +173,6 @@ html.cm-lock, html.cm-lock body { overflow: hidden; }
 /* Inside the car screen: the main frame of the 1920 x 1080 artboard (same box as the Cabin Care screen). Text is scaled 1.25x so it reads like the rest of the HMI. */
 .vf-shell.cm-layer.cm-incar { position: absolute; inset: auto; left: 608px; top: 88px; width: 1288px; height: 856px; z-index: 40; padding: 0; align-items: flex-start; justify-content: flex-start; background: none; overflow: hidden; border-radius: 20px; }
 .vf-shell.cm-layer.cm-incar .cm-dialog { width: 80%; height: 80%; transform: scale(1.25); transform-origin: 0 0; border-radius: 20px; border: 1px solid var(--cm-line); box-shadow: none; }
+
+.cm-box-script { border-style: dashed; border-color: #F5B93C; }
+.cm-box-script i { background: #F5B93C; color: #2b1d00; }

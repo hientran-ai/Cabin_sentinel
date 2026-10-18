@@ -21,5 +21,5 @@ export function washBlockers(v: { windows: Record<string, string>; doors: Record
 /** UI-only state of the car shell (not persisted): hazard lights, selected car mode, simulated pet / wash switches. */
 export type PetKind = 'dog' | 'cat'
 /** adultMusic / childMusic are the comfort-audio sources sent to Cabin Care; petName and petKind only dress the simulated parked-car screen. */
-interface CarUi { page: 0 | 1; hazard: boolean; selected: CarMode; petOn: boolean; washOn: boolean; petName: string; petKind: PetKind; adultMusic: string; childMusic: string; set: (p: Partial<Omit<CarUi, 'set'>>) => void }
-export const useCarUi = create<CarUi>((set) => ({ page: 0, hazard: false, selected: 'camping', petOn: false, washOn: false, petName: 'Bông', petKind: 'dog', adultMusic: 'off', childMusic: 'off', set: (p) => set(p) }))
+interface CarUi { page: 0 | 1; hazard: boolean; selected: CarMode; petOn: boolean; washOn: boolean; campSim: boolean; babySim: boolean; petName: string; petKind: PetKind; adultMusic: string; childMusic: string; set: (p: Partial<Omit<CarUi, 'set'>>) => void }
+export const useCarUi = create<CarUi>((set) => ({ page: 0, hazard: false, selected: 'camping', petOn: false, washOn: false, campSim: false, babySim: false, petName: 'Bông', petKind: 'dog', adultMusic: 'off', childMusic: 'off', set: (p) => set(p) }))

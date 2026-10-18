@@ -1,6 +1,7 @@
 // Frame adapter: turns a playing clip, a still image or the device camera into JPEG observations and sends each
 // one to the backend for real inference. Playing a clip on screen is not inference; only the frames posted here are.
 import { api, ApiError } from './api'
+import { headMaskRegions } from './headMask'
 import { DEVICE_UPLOAD_ENABLED } from './config'
 import { attachStream, startDeviceCamera, stopDeviceCamera, useDeviceCamera } from './deviceCamera'
 import { useE2e } from './store'
@@ -31,8 +32,8 @@ let faultCounter = 0
 let sourceEpoch = 0
 
 /** The last frame this browser SENT and got an answer for: the exact picture the model analysed, with its geometry and source. */
-/** masked: the picture is the backend's face-masked copy (YuNet + person fallback). false = the raw local frame (model without a masker). */
-export interface ThumbInfo { url: string; kind: 'UPLOAD' | 'CLIP_FRAME' | 'DEVICE_CAMERA'; frameId: string; width: number; height: number; at: number; mediaTimeS?: number; masked: boolean; maskedRegions?: number; obscured?: boolean }
+/** Every URL is processed: YuNet, head boxes, or full-frame obscuring. Raw source pixels are never published. */
+export interface ThumbInfo { url: string; kind: 'UPLOAD' | 'CLIP_FRAME' | 'DEVICE_CAMERA'; frameId: string; width: number; height: number; at: number; mediaTimeS?: number; masked: boolean; maskedRegions?: number; obscured?: boolean; maskMethod?: 'YUNET' | 'HEAD' | 'FULL' | 'NONE' }
 const thumbListeners = new Set<(url: string | null) => void>()
 const infoListeners = new Set<(i: ThumbInfo | null) => void>()
 let thumbInfo: ThumbInfo | null = null
@@ -106,12 +107,35 @@ export async function obscure(blob: Blob): Promise<Blob | null> {
     const small = document.createElement('canvas'); small.width = Math.max(1, Math.round(bmp.width / 26)); small.height = Math.max(1, Math.round(bmp.height / 26))
     small.getContext('2d')?.drawImage(bmp, 0, 0, small.width, small.height)
     const big = document.createElement('canvas'); big.width = bmp.width; big.height = bmp.height
-    const ctx = big.getContext('2d'); if (!ctx) return null
+    const ctx = big.getContext('2d'); if (!ctx) { bmp.close(); return null }
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'low'
     ctx.drawImage(small, 0, 0, big.width, big.height)
     bmp.close()
     return await new Promise((r) => big.toBlob(r, 'image/jpeg', 0.7))
   } catch { return null }
+}
+
+/** Local privacy fallback: pixelated head ellipses on a copy, or obscure the whole frame on incomplete evidence. */
+export async function maskDetectedHeads(blob: Blob, detections: Parameters<typeof headMaskRegions>[0]): Promise<{ blob: Blob | null; regions: number; method: 'HEAD' | 'FULL' }> {
+  let bmp: ImageBitmap | null = null
+  try {
+    bmp = await createImageBitmap(blob)
+    const regions = headMaskRegions(detections, bmp.width, bmp.height)
+    if (!regions) return { blob: await obscure(blob), regions: 0, method: 'FULL' }
+    const canvas = document.createElement('canvas'); canvas.width = bmp.width; canvas.height = bmp.height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return { blob: null, regions: 0, method: 'FULL' }
+    ctx.drawImage(bmp, 0, 0)
+    for (const [x1, y1, x2, y2] of regions) {
+      const w = x2 - x1, h = y2 - y1, cell = Math.max(6, Math.round(w / 7))
+      const small = document.createElement('canvas'); small.width = Math.max(1, Math.floor(w / cell)); small.height = Math.max(1, Math.floor(h / cell))
+      small.getContext('2d')?.drawImage(bmp, x1, y1, w, h, 0, 0, small.width, small.height)
+      ctx.save(); ctx.beginPath(); ctx.ellipse((x1 + x2) / 2, (y1 + y2) / 2, w / 2, h / 2, 0, 0, Math.PI * 2); ctx.clip()
+      ctx.imageSmoothingEnabled = false; ctx.drawImage(small, 0, 0, small.width, small.height, x1, y1, w, h); ctx.restore()
+    }
+    return { blob: await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', .85)), regions: regions.length, method: 'HEAD' }
+  } catch { return { blob: await obscure(blob), regions: 0, method: 'FULL' } }
+  finally { bmp?.close() }
 }
 
 async function send(blob: Blob, capturedAtPerf: number, kind: 'UPLOAD' | 'CLIP_FRAME' | 'DEVICE_CAMERA', label: string, encodeMs: number, size: { width: number; height: number; mediaTimeS?: number }) {
@@ -128,13 +152,23 @@ async function send(blob: Blob, capturedAtPerf: number, kind: 'UPLOAD' | 'CLIP_F
     const rtt = performance.now() - sentAt
     if (mine !== sourceEpoch) return   // the source changed while this frame was in flight: its answer belongs to the old source
     if (reply.accepted) {
-      // show the face-masked copy the backend made of this exact frame; only without a masker does the raw local frame stay on screen
-      let shown: Blob | null = null, masked = false
+      let shown: Blob | null = null, maskMethod: 'YUNET' | 'HEAD' | 'FULL' | 'NONE' = 'FULL', maskedRegions = 0
       const pv = reply.preview
-      if (pv?.status === 'PROCESSED' && pv.data_url) { try { shown = await (await fetch(pv.data_url)).blob(); masked = true } catch { shown = null } }
-      if (!shown) shown = await obscure(blob)   // no masker (or it failed): the raw frame is never displayed, only a pixelated copy
+      // A completed pass with zero masks is not evidence that no face exists.
+      if (pv?.status === 'PROCESSED' && /^data:image\/jpeg;base64,/.test(pv.data_url ?? '') && ((pv.masked_regions ?? 0) > 0 || (kind === 'CLIP_FRAME' && pv.method === 'CLIP_SAMPLE_PASSTHROUGH'))) {
+        try {
+          shown = await (await fetch(pv.data_url!)).blob()
+          maskMethod = pv.method === 'CLIP_SAMPLE_PASSTHROUGH' ? 'NONE' : pv.method === 'FULL_FRAME_FALLBACK' ? 'FULL' : pv.method === 'YUNET_HEAD_FALLBACK' || (pv.fallback_regions ?? 0) > 0 ? 'HEAD' : 'YUNET'
+          maskedRegions = pv.masked_regions ?? 0
+        } catch { shown = null }
+      }
+      if (!shown) {
+        const fallback = await maskDetectedHeads(blob, reply.vision.detections)
+        shown = fallback.blob; maskMethod = fallback.method; maskedRegions = fallback.regions
+      }
       if (mine !== sourceEpoch) return
-      if (shown) setThumb(shown, { kind, frameId: id, width: size.width, height: size.height, at: Date.now(), mediaTimeS: size.mediaTimeS, masked, maskedRegions: pv?.masked_regions, obscured: !masked })
+      // Clear any earlier frame on processing failure rather than retaining an unqualified image.
+      setThumb(shown, { kind, frameId: id, width: size.width, height: size.height, at: Date.now(), mediaTimeS: size.mediaTimeS, masked: maskMethod !== 'FULL' && maskMethod !== 'NONE', maskedRegions, obscured: maskMethod === 'FULL', maskMethod })
     }
     useE2e.getState().patchMetrics((m) => ({
       accepted: m.accepted + (reply.accepted ? 1 : 0), ignored: m.ignored + (reply.accepted ? 0 : 1), replayed: m.replayed + (reply.replayed ? 1 : 0),

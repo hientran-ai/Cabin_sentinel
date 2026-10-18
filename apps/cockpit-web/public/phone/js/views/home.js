@@ -3,6 +3,7 @@ import { h, icon, carPic, fmt, toast, sheet, confirmDialog, busy } from "../ui.j
 const loadMap = () => {};
 import { addVehicle, setupCard } from "./setup.js";
 import { scheduleBanner } from "./modes.js";
+import { liveCard } from "./livecam.js";
 
 const LEVEL = { critical: "Nghiêm trọng", warning: "Cảnh báo", notice: "Lưu ý", paused: "Tạm dừng", ok: "Chưa thấy nguy cơ", safe: "Chưa thấy nguy cơ", unknown: "Chưa rõ" };
 
@@ -117,6 +118,7 @@ export async function render(ctx) {
     paused && h("div", { class: "banner" }, s.paused_indefinite ? "Giám sát đang tắt cho đến khi bạn bật lại. Hệ thống không cảnh báo trong lúc này." : `Đang tạm dừng giám sát tới ${fmt.clock(s.paused_until)}. Sẽ tự bật lại.`),
     S.cfg && S.cfg.climate && s.climate && climateRow(s, refresh)));
   if (mapBox) { out.push(h("section", { class: "card gap" }, h("h3", {}, "Vị trí xe"), mapBox, h("p", { class: "small muted", style: "margin:0" }, `${s.location || "Vị trí"} · ${fmt.ago(s.coords.at)} · Bản đồ © OpenStreetMap`))); setTimeout(() => loadMap("home-map", s), 0); }
+  out.push(liveCard());
   if (s.device) out.push(h("p", { class: "small muted center" }, `Thiết bị: ${s.device.label} (${s.device.platform})${s.device.battery != null ? ` · pin ${s.device.battery}%` : ""}`));
   return h("div", { class: "gap" }, out);
 }
