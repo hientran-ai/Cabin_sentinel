@@ -31,7 +31,7 @@ const TABS: { id: Tab; label: string; test: string }[] = [
   { id: 'how', label: 'Cách hoạt động', test: 'vf-tab-intro' },
   { id: 'evidence', label: 'Bằng chứng', test: 'vf-tab-evidence' },
 ]
-const DET_VI: Record<string, string> = { person: 'người', dog: 'chó', cat: 'mèo', backpack: 'ba lô', 'cell phone': 'điện thoại' }
+const DET_VI: Record<string, string> = { person: 'người', dog: 'thú cưng', cat: 'thú cưng', backpack: 'ba lô', 'cell phone': 'điện thoại' }
 const CAMERA_VI: Record<string, string> = { OK: 'Hoạt động', BLOCKED: 'Bị che', DISCONNECTED: 'Mất kết nối', NO_FEED: 'Không có hình', ERROR: 'Lỗi' }
 const fmt = (n: number | null | undefined) => (n == null ? '—' : String(n))
 const stamp = (iso?: string | null) => {

@@ -40,7 +40,7 @@ export async function runVideoScenario(id: string): Promise<void> {
     isLocked: f.locked === true, gear: driving ? 'D' : 'P', parkingBrake: !driving, speed: driving ? 30 : 0, speedOverride: driving ? 30 : 0,
     autoDrive: false, climate: { ...v.climate, enabled: driving } })
   useE2e.getState().setSim({ engineOn: f.ignition_on === true, driverPresent: driving || id === 'DEMO-06',
-    radar: f.radar_presence === true, telemetryEnabled: f.radar_presence !== null || id === 'DEMO-04', tripEnded: f.trip_ended === true, hvacFault: false, mode: 'NONE' })   // DEMO-04 (low light) is judged by vision with a simulated radar-negative sensor; DEMO-01 stays sensor-less: without a cabin geometry an outside person would otherwise raise a false cabin alarm
+    radar: f.radar_presence === true, telemetryEnabled: f.radar_presence !== null || id === 'DEMO-01' || id === 'DEMO-04', tripEnded: f.trip_ended === true, hvacFault: false, mode: 'NONE' })   // DEMO-01/04 (radar unknown in the manifest) are judged by vision with a simulated radar-negative sensor; the outside person of DEMO-01 is split off by the window calibration in the backend
   await publishSensor()
   if (epoch !== videoScenarioEpoch) return
   startTelemetry()

@@ -454,3 +454,18 @@ async def test_observation_preview_is_one_shot_not_persisted_or_replayed(env, mo
         assert 'preview' not in service.observation_get(vid, 'preview-once')
         assert 'data:image' not in str(service.get_state(vid))
         assert 'data:image' not in str(service.events(vid, limit=500))
+
+
+def test_demo_exterior_split_moves_window_person_out_of_the_cabin():
+    from io import BytesIO
+
+    from PIL import Image
+
+    from src.cabinsentinel.e2e_api import _demo_exterior_split
+    buf = BytesIO(); Image.new("RGB", (640, 360)).save(buf, "JPEG")
+    window_person = {"class": "person", "confidence": .7, "bbox": [487, 106, 530, 197]}   # centre (0.79, 0.42): right window
+    seat_person = {"class": "person", "confidence": .8, "bbox": [250, 150, 330, 300]}
+    out = _demo_exterior_split({"detections": [window_person, seat_person]}, buf.getvalue())
+    assert out["detections"] == [seat_person] and out["exterior_count"] == 1
+    kept = _demo_exterior_split({"detections": [seat_person]}, buf.getvalue())
+    assert kept["detections"] == [seat_person] and "exterior_count" not in kept
