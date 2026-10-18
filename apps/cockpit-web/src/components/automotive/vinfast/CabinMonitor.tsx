@@ -369,9 +369,9 @@ function Evidence() {
             <div className="cm-overlay-top"><Badge kind={`feed-${src.badge}`}>{BADGE_TEXT[src.badge]}</Badge>
               {src.analysis === 'preview-only' && <span className="cm-chip">AI chưa khả dụng · hình không rời thiết bị</span>}
               {src.analysis === 'running' && belongs && <span className="cm-chip ok">Đã phân tích</span>}
-              {(src.badge === 'DEMO' || src.badge === 'UPLOAD') && frame && (frame.masked
-                ? <span className="cm-chip ok" data-testid="cm-masked">Đã che mặt ({frame.maskedRegions ?? 0} vùng) · chưa đảm bảo che hết</span>
-                : <span className="cm-chip ok" data-testid="cm-unmasked">Đã làm mờ toàn khung (máy chủ chưa có bộ che mặt)</span>)}
+              {(src.badge === 'DEMO' || src.badge === 'UPLOAD') && frame && <span className="cm-chip ok" data-testid="cm-privacy" data-method={frame.maskMethod ?? 'FULL'}>
+                {frame.maskMethod === 'YUNET' ? `Đã che mặt bằng YuNet (${frame.maskedRegions ?? 0} vùng)` : frame.maskMethod === 'HEAD' ? 'Đã che vùng đầu theo khung phát hiện' : 'Làm mờ toàn khung (không có vùng để che)'} · chưa đảm bảo che hết
+              </span>}
             </div>)}
           {src.badge !== 'NONE' && (
             <div className="cm-overlay-bottom">

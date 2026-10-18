@@ -152,11 +152,24 @@ test.describe('car ↔ phone sync', () => {
     const banner = ph.locator('.banner-n').first()
     await expect(banner).toBeVisible({ timeout: 30_000 })                                         // the phone announces the incident, not only the bell badge
     await expect(banner).toContainText(/có thể có người trong xe/i)
+    // The radar alert can precede the first decoded/inferred frame. Wait for actual image evidence.
+    await page.waitForFunction(() => (window as any).__e2eCapture.getThumbInfo()?.kind === 'CLIP_FRAME')
+    // Hold one analysed frame while the phone fetches its report copy.
+    await page.evaluate(() => (window as any).__e2eCapture.getVideo().pause())
+    await page.waitForTimeout(1000)
     await ph.locator('a[href^="#/incident/"]').first().click()
     await expect(ph.getByRole('link', { name: /Về trang chủ/ })).toBeVisible()
     const photo = ph.locator('.report-frame img.alert-photo')
     await expect(photo).toBeVisible({ timeout: 15_000 })
-    // the picture is never the raw frame: either the backend's face-masked copy or a pixelated one
+    // Compare the actual report bytes with the one shared processed thumb, never the source clip.
+    const digest = async (element: HTMLImageElement) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', await (await fetch(element.src)).arrayBuffer()))).join(',')
+    const phoneHash = await photo.evaluate(digest)
+    const sharedHash = await page.evaluate(async () => {
+      const w = window as any, thumb = w.__e2eCapture.getThumbInfo(), bridge = w.__phoneBridge.latestFrame()
+      if (!thumb || bridge?.url !== thumb.url || !['YUNET', 'HEAD', 'FULL'].includes(thumb.maskMethod)) throw new Error('Unqualified report frame')
+      return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', await (await fetch(thumb.url)).arrayBuffer()))).join(',')
+    })
+    expect(phoneHash).toBe(sharedHash)
     expect(await page.evaluate(() => (window as any).__e2e.getState().metrics.accepted)).toBeGreaterThan(0)
   })
 })

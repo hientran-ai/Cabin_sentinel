@@ -89,7 +89,7 @@ export interface ObservationReply {
   observed_at: string; received_at: string; capture_age_ms: number
   vision: { detections: Detection[] }; timings_ms: Record<string, number>; committed: { revision: number; risk_level: RiskLevel } | null
   /** face-masked picture of THIS frame, returned once and never stored by the backend. Absent when the model has no masker. */
-  preview?: { status: 'PROCESSED' | 'UNAVAILABLE'; data_url: string | null; method?: string; detected_faces?: number; masked_regions?: number; coverage_verified?: false }
+  preview?: { status: 'PROCESSED' | 'UNAVAILABLE'; data_url: string | null; method?: string; detected_faces?: number; masked_regions?: number; fallback_regions?: number; coverage_verified?: false }
 }
 
 /** State of the (simulated) vehicle edge link of this session, owned by the backend. Not the browser connection, not camera health. */

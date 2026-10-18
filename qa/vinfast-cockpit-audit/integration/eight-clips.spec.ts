@@ -17,11 +17,16 @@ for (let n = 1; n <= 8; n++) {
     const phase = await page.getByTestId('player-phase').textContent()
     if (phase?.includes('READY') || phase?.includes('ENDED')) await page.getByRole('button', { name: 'Phát lại clip', exact: true }).click()
     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+    await expect(page.getByTestId('cm-privacy')).toContainText('chưa đảm bảo che hết')
+    // Polling can briefly have no committed state after source reset; sample only a matching frame.
+    await page.waitForFunction(() => { const w = window as any; return w.__e2e.getState().state?.last_observation?.frame_id === w.__e2eCapture.getThumbInfo()?.frameId && !!w.__e2eCapture.getThumbInfo() })
     const evidence = await page.evaluate(() => {
       const s = (window as any).__e2e.getState()
       const v = (window as any).__e2eCapture.getVideo()
-      return { source: s.source, model: s.state.model, observation: s.state.last_observation, risk: s.state.risk_level, rule: s.state.rule_id, incident: s.state.incident, notifications: s.notifications, media: { src: v.currentSrc, width: v.videoWidth, height: v.videoHeight, time: v.currentTime, muted: v.muted } }
+      return { privacy: { method: (window as any).__e2eCapture.getThumbInfo().maskMethod, sharedWithPhone: (window as any).__phoneBridge.latestFrame()?.url === (window as any).__e2eCapture.getThumbInfo().url }, source: s.source, model: s.state.model, observation: s.state.last_observation, risk: s.state.risk_level, rule: s.state.rule_id, incident: s.state.incident, notifications: s.notifications, media: { src: v.currentSrc, width: v.videoWidth, height: v.videoHeight, time: v.currentTime, muted: v.muted } }
     })
+    expect(evidence.privacy.sharedWithPhone).toBe(true)
+    expect(['YUNET', 'HEAD', 'FULL']).toContain(evidence.privacy.method)
     expect(evidence.source.scenarioId).toBe(id)
     expect(evidence.observation.vision.source).toBe('MODEL_INFERENCE')
     expect(evidence.observation.source).toBe('CLIP_FRAME')

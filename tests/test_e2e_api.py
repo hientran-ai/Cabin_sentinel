@@ -435,3 +435,22 @@ async def test_history_can_export_per_frame_observations_with_timings(env):
         assert all(i["type"] != "observation" for i in plain)
         rows = [i for i in (await c.get(base + "/history?observations=true", headers=h)).json()["items"] if i["type"] == "observation"]
         assert len(rows) == 1 and rows[0]["timings_ms"]["infer_detector"] == 11.0
+
+
+@pytest.mark.asyncio
+async def test_observation_preview_is_one_shot_not_persisted_or_replayed(env, monkeypatch):
+    service, clock, fake = env
+    infer = fake.infer
+    masked = {'status': 'PROCESSED', 'data_url': 'data:image/jpeg;base64,masked-only',
+              'masked_regions': 1, 'coverage_verified': False}
+    monkeypatch.setattr(fake, 'infer', lambda image: {**infer(image), 'preview': masked})
+    async with client() as c:
+        sid, h = await new_session(c)
+        first = (await frame(c, sid, h, 'preview-once')).json()
+        assert first['preview'] == masked
+        retry = (await frame(c, sid, h, 'preview-once')).json()
+        assert retry['replayed'] and 'preview' not in retry and fake.calls == 1
+        vid = f'DEMO_{sid}'
+        assert 'preview' not in service.observation_get(vid, 'preview-once')
+        assert 'data:image' not in str(service.get_state(vid))
+        assert 'data:image' not in str(service.events(vid, limit=500))
