@@ -35,6 +35,7 @@ def test_preview_covers_missing_faces_without_modifying_source(detections, metho
     if method == 'YUNET_HEAD_FALLBACK':
         # Background far from both masks remains clear (JPEG error allowed).
         assert result[130:180, 20:60].var() > 1000
+        assert not (result[25:40, 25:40] < 40).all()   # pixelated, not a solid dark box
     np.testing.assert_array_equal(blurrer.apply.call_args.args[0], original)
 
 

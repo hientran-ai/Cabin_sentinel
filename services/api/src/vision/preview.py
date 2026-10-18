@@ -54,7 +54,7 @@ class FacePreview:
                     if any(rect[0] <= (b[0] + b[2]) / 2 <= rect[2] and rect[1] <= (b[1] + b[3]) / 2 <= rect[3] for b in metadata['masked_boxes']):
                         continue
                     x1, y1, x2, y2 = rect
-                    processed[y1:y2, x1:x2] = (24, 24, 24)
+                    _pixelate_ellipse(processed, frame, x1, y1, x2, y2)
                     fallback.append(rect)
                 metadata['masked_boxes'] = [*metadata['masked_boxes'], *fallback]
                 if fallback:
@@ -75,6 +75,25 @@ class FacePreview:
             'masked_boxes': [[int(v) for v in box] for box in metadata['masked_boxes']],
             'latency_ms': (perf_counter() - started) * 1000,
         }
+
+
+def _pixelate_ellipse(out, src, x1, y1, x2, y2):
+    """Natural-looking cover: coarse pixelation inside the ellipse inscribed in the head rectangle, feathered at the edge. Works on `out` in place."""
+    import cv2
+    import numpy as np
+    w, h = x2 - x1, y2 - y1
+    if w < 2 or h < 2:
+        return
+    block = max(6, round(w / 7))
+    crop = src[y1:y2, x1:x2]
+    small = cv2.resize(crop, (max(1, w // block), max(1, h // block)), interpolation=cv2.INTER_AREA)
+    pix = cv2.resize(small, (w, h), interpolation=cv2.INTER_NEAREST)
+    mask = np.zeros((h, w), dtype=np.float32)
+    cv2.ellipse(mask, (w // 2, h // 2), (max(1, w // 2 - 1), max(1, h // 2 - 1)), 0, 0, 360, 1.0, -1)
+    k = max(3, (min(w, h) // 8) | 1)
+    mask = cv2.GaussianBlur(mask, (k, k), 0)[..., None]
+    region = out[y1:y2, x1:x2].astype(np.float32)
+    out[y1:y2, x1:x2] = (pix.astype(np.float32) * mask + region * (1 - mask)).astype(np.uint8)
 
 
 def head_regions(detections, width, height):

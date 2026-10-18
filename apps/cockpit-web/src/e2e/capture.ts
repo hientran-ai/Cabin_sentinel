@@ -115,7 +115,7 @@ export async function obscure(blob: Blob): Promise<Blob | null> {
   } catch { return null }
 }
 
-/** Local privacy fallback: opaque head rectangles on a copy, or obscure the whole frame on incomplete evidence. */
+/** Local privacy fallback: pixelated head ellipses on a copy, or obscure the whole frame on incomplete evidence. */
 export async function maskDetectedHeads(blob: Blob, detections: Parameters<typeof headMaskRegions>[0]): Promise<{ blob: Blob | null; regions: number; method: 'HEAD' | 'FULL' }> {
   let bmp: ImageBitmap | null = null
   try {
@@ -126,8 +126,13 @@ export async function maskDetectedHeads(blob: Blob, detections: Parameters<typeo
     const ctx = canvas.getContext('2d')
     if (!ctx) return { blob: null, regions: 0, method: 'FULL' }
     ctx.drawImage(bmp, 0, 0)
-    ctx.fillStyle = '#181818'
-    for (const [x1, y1, x2, y2] of regions) ctx.fillRect(x1, y1, x2 - x1, y2 - y1)
+    for (const [x1, y1, x2, y2] of regions) {
+      const w = x2 - x1, h = y2 - y1, cell = Math.max(6, Math.round(w / 7))
+      const small = document.createElement('canvas'); small.width = Math.max(1, Math.floor(w / cell)); small.height = Math.max(1, Math.floor(h / cell))
+      small.getContext('2d')?.drawImage(bmp, x1, y1, w, h, 0, 0, small.width, small.height)
+      ctx.save(); ctx.beginPath(); ctx.ellipse((x1 + x2) / 2, (y1 + y2) / 2, w / 2, h / 2, 0, 0, Math.PI * 2); ctx.clip()
+      ctx.imageSmoothingEnabled = false; ctx.drawImage(small, 0, 0, small.width, small.height, x1, y1, w, h); ctx.restore()
+    }
     return { blob: await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', .85)), regions: regions.length, method: 'HEAD' }
   } catch { return { blob: await obscure(blob), regions: 0, method: 'FULL' } }
   finally { bmp?.close() }
