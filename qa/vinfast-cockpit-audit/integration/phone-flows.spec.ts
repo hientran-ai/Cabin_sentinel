@@ -173,3 +173,18 @@ test.describe('car ↔ phone sync', () => {
     expect(await page.evaluate(() => (window as any).__e2e.getState().metrics.accepted)).toBeGreaterThan(0)
   })
 })
+
+test('the phone home has a live (simulated) view that shows the same masked frame as the car', async ({ page }, info) => {
+  test.skip(info.project.name === 'chromium', 'needs H.264 playback for the clip (use chrome or webkit)')
+  test.setTimeout(90_000)
+  await openDemo(page)
+  const ph = phone(page)
+  await expect(ph.locator('#live-cam')).toContainText('Chưa có hình')
+  await page.getByTestId('scenario-selector').click()
+  await page.getByTestId('start-DEMO-05').click()
+  await page.keyboard.press('Escape')
+  const img = ph.locator('#live-cam img')
+  await expect(img).toBeVisible({ timeout: 30_000 })
+  const first = await img.getAttribute('src')
+  await expect.poll(async () => (await img.getAttribute('src')) !== first, { timeout: 15_000 }).toBe(true)   // refreshes with new frames
+})
