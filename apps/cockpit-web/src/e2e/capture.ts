@@ -33,7 +33,7 @@ let sourceEpoch = 0
 
 /** The last frame this browser SENT and got an answer for: the exact picture the model analysed, with its geometry and source. */
 /** Every URL is processed: YuNet, head boxes, or full-frame obscuring. Raw source pixels are never published. */
-export interface ThumbInfo { url: string; kind: 'UPLOAD' | 'CLIP_FRAME' | 'DEVICE_CAMERA'; frameId: string; width: number; height: number; at: number; mediaTimeS?: number; masked: boolean; maskedRegions?: number; obscured?: boolean; maskMethod?: 'YUNET' | 'HEAD' | 'FULL' }
+export interface ThumbInfo { url: string; kind: 'UPLOAD' | 'CLIP_FRAME' | 'DEVICE_CAMERA'; frameId: string; width: number; height: number; at: number; mediaTimeS?: number; masked: boolean; maskedRegions?: number; obscured?: boolean; maskMethod?: 'YUNET' | 'HEAD' | 'FULL' | 'NONE' }
 const thumbListeners = new Set<(url: string | null) => void>()
 const infoListeners = new Set<(i: ThumbInfo | null) => void>()
 let thumbInfo: ThumbInfo | null = null
@@ -152,13 +152,13 @@ async function send(blob: Blob, capturedAtPerf: number, kind: 'UPLOAD' | 'CLIP_F
     const rtt = performance.now() - sentAt
     if (mine !== sourceEpoch) return   // the source changed while this frame was in flight: its answer belongs to the old source
     if (reply.accepted) {
-      let shown: Blob | null = null, maskMethod: 'YUNET' | 'HEAD' | 'FULL' = 'FULL', maskedRegions = 0
+      let shown: Blob | null = null, maskMethod: 'YUNET' | 'HEAD' | 'FULL' | 'NONE' = 'FULL', maskedRegions = 0
       const pv = reply.preview
       // A completed pass with zero masks is not evidence that no face exists.
-      if (pv?.status === 'PROCESSED' && /^data:image\/jpeg;base64,/.test(pv.data_url ?? '') && (pv.masked_regions ?? 0) > 0) {
+      if (pv?.status === 'PROCESSED' && /^data:image\/jpeg;base64,/.test(pv.data_url ?? '') && ((pv.masked_regions ?? 0) > 0 || (kind === 'CLIP_FRAME' && pv.method === 'CLIP_SAMPLE_PASSTHROUGH'))) {
         try {
           shown = await (await fetch(pv.data_url!)).blob()
-          maskMethod = pv.method === 'FULL_FRAME_FALLBACK' ? 'FULL' : pv.method === 'YUNET_HEAD_FALLBACK' || (pv.fallback_regions ?? 0) > 0 ? 'HEAD' : 'YUNET'
+          maskMethod = pv.method === 'CLIP_SAMPLE_PASSTHROUGH' ? 'NONE' : pv.method === 'FULL_FRAME_FALLBACK' ? 'FULL' : pv.method === 'YUNET_HEAD_FALLBACK' || (pv.fallback_regions ?? 0) > 0 ? 'HEAD' : 'YUNET'
           maskedRegions = pv.masked_regions ?? 0
         } catch { shown = null }
       }
@@ -168,7 +168,7 @@ async function send(blob: Blob, capturedAtPerf: number, kind: 'UPLOAD' | 'CLIP_F
       }
       if (mine !== sourceEpoch) return
       // Clear any earlier frame on processing failure rather than retaining an unqualified image.
-      setThumb(shown, { kind, frameId: id, width: size.width, height: size.height, at: Date.now(), mediaTimeS: size.mediaTimeS, masked: maskMethod !== 'FULL', maskedRegions, obscured: maskMethod === 'FULL', maskMethod })
+      setThumb(shown, { kind, frameId: id, width: size.width, height: size.height, at: Date.now(), mediaTimeS: size.mediaTimeS, masked: maskMethod !== 'FULL' && maskMethod !== 'NONE', maskedRegions, obscured: maskMethod === 'FULL', maskMethod })
     }
     useE2e.getState().patchMetrics((m) => ({
       accepted: m.accepted + (reply.accepted ? 1 : 0), ignored: m.ignored + (reply.accepted ? 0 : 1), replayed: m.replayed + (reply.replayed ? 1 : 0),

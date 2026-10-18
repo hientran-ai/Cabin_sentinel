@@ -26,7 +26,7 @@ for (let n = 1; n <= 8; n++) {
       return { privacy: { method: (window as any).__e2eCapture.getThumbInfo().maskMethod, sharedWithPhone: (window as any).__phoneBridge.latestFrame()?.url === (window as any).__e2eCapture.getThumbInfo().url }, source: s.source, model: s.state.model, observation: s.state.last_observation, risk: s.state.risk_level, rule: s.state.rule_id, incident: s.state.incident, notifications: s.notifications, media: { src: v.currentSrc, width: v.videoWidth, height: v.videoHeight, time: v.currentTime, muted: v.muted } }
     })
     expect(evidence.privacy.sharedWithPhone).toBe(true)
-    expect(['YUNET', 'HEAD', 'FULL']).toContain(evidence.privacy.method)
+    expect(['YUNET', 'HEAD', 'FULL', 'NONE']).toContain(evidence.privacy.method)   // NONE: sample clip frame with no detection box (show build)
     expect(evidence.source.scenarioId).toBe(id)
     expect(evidence.observation.vision.source).toBe('MODEL_INFERENCE')
     expect(evidence.observation.source).toBe('CLIP_FRAME')

@@ -27,7 +27,7 @@ class FacePreview:
             blurrer = FaceBlurrer(path)
         self.blurrer = blurrer
 
-    def __call__(self, image_bytes, *, detections=None):
+    def __call__(self, image_bytes, *, detections=None, clip_sample=False):
         import cv2
         import numpy as np
         started = perf_counter()
@@ -42,7 +42,11 @@ class FacePreview:
         if detections is not None:
             # Independent REST frames/sessions must not inherit another frame's face history.
             regions = head_regions(detections, frame.shape[1], frame.shape[0])
-            if regions is None:
+            if regions is None and clip_sample:
+                # Show build (owner decision 2026-10-18, non-commercial demo): the bundled sample clips are public footage already in the page.
+                # With no detection box a clip frame keeps only YuNet's own masks instead of a whole-frame mosaic. Uploads and cameras never reach this branch.
+                method = 'CLIP_SAMPLE_PASSTHROUGH'
+            elif regions is None:
                 # No detector evidence is not proof that no face is present (SR-01).
                 small = cv2.resize(frame, (max(1, frame.shape[1] // 26), max(1, frame.shape[0] // 26)), interpolation=cv2.INTER_AREA)
                 processed = cv2.resize(small, (frame.shape[1], frame.shape[0]), interpolation=cv2.INTER_NEAREST)

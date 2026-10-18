@@ -308,6 +308,9 @@ function Evidence() {
   const boxFrame = (src.badge === 'DEMO' || src.badge === 'UPLOAD') && frame && obs && obs.frame_id === frame.frameId ? frame : null
   const boxes = boxFrame ? dets.map((d) => ({ d, box: normalizeBox(d.bbox, boxFrame.width, boxFrame.height) })).filter((x) => x.box) : []
 
+  // DEMO-08: the detectors cannot see the backpack (dark, behind the seat). This box is a scripted annotation of the footage, NOT a model output; it is drawn only while the model reports no backpack itself.
+  const scripted = source.scenarioId === 'DEMO-08' && src.badge === 'DEMO' && frame && frame.kind === 'CLIP_FRAME' && !(obs?.vision?.items ?? []).some((i) => i.class === 'backpack') ? { x: 655 / 1280, y: 440 / 720, w: 110 / 1280, h: 230 / 720 } : null
+
   let analysisText = '—'
   if (src.analysis === 'preview-only') analysisText = 'AI chưa khả dụng cho camera trực tiếp trên bản này: hình chỉ hiển thị trên máy bạn, không gửi đi. Không có kết quả giả.'
   else if (src.analysis === 'running') analysisText = obs?.timings_ms?.infer_detector != null ? `Đã chạy model · ${obs.timings_ms.infer_detector} ms (máy chủ demo)` : 'Đã chạy model'
@@ -360,7 +363,8 @@ function Evidence() {
               <div className="cm-fit" style={{ ['--ar' as string]: frame.width / frame.height }}>
                 <img className="cm-media-img" src={frame.url} alt={`Khung hình đã phân tích từ ${src.badge === 'DEMO' ? 'clip mẫu' : 'ảnh tải lên'}`} data-testid="cm-frame" />
                 {boxes.map(({ d, box }, i) => box && (
-                  <span key={i} className="cm-box" style={{ left: `${box.x * 100}%`, top: `${box.y * 100}%`, width: `${box.w * 100}%`, height: `${box.h * 100}%` }} data-testid="cm-box"><i>{DET_VI[d.class] ?? d.class} {(d.confidence * 100).toFixed(0)}%</i></span>))}
+                  <span key={i} className="cm-box" style={{ left: `${box.x * 100}%`, top: `${box.y * 100}%`, width: `${box.w * 100}%`, height: `${box.h * 100}%` }} data-testid="cm-box" role="img" aria-label={`${DET_VI[d.class] ?? d.class} ${(d.confidence * 100).toFixed(0)}%`} />))}
+                {scripted && <span className="cm-box cm-box-script" style={{ left: `${scripted.x * 100}%`, top: `${scripted.y * 100}%`, width: `${scripted.w * 100}%`, height: `${scripted.h * 100}%` }} data-testid="cm-box-script" role="img" aria-label="ba lô (chú thích kịch bản)" />}
               </div>)
             : <StageMessage busy title="Đang chờ khung hình đầu tiên…" hint="Mỗi giây một khung được trích và chạy model." />)}
           {src.badge === 'SIM' && <SimBlockedPreview />}
@@ -370,8 +374,9 @@ function Evidence() {
             <div className="cm-overlay-top"><Badge kind={`feed-${src.badge}`}>{BADGE_TEXT[src.badge]}</Badge>
               {src.analysis === 'preview-only' && <span className="cm-chip">AI chưa khả dụng · hình không rời thiết bị</span>}
               {src.analysis === 'running' && belongs && <span className="cm-chip ok">Đã phân tích</span>}
+              {scripted && <span className="cm-chip" data-testid="cm-script-chip">Hộp ba lô vàng: chú thích kịch bản</span>}
               {(src.badge === 'DEMO' || src.badge === 'UPLOAD') && frame && <span className="cm-chip ok" data-testid="cm-privacy" data-method={frame.maskMethod ?? 'FULL'}>
-                {frame.maskMethod === 'YUNET' ? `Đã che mặt bằng YuNet (${frame.maskedRegions ?? 0} vùng)` : frame.maskMethod === 'HEAD' ? 'Đã che vùng đầu theo khung phát hiện' : 'Làm mờ toàn khung (không có vùng để che)'} · chưa đảm bảo che hết
+                {frame.maskMethod === 'YUNET' ? `Đã che mặt bằng YuNet (${frame.maskedRegions ?? 0} vùng)` : frame.maskMethod === 'HEAD' ? 'Đã che vùng đầu theo khung phát hiện' : frame.maskMethod === 'NONE' ? 'Clip mẫu công khai: không phát hiện mặt nên không che' : 'Làm mờ toàn khung (không có vùng để che)'} · chưa đảm bảo che hết
               </span>}
             </div>)}
           {src.badge !== 'NONE' && (

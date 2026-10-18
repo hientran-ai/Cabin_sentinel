@@ -54,9 +54,21 @@ def test_provider_invokes_privacy_and_withholds_errors(monkeypatch, tmp_path):
     monkeypatch.setattr(preview, 'FacePreview', lambda: masker)
     provider = TamVisionProvider(path)
     assert provider.infer(image)['preview']['data_url'] == 'masked'
-    masker.assert_called_once_with(image, detections=[])
+    masker.assert_called_once_with(image, detections=[], clip_sample=False)
     masker.side_effect = RuntimeError('masking failed')
     failed = provider.infer(image)
     assert failed['detections'] == []
     assert failed['preview']['status'] == 'UNAVAILABLE'
     assert not failed['preview'].get('data_url')
+
+
+def test_clip_sample_frames_without_detection_keep_the_cabin_readable_but_uploads_stay_fully_masked():
+    original, image = encoded_frame()
+    blurrer = Mock()
+    blurrer.apply.side_effect = lambda f: (f.copy(), {'detected_faces': 0, 'masked_boxes': []})
+    clip = FacePreview(blurrer=blurrer)(image, detections=[], clip_sample=True)
+    assert clip['method'] == 'CLIP_SAMPLE_PASSTHROUGH' and clip['masked_regions'] == 0 and clip['fallback_regions'] == 0
+    decoded = cv2.imdecode(np.frombuffer(base64.b64decode(clip['data_url'].split(',')[1]), np.uint8), cv2.IMREAD_COLOR)
+    assert decoded.var() > 1000
+    upload = FacePreview(blurrer=blurrer)(image, detections=[])
+    assert upload['method'] == 'FULL_FRAME_FALLBACK'

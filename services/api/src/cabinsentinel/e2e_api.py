@@ -310,7 +310,8 @@ async def post_observation(
             camera = "DEMO-WIDE-01" if source_label.startswith(("DEMO-01", "DEMO-02")) else None
             frame = await run_in_threadpool(provider.infer, data, f"{vehicle_id}:{run}", camera)
         else:
-            frame = await run_in_threadpool(provider.infer, data)
+            clip = source == "CLIP_FRAME" and getattr(provider, "supports_clip_sample", False)
+            frame = await (run_in_threadpool(provider.infer, data, True) if clip else run_in_threadpool(provider.infer, data))
             if source_label.startswith(("DEMO-01", "DEMO-02")):
                 frame = _demo_exterior_split(frame, data)   # same demo calibration as DEMO-WIDE-01, for providers without geometry support
     except Exception as exc:

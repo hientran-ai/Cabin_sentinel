@@ -68,7 +68,9 @@ class TamVisionProvider:
         except Exception:
             return None
 
-    def infer(self, image: bytes) -> dict:
+    supports_clip_sample = True
+
+    def infer(self, image: bytes, clip_sample: bool = False) -> dict:
         import cv2
         import numpy as np
 
@@ -114,7 +116,7 @@ class TamVisionProvider:
             preview = {"status": "UNAVAILABLE", "data_url": None, "coverage_verified": False}
             if self._preview is not None:
                 try:
-                    preview = self._preview(image, detections=detections)
+                    preview = self._preview(image, detections=detections, clip_sample=clip_sample)
                 except Exception:
                     logger.exception("REST privacy processing failed; image withheld")
             latency_ms = (perf_counter() - started) * 1000
