@@ -32,6 +32,7 @@ const TABS: { id: Tab; label: string; test: string }[] = [
   { id: 'evidence', label: 'Bằng chứng', test: 'vf-tab-evidence' },
 ]
 const DET_VI: Record<string, string> = { person: 'người', dog: 'thú cưng', cat: 'thú cưng', backpack: 'ba lô', 'cell phone': 'điện thoại' }
+const AGE_VI: Record<string, string> = { child: 'có thể là trẻ em', infant: 'có thể là em bé', adult: 'có thể là người lớn' }   // age is secondary evidence from a small model: never state it as fact
 const CAMERA_VI: Record<string, string> = { OK: 'Hoạt động', BLOCKED: 'Bị che', DISCONNECTED: 'Mất kết nối', NO_FEED: 'Không có hình', ERROR: 'Lỗi' }
 const fmt = (n: number | null | undefined) => (n == null ? '—' : String(n))
 const stamp = (iso?: string | null) => {
@@ -394,7 +395,7 @@ function Evidence() {
           <dt>Thời điểm trong video</dt><dd>{belongs && obs?.media_time_s != null ? `${obs.media_time_s.toFixed(3)}s` : '—'}</dd>
           <dt>Phát hiện</dt>
           <dd data-testid="cm-detections">{belongs && connection === 'ok' && counts.status === 'CURRENT'
-            ? dets.length ? dets.map((d) => `${DET_VI[d.class] ?? d.class} ${(d.confidence * 100).toFixed(0)}%${d.age_group ? ` (${d.age_group})` : ''}`).join(', ') : 'Không phát hiện người/thú trong khung này (chưa chứng minh xe trống)'
+            ? dets.length ? dets.map((d) => `${DET_VI[d.class] ?? d.class} ${(d.confidence * 100).toFixed(0)}%${d.age_group && AGE_VI[d.age_group] ? ` (${AGE_VI[d.age_group]})` : ''}`).join(', ') : 'Không phát hiện người/thú trong khung này (chưa chứng minh xe trống)'
             : 'Chưa có kết quả phân tích cho nguồn này'}</dd>
           <dt>Ngoài cabin</dt><dd data-testid="cm-exterior">{belongs && obs?.vision?.exterior_count ? `${obs.vision.exterior_count} người ở ngoài cabin theo hiệu chuẩn demo: không tính là người trong xe` : '—'}</dd>
           <dt>Vùng phát hiện</dt><dd>{boxes.length ? `Đã vẽ ${boxes.length} khung từ tọa độ backend` : belongs && dets.length ? 'Backend chưa trả tọa độ vùng nên chưa vẽ khung' : '—'}</dd>
