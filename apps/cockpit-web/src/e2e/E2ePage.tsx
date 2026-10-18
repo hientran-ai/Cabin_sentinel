@@ -10,6 +10,7 @@ import { useCareEffects } from './careEffects'
 import { startPolling, startTelemetry, stopPolling, stopTelemetry, useE2e } from './store'
 import { stopSource } from './capture'
 import { Chip } from './ui'
+import { ExitBar } from '../components/common/ExitBar'
 
 const COCKPIT_W = 120, COCKPIT_H = 75   // rem; the cockpit is designed for 1920 x 1200 (16:10) at a 16 px root
 const GAP = 16, HEADER = 56
@@ -57,7 +58,14 @@ export function E2ePage({ dashboard, fixedArtboard = false, artboardRem = { w: C
   const cockpit = <div className="relative overflow-hidden rounded-2xl border border-line" style={{ width: Math.floor(artboardRem.w * f), height: Math.floor(artboardRem.h * f) }} data-testid="cockpit">{dashboard ?? <AutomotiveDashboard />}</div>
   const phone = <div style={{ width: phoneW, height: phoneH }}><div style={{ transform: `scale(${phoneScale})`, transformOrigin: 'top left', width: PHONE_W, height: PHONE_H }}><PhoneFrame /></div></div>
 
-  if (cockpitOnly) return <div className="h-screen w-screen overflow-hidden bg-black"><div className="relative h-full w-full overflow-hidden" data-testid="cockpit">{dashboard ?? <AutomotiveDashboard />}</div></div>
+  // every full-window view has a labelled way out (same component on all three skins); Esc does the same
+  useEffect(() => {
+    if (!cockpitOnly) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) location.assign(location.pathname) }
+    addEventListener('keydown', onKey)
+    return () => removeEventListener('keydown', onKey)
+  }, [cockpitOnly])
+  if (cockpitOnly) return <div className="h-screen w-screen overflow-hidden bg-black"><div className="relative h-full w-full overflow-hidden" data-testid="cockpit">{dashboard ?? <AutomotiveDashboard />}</div><ExitBar label="Thoát toàn màn hình" href={location.pathname} /></div>
 
   return (
     <div className="px-ui min-h-screen">
@@ -68,6 +76,7 @@ export function E2ePage({ dashboard, fixedArtboard = false, artboardRem = { w: C
         <span className="px-mono text-text-3">{session ? `phiên ${session.id.slice(0, 8)}` : 'chưa có phiên'}</span>
         <span className="grow" />
         {headerExtra}
+        <a href={`${import.meta.env.BASE_URL}vinfast/`} className="px-btn" data-testid="back-to-vinfast">← Về demo VinFast</a>
         <a href="?mode=playground" className="text-sm text-accent underline">Bản mock (không qua backend)</a>
       </header>
       {serviceError && <div role="alert" className="mx-4 mb-2 rounded-lg border border-critical p-3 text-sm text-critical">{serviceError}. Không có dữ liệu giả thay thế: các màn sẽ báo "chưa có dữ liệu".</div>}

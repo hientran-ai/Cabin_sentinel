@@ -1,0 +1,50 @@
+[
+  {
+    "id": "DEMO-01",
+    "fallback_video": "videos/empty-cabin-outside-person.webm",
+    "sha256": "6896cf63f7a7c103eda3570a3f1ebdff4eefd323826c6bf1b0d9d4b6baa29799",
+    "audio": "removed"
+  },
+  {
+    "id": "DEMO-02",
+    "fallback_video": "videos/empty-cabin.webm",
+    "sha256": "c395cef9ff693ae6b173b49b0de7b6dc7719ccaa891b72662d83ca0ffe504569",
+    "audio": "removed"
+  },
+  {
+    "id": "DEMO-03",
+    "fallback_video": "videos/camera-occluded.webm",
+    "sha256": "b1954b2133462f8dc5a73f25406728d5bbfe9c2f223b9f00b3adf209891fa067",
+    "audio": "removed"
+  },
+  {
+    "id": "DEMO-04",
+    "fallback_video": "videos/low-light.webm",
+    "sha256": "312d90e276a26747b68ccd70024a690574fc5dadfc22b8c41e998438772015f1",
+    "audio": "removed"
+  },
+  {
+    "id": "DEMO-05",
+    "fallback_video": "videos/child-hot.webm",
+    "sha256": "f949a60e16e2f37ef586c1665e61720ac5990de56c13c65a7c9af5ea03e6facd",
+    "audio": "removed"
+  },
+  {
+    "id": "DEMO-06",
+    "fallback_video": "videos/mixed-occupants-pet-items.webm",
+    "sha256": "f464c22fff70a2751835ae37d64e0395304b743a14177c8f159fe43799022db8",
+    "audio": "removed"
+  },
+  {
+    "id": "DEMO-07",
+    "fallback_video": "videos/normal-driving.webm",
+    "sha256": "9db85bb5371c746658fde6a96faffd3b4373f395dc968a0de2ccb83efac8c7c4",
+    "audio": "removed"
+  },
+  {
+    "id": "DEMO-08",
+    "fallback_video": "videos/forgotten-backpack.webm",
+    "sha256": "c0672f663d10125ce5aa56017452004d56f8f160ef0cc18894b58c6b7f58b402",
+    "audio": "removed"
+  }
+]

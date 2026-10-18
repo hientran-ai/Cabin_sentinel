@@ -14,18 +14,19 @@ NOW = datetime(2026, 9, 26, 3, 0, tzinfo=UTC)
 
 
 @pytest.mark.asyncio
-async def test_restart_get_marks_old_safe_decision_stale_before_first_tick(tmp_path):
+async def test_restart_get_marks_old_attended_safe_decision_stale_before_first_tick(tmp_path):
     clock = [NOW]
     path = tmp_path / "state.db"
     service = CabinService(path, clock=lambda: clock[0])
     service.ingest_sensor(SensorPayload(
         vehicle_id="CAR_1", timestamp=NOW, sequence=1,
-        temperature=25, engine_status="OFF", doors_locked=True,
-        radar_presence=False,
+        temperature=25, engine_status="ON", doors_locked=False,
+        radar_presence=False, driver_present=True, gear="D",
+        vehicle_speed_kph=30, hvac_status="ACTIVE",
     ))
     safe = service.ingest_vision(VisionPayload(
         vehicle_id="CAR_1", timestamp=NOW, frame_id="empty-1",
-        camera_status="OK", detected_objects=[],
+        camera_status="OK", detected_objects=[{"class_name": "person", "confidence": 0.9}],
     ))
     assert safe["risk_level"] == "SAFE"
     service._db.close()

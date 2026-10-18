@@ -20,16 +20,21 @@ export interface Metrics {
 }
 const EMPTY_METRICS: Metrics = { captured: 0, sent: 0, accepted: 0, ignored: 0, replayed: 0, dropped: 0, errors: 0, capTimes: [], accTimes: [], lastReply: null, lastRttMs: null, lastEncodeMs: null, lastCaptureAgeMs: null, sensorSent: 0, sensorErrors: 0, uiCommitMs: null }
 
-export type SourceKind = 'none' | 'clip' | 'upload' | 'device'
-export interface SourceState { kind: SourceKind; label: string; running: boolean; error: string | null; consent: boolean; cameraFault: null | 'BLOCKED' | 'DISCONNECTED' }
+export type SourceKind = 'none' | 'clip' | 'upload' | 'device' | 'simulated'
+/** localOnly: the picture is shown on this device only and no frame is sent, so no analysis result may be claimed for it. */
+export type PlayerPhase = 'IDLE' | 'LOADING' | 'READY' | 'PLAYING' | 'PROCESSING' | 'ENDED' | 'ERROR' | 'UNSUPPORTED_CODEC' | 'SOURCE_UNAVAILABLE'
+export interface SourceState { kind: SourceKind; label: string; running: boolean; localOnly: boolean; error: string | null; consent: boolean; cameraFault: null | 'BLOCKED' | 'DISCONNECTED'; runId?: string; playerPhase?: PlayerPhase; scenarioId?: string }
 
 /** What the backend said about an owner action; the phone UI needs the reason to explain a rejection. */
 export interface ActionOutcome { ok: boolean; detail?: string }
 
 interface E2eStore {
   session: Session | null
-  service: ServiceStatus | null; serviceError: string | null; booting: boolean
+  service: ServiceStatus | null; serviceError: string | null; sessionError: string | null; booting: boolean
   state: ServerState | null; receivedPerf: number; connection: 'ok' | 'lost'; failures: number
+  /** the simulated VEHICLE is offline in this session: the simulated vehicle sends nothing (the backend also refuses). Not the browser link. */
+  vehicleDown: boolean
+  setVehicleDown: (down: boolean) => void
   notifications: NotificationItem[]; banner: NotificationItem | null
   history: HistoryItem[]; historyAfter: number
   sim: SimInput
@@ -38,14 +43,15 @@ interface E2eStore {
   toast: string | null
   sessionNote: string | null
   bootstrap: () => Promise<void>
-  newSession: (note?: string) => Promise<void>
+  newSession: (note?: string, preservePrevious?: boolean) => Promise<void>
   setSim: (p: Partial<SimInput>) => void
   setSource: (p: Partial<SourceState>) => void
   patchMetrics: (fn: (m: Metrics) => Partial<Metrics>) => void
   confirmDelivered: (id: number) => void
   dismissBanner: () => void
   acknowledge: (surface: 'PHONE' | 'COCKPIT') => Promise<ActionOutcome>
-  resolve: (surface: 'PHONE' | 'COCKPIT') => Promise<ActionOutcome>
+  /** seenRevision: the revision the person was looking at. If the committed state moved on, nothing is sent: they must look again. */
+  resolve: (surface: 'PHONE' | 'COCKPIT', seenRevision?: number) => Promise<ActionOutcome>
   setMessagingFault: (fail: boolean) => Promise<void>
   /** Cabin Care: every call goes to the backend, which records who did it; the UI never starts comfort on its own. */
   care: (call: (s: Session) => Promise<unknown>, ok: string) => Promise<ActionOutcome>
@@ -55,6 +61,7 @@ interface E2eStore {
 const known = new Set<number>()
 const delivering = new Set<number>()
 let baselineDone = false
+let sessionCreation: Promise<void> | null = null
 
 function readStored(): Session | null {
   try { const v = JSON.parse(sessionStorage.getItem(KEY) ?? 'null'); return v?.id && v?.token ? v : null } catch { return null }
@@ -64,12 +71,13 @@ function store(s: Session | null) {
 }
 
 export const useE2e = create<E2eStore>((set, get) => ({
-  session: null, service: null, serviceError: null, booting: true,
-  state: null, receivedPerf: 0, connection: 'ok', failures: 0,
+  session: null, service: null, serviceError: null, sessionError: null, booting: true,
+  state: null, receivedPerf: 0, connection: 'ok', failures: 0, vehicleDown: false,
+  setVehicleDown: (vehicleDown) => set({ vehicleDown }),
   notifications: [], banner: null, history: [], historyAfter: 0,
   sim: { engineOn: false, driverPresent: false, radar: false, mode: 'NONE', hvacFault: false },
   metrics: EMPTY_METRICS,
-  source: { kind: 'none', label: '', running: false, error: null, consent: false, cameraFault: null },
+  source: { kind: 'none', label: '', running: false, localOnly: false, error: null, consent: false, cameraFault: null },
   toast: null, sessionNote: null,
 
   bootstrap: async () => {
@@ -86,18 +94,23 @@ export const useE2e = create<E2eStore>((set, get) => ({
     set({ booting: false })
   },
 
-  newSession: async (note) => {
+  newSession: async (note, preservePrevious = false) => {
+    if (sessionCreation) return sessionCreation
+    sessionCreation = (async () => {
     const old = get().session
-    if (old) await api.erase(old).catch(() => undefined)   // best effort; the server also deletes idle demo data after its retention window
+    if (old && !preservePrevious) await api.erase(old).catch(() => undefined)
     known.clear(); baselineDone = false
     try {
       const c = await api.createSession()
       const session = { id: c.session_id, token: c.session_token }
       store(session)
-      set({ session, state: null, notifications: [], banner: null, history: [], historyAfter: 0, metrics: EMPTY_METRICS, connection: 'ok', failures: 0, serviceError: null, sessionNote: note ?? null, toast: null })
+      delivering.clear()
+      set({ session, state: null, notifications: [], banner: null, history: [], historyAfter: 0, metrics: EMPTY_METRICS, connection: 'ok', failures: 0, vehicleDown: false, sessionError: null, sessionNote: note ?? null, toast: null })
     } catch (e) {
-      set({ session: null, serviceError: e instanceof ApiError ? `Không tạo được phiên: ${e.detail}` : 'Không tạo được phiên demo (không kết nối được máy chủ)' })
+      set({ session: null, sessionError: e instanceof ApiError ? `Không tạo được phiên: ${e.detail}` : 'Không tạo được phiên demo (không kết nối được máy chủ)' })
     }
+    })().finally(() => { sessionCreation = null })
+    return sessionCreation
   },
 
   setSim: (p) => set((s) => ({ sim: { ...s.sim, ...p } })),
@@ -126,7 +139,7 @@ export const useE2e = create<E2eStore>((set, get) => ({
     return outcome
   },
 
-  resolve: async (surface) => {
+  resolve: async (surface, seenRevision) => {
     const { session } = get()
     if (!session) return { ok: false, detail: 'Chưa có phiên.' }
     let outcome: ActionOutcome = { ok: true }
@@ -135,6 +148,7 @@ export const useE2e = create<E2eStore>((set, get) => ({
       const fresh = await api.state(session)
       set((s) => ({ state: mergeState(s.state, fresh), receivedPerf: performance.now() }))
       if (!fresh.incident_id) outcome = { ok: false, detail: 'Không có sự cố đang mở.' }
+      else if (seenRevision !== undefined && fresh.revision !== seenRevision) outcome = { ok: false, detail: 'state changed: revision is newer than the one confirmed' }
       else { await api.resolve(session, fresh.incident_id, fresh.revision, surface); set({ toast: 'Đã đóng sự cố sau khi kiểm tra cabin.' }) }
     } catch (e) { outcome = { ok: false, detail: e instanceof ApiError ? e.detail : 'Không gửi được kết quả (mất kết nối)' }; set({ toast: e instanceof ApiError ? friendlyError(e.detail) : outcome.detail }) }
     await pollOnce()
@@ -171,13 +185,14 @@ export async function pollOnce(): Promise<void> {
   const patch: Partial<E2eStore> = {}
   if (st.status === 'fulfilled') {
     patch.state = mergeState(useE2e.getState().state, st.value); patch.receivedPerf = performance.now(); patch.connection = 'ok'; patch.failures = 0
+    if (st.value.connectivity) patch.vehicleDown = st.value.connectivity.link === 'DROPPED'   // the backend is the source of truth for the vehicle link
   } else if (st.reason instanceof ApiError && st.reason.status === 404) {
-    patch.connection = 'ok'; patch.failures = 0     // reachable, nothing evaluated yet
+    patch.connection = useE2e.getState().state ? 'lost' : 'ok'; patch.failures = 0
   } else if (st.reason instanceof ApiError && (st.reason.status === 401 || st.reason.status === 403)) {
     store(null); useE2e.setState({ session: null }); await useE2e.getState().newSession('Phiên cũ không còn hợp lệ. Đã tạo phiên mới.'); return
   } else {
     const failures = useE2e.getState().failures + 1
-    patch.failures = failures; if (failures >= 2) patch.connection = 'lost'
+    patch.failures = failures; patch.connection = 'lost'
   }
   const incident = patch.state?.incident
   if (patch.state && incident?.status !== 'OPEN') {
@@ -228,7 +243,7 @@ function sensorBody() {
 }
 export async function publishSensor() {
   const { session } = useE2e.getState()
-  if (!session) return
+  if (!session || useE2e.getState().sim.telemetryEnabled === false || useE2e.getState().vehicleDown) return   // an offline vehicle sends nothing
   const body = sensorBody(); lastSensorJson = JSON.stringify(body)
   try { await api.sensor(session, body); useE2e.getState().patchMetrics((m) => ({ sensorSent: m.sensorSent + 1 })) } catch { useE2e.getState().patchMetrics((m) => ({ sensorErrors: m.sensorErrors + 1 })) }
 }

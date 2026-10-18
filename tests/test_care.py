@@ -57,7 +57,7 @@ async def test_child_comfort_is_a_bridge_not_a_resolution(env):
     async with client() as c:
         sid, h = await critical(c, EV)
         s = await state(c, sid, h)
-        assert s["care"]["suggestion"]["kind"] == "ASK" and s["care"]["countdown"]["armed"] is True
+        assert s["care"]["suggestion"]["kind"] == "ASK" and s["care"]["countdown"]["armed"] is False
         declared = (await c.post(f"{base(sid)}/care/declare", headers=h, json={"occupant": "CHILD", "surface": "PHONE"})).json()
         assert declared["profile"] == "CHILD" and declared["suggestion"]["kind"] == "CHILD"
         started = await c.post(f"{base(sid)}/care/start", headers=h, json={"music": "brahms", "surface": "PHONE"})
@@ -81,6 +81,7 @@ async def test_unanswered_alert_starts_comfort_only_with_consent_and_current_dat
     service, clock, fake = env
     async with client() as c:
         sid, h = await critical(c)
+        await c.post(f"{base(sid)}/care/consent", headers=h, json={"auto_start": True, "surface": "PHONE"})
         clock[0] += timedelta(seconds=CARE_AUTO_AFTER_S - 5)
         await refresh(c, sid, h, "f1")
         early = await state(c, sid, h)

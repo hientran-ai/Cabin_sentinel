@@ -256,7 +256,7 @@ class CabinService:
             prior_incident = old_state.get("incident") if old_state else None
             unresolved = bool(
                 prior_incident and prior_incident["status"] == "OPEN"
-                or old_state and prior_incident is None and old_state.get("incident_id")
+                or old_state and "incident" not in old_state and old_state.get("incident_id")
                 and old_state["risk_level"] in {"WARNING", "CRITICAL"}
                 and old_state.get("occupancy_state") in {"PRESENT", "SUSPECTED"}
                 and old_state.get("rule_id") != "HOT_ATTENDED_DRIVING"
@@ -321,7 +321,7 @@ class CabinService:
                 "incident": incident,
                 "alert": alert,
                 "data_quality": quality,
-                "ruleset_version": "demo-alerts-2026-09-30",
+                "ruleset_version": "demo-alerts-2026-10-17",
                 "risk_route": decision["route"],
                 "unlock_request": unlock_request,
                 "sensor_snapshot": sensor_data,
@@ -345,8 +345,19 @@ class CabinService:
                 and has_baby_seat_evidence(vision_data)
                 and not has_baby_seat_evidence(old_state)
             )
+            camera_radar_first_notice = (
+                decision["rule_id"] == "CAMERA_UNAVAILABLE"
+                and "send_notification" in decision["actions"]
+                and decision["occupancy_state"] == "SUSPECTED"
+                and (
+                    old_state is None
+                    or old_state.get("rule_id") != "CAMERA_UNAVAILABLE"
+                    or old_state.get("occupancy_state") != "SUSPECTED"
+                )
+            )
             new_intents = decision["actions"] if (
                 new_risk != previous or deadline_escalation or baby_seat_first_notice
+                or camera_radar_first_notice
             ) else []
             if opened and not new_intents:
                 new_intents = ["send_notification"]
@@ -445,8 +456,8 @@ class CabinService:
                 self._event(vehicle_id, "acknowledgment", {"revision": state["revision"], **incident})
             return state
 
-    def resolve(self, vehicle_id: str, incident_id: str, revision: int) -> dict:
-        """Record a separate cabin check against the exact committed revision.
+    def resolve(self, vehicle_id: str, incident_id: str, revision: int, *, cabin_checked: bool = False) -> dict:
+        """Record an authorized human cabin check against the exact committed revision.
 
         Endpoint authorization belongs to the API; this never calls an actuator.
         """
@@ -461,17 +472,21 @@ class CabinService:
                 return state
             if incident["status"] != "OPEN" or state["revision"] != revision:
                 raise ValueError("State changed; inspect the current revision")
+            if cabin_checked is not True:
+                raise ValueError("Explicit cabin check is required to resolve this incident")
             now = self.clock()
             sensor = json.loads(row["sensor_json"]) if row["sensor_json"] else None
             vision = json.loads(row["vision_json"]) if row["vision_json"] else None
             decision = safety_graph.invoke({"sensor": sensor, "vision": vision, "now": now})
-            if (
-                data_quality(sensor, vision, now)["status"] != "CURRENT"
-                or decision["occupancy_state"] != "ABSENT"
-                or decision["evidence_conflicts"]
-                or state.get("alert", {}).get("temporal_status") == "UNKNOWN_CLOCK_REGRESSION"
-            ):
-                raise ValueError("Fresh, consistent empty-cabin evidence is required")
+            quality = data_quality(sensor, vision, now)
+            if quality["status"] != "CURRENT":
+                raise ValueError("Current sensor and camera evidence is required before resolution")
+            if decision["occupancy_state"] in {"PRESENT", "SUSPECTED"}:
+                raise ValueError("Presence is still detected; inspect the cabin before resolving")
+            if decision["evidence_conflicts"]:
+                raise ValueError("Sensor evidence conflicts; refresh and inspect the cabin before resolving")
+            if state.get("alert", {}).get("temporal_status") == "UNKNOWN_CLOCK_REGRESSION":
+                raise ValueError("System time changed; refresh the current incident before resolving")
             incident.update(status="RESOLVED", resolved_at=now.isoformat(), resolution_revision=revision,
                             resolution="OPERATOR_CABIN_CHECK")
             prior_risk = state["risk_level"]

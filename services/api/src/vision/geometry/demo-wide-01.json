@@ -1,0 +1,82 @@
+{
+  "camera_id": "DEMO-WIDE-01",
+  "reference_size": [
+    1280,
+    720
+  ],
+  "cabin": [
+    [
+      [
+        0.0,
+        0.3
+      ],
+      [
+        0.26,
+        0.4
+      ],
+      [
+        0.74,
+        0.4
+      ],
+      [
+        1.0,
+        0.3
+      ],
+      [
+        1.0,
+        1.0
+      ],
+      [
+        0.0,
+        1.0
+      ]
+    ]
+  ],
+  "windows": [
+    [
+      [
+        0.04,
+        0.28
+      ],
+      [
+        0.3,
+        0.27
+      ],
+      [
+        0.34,
+        0.42
+      ],
+      [
+        0.2,
+        0.62
+      ],
+      [
+        0.02,
+        0.6
+      ]
+    ],
+    [
+      [
+        0.72,
+        0.27
+      ],
+      [
+        1.0,
+        0.27
+      ],
+      [
+        1.0,
+        0.7
+      ],
+      [
+        0.8,
+        0.64
+      ],
+      [
+        0.72,
+        0.6
+      ]
+    ]
+  ],
+  "note": "DEMO calibration drawn by hand for the DEMO-01/DEMO-02 footage only (one camera view). Image overlap with the cabin footprint minus glass: not a depth estimate, not validated, not valid for any other camera."
+}

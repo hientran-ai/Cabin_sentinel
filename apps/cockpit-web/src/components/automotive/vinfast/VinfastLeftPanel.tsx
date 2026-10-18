@@ -87,10 +87,11 @@ export function VinfastQuickControls() {
         </div>)}
       <div className="vf-row1">
         <Qc label="Tổng quan" aria="Tổng quan xe" icon={<GCarTop size={32} />} state={ui.overlay === 'vehicle' ? 'selected' : 'default'} onClick={() => ui.toggleOverlay('vehicle')} />
-        <Qc label="Khoá cửa" aria="Khoá cửa (mô phỏng, không điều khiển xe thật)" icon={<GLock size={32} />} state="default" onClick={() => notify({ key: 'vf-lock', level: 'info', title: 'Khoá xe · MÔ PHỎNG', body: 'Thay đổi đầu vào ở bảng mô phỏng. Xác nhận sự cố vẫn ở điện thoại chủ xe.' })} />
+        <Qc label={v.isLocked ? 'Đã khoá' : 'Khoá cửa'} aria={`Khoá cửa: đang ${v.isLocked ? 'khoá' : 'mở'}. Bấm để đổi (mô phỏng, không điều khiển xe thật)`} icon={<GLock size={32} />} state={v.isLocked ? 'active' : 'default'}
+          onClick={() => { v.set({ isLocked: !v.isLocked }); notify({ key: 'vf-lock', level: 'info', title: `Xe ${v.isLocked ? 'mở khoá' : 'đã khoá'} · MÔ PHỎNG`, body: 'Chỉ đổi dữ liệu mô phỏng gửi cho luật cảnh báo. Không điều khiển xe thật.' }) }} />
         <Qc label="Điều hòa" aria={`Điều hòa${climateOn ? ' đang bật' : ' đang tắt'}`} icon={<GFan size={32} />} state={ui.overlay === 'climate' ? 'selected' : climateOn ? 'active' : 'default'} tone="cool" onClick={() => ui.toggleOverlay('climate')} />
         <span data-seat-btn style={{ display: 'contents' }}><Qc label="Sưởi ghế" aria={`Ghế sưởi bên lái, mức ${seat}. Bấm để chọn mức`} icon={<GSeat size={32} />} badge={seat ? String(seat) : undefined} state={seatOpen ? 'selected' : seat ? 'active' : 'default'} tone="heat" onClick={() => setSeatOpen((o) => !o)} /></span>
-        <Qc label="CabinSentinel" aria="Thiết lập CabinSentinel" icon={<GCabinEye size={32} />} state={ui.overlay === 'cabinset' ? 'selected' : 'default'} onClick={() => ui.toggleOverlay('cabinset')} />
+        <Qc label="Cài đặt cabin" aria="Cài đặt giám sát cabin" icon={<GCabinEye size={32} />} state={ui.overlay === 'cabinset' ? 'selected' : 'default'} onClick={() => ui.toggleOverlay('cabinset')} />
         <button type="button" className={`vf-qt vf-qt-primary vf-press ${ui.overlay === 'carmode' ? 'is-open' : ''}`} aria-label="Car Mode: cắm trại, bé, thú cưng, rửa xe" aria-pressed={ui.overlay === 'carmode'} onClick={() => ui.toggleOverlay('carmode')}>
           <span className="ic"><GCarMode size={32} /></span><span className="lb">CAR MODE</span></button>
       </div>
@@ -102,7 +103,7 @@ export function VinfastQuickControls() {
 function Banner() {
   const ui = useUi(), view = useView(), belt = useVehicle((s) => s.driverSeatbelt)
   const alarm = view.tone === 'critical' || view.tone === 'warning'
-  if (alarm) return <button type="button" className={`vf-banner ${view.tone}`} role="alert" data-testid="vf-prompt" onClick={() => ui.setOverlay('cabin')}><GHazard size={24} /><span><b>Cabin: {view.headline}</b><small>{view.reason}</small></span></button>
+  if (alarm) return <button type="button" className={`vf-banner ${view.tone}`} data-testid="vf-prompt" onClick={() => ui.setOverlay('cabin')}><GHazard size={24} /><span><b>Cabin: {view.headline}</b><small>{view.reason}</small></span></button>
   if (!belt) return <div className="vf-banner warning" role="status" data-testid="vf-prompt"><GHazard size={24} /><span><b>Chú ý thắt dây an toàn</b></span></div>
   // never "no warning" while the cabin cannot be verified: unknown is not safe
   const verified = view.kind === 'current'

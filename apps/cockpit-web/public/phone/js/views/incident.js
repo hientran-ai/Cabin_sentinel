@@ -55,9 +55,9 @@ export async function render(ctx) {
     h("section", { class: `verdict ${inc.level}` }, h("div", { class: "kicker" }, inc.level === "critical" ? "Nghiêm trọng" : "Cảnh báo"),
       h("h1", { style: "margin:6px 0" }, "Có thể có người trong xe"), h("p", { style: "margin:0" }, inc.reason),
       h("p", { class: "small muted", style: "margin:10px 0 0" }, `Mở ${fmt.ago(inc.created_at)} · ${inc.seat_label || ""}${inc.viewed_at ? ` · ${inc.viewed_by} đã xem` : ""}`)),
-    h("div", { class: "actions3" }, h("a", { class: "btn danger", href: "tel:112", "aria-label": "Thấy người trong xe? Gọi 112" }, icon("phone"), "Gọi 112"),
+    h("div", { class: "actions3" }, h("button", { class: "btn danger", on: { click: () => toast("DEMO: không thực hiện cuộc gọi khẩn cấp.", "info") } }, icon("phone"), "Hỗ trợ (mô phỏng)"),
       canAct && !inc.viewed_at && h("button", { class: "btn", on: { click: (e) => busy(e.target, async () => { try { await post(`/v1/incidents/${inc.id}/view`); toast("Đã ghi nhận bạn đã xem. Sự cố vẫn mở.", "ok"); refresh(); } catch (er) { toast(er.message, "err"); } }) } }, "Đã xem")),
-    h("p", { class: "small muted", style: "margin:0" }, "“Đã xem” chỉ ghi nhận bạn đã xem, không đóng sự cố và không dừng nhắc lặp. Sự cố chỉ đóng khi bạn xác nhận đã kiểm tra xe và camera không còn thấy người."),
+    h("p", { class: "small muted", style: "margin:0" }, "“Đã xem” chỉ ghi nhận bạn đã xem, không đóng sự cố và không dừng nhắc lặp. Sự cố chỉ đóng khi bạn xác nhận đã kiểm tra xe và dữ liệu mới đáp ứng điều kiện kiểm tra. Không phát hiện qua camera chưa xác minh xe trống."),
     esc && h("section", { class: "card gap" }, h("h3", {}, "Kế hoạch xử lý"), h("div", { class: "steps" }, esc.steps.map((st) => h("div", { class: "step" }, h("i", { class: `dot ${st.state}` }),
       h("div", {}, h("div", {}, st.title), h("div", { class: "small muted" }, `${st.note}${st.state === "skipped" || st.state === "failed" ? " · " + (st.detail || st.state) : ""}`)))))),
     canAct ? h("section", { class: "card gap" }, h("h2", {}, "Xác nhận đã kiểm tra xe"),
@@ -84,11 +84,11 @@ function syncChecks() { document.querySelectorAll(".needs-checks").forEach((b) =
 
 async function submit(inc, ctx, override) {
   try {
-    const cur = await get(`/v1/incidents/${inc.id}`);
-    const rev = state.reject ? cur.revision : inc.revision;
-    const r = await post(`/v1/incidents/${inc.id}/confirm`, { revision: rev, checks: [...state.checks], override });
+    // The confirmation is bound to the revision the person is LOOKING AT (inc is re-read on every render). It is never silently re-bound
+    // to a newer revision: after "changed"/"stale" the ticks are cleared and the person must look again before sending.
+    const r = await post(`/v1/incidents/${inc.id}/confirm`, { revision: inc.revision, checks: [...state.checks], override });
     if (r.result === "resolved") { state.done = r; state.overridden = override; state.reject = null; await ctx.refresh(false); }
-    else state.reject = r.reject;
+    else { state.reject = r.reject; if (r.reject && (r.reject.code === "changed" || r.reject.code === "stale")) state.checks.clear(); }
   } catch (e) { toast(e instanceof ApiError ? e.message : "Không gửi được.", "err"); }
   ctx.rerender();
 }

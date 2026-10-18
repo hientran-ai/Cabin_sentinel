@@ -175,8 +175,8 @@ def test_pairing_issues_device_token_scoped_to_its_vehicle_only(env):
     add_vehicle(env, owner, "CAR-B")
     device = pair(env, owner, "CAR-A")
     token = device["device_token"]
-    feed(env, token, "CAR-A", "SAFE", 1)
-    wrong = env.client.post("/api/v1/vehicles/CAR-B/sensors", json=sensor("CAR-B", env.clock[0], 1, "SAFE"), headers=auth(token))
+    feed(env, token, "CAR-A", "NO_OCCUPANT_DETECTION", 1)
+    wrong = env.client.post("/api/v1/vehicles/CAR-B/sensors", json=sensor("CAR-B", env.clock[0], 1, "NO_OCCUPANT_DETECTION"), headers=auth(token))
     assert wrong.status_code == 403
     hb = env.client.post("/api/v1/device/heartbeat", json={"firmware": "1.0.1", "battery_pct": 88, "rssi_dbm": -60}, headers=auth(token))
     assert hb.status_code == 200
@@ -240,7 +240,7 @@ def test_telemetry_series_and_live_session_metadata_only(env):
     owner = user_token(env, "tel@example.com")
     add_vehicle(env, owner, "CAR-T")
     token = pair(env, owner, "CAR-T")["device_token"]
-    for step, scenario in enumerate(["SAFE", "WARNING", "CRITICAL"], start=1):
+    for step, scenario in enumerate(["NO_OCCUPANT_DETECTION", "WARNING", "CRITICAL"], start=1):
         feed(env, token, "CAR-T", scenario, step)
         env.clock[0] += timedelta(seconds=40)
     series = env.client.get("/api/v1/vehicles/CAR-T/telemetry?minutes=30&bucket_seconds=30", headers=auth(owner)).json()
@@ -381,7 +381,7 @@ def test_unlock_needs_current_critical_and_sms_needs_verified_contact(env):
     add_vehicle(env, owner, "CAR-U")
     token = pair(env, owner, "CAR-U")["device_token"]
     assert env.client.post("/api/v1/vehicles/CAR-U/commands", json={"type": "unlock"}, headers=auth(owner)).status_code == 409  # no data
-    feed(env, token, "CAR-U", "SAFE", 1)
+    feed(env, token, "CAR-U", "NO_OCCUPANT_DETECTION", 1)
     assert env.client.post("/api/v1/vehicles/CAR-U/commands", json={"type": "unlock"}, headers=auth(owner)).status_code == 409
     env.clock[0] += timedelta(seconds=1)  # observations must be newer than the committed ones
     feed(env, token, "CAR-U", "CRITICAL", 2)

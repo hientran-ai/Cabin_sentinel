@@ -5,7 +5,7 @@ import type { NotificationItem, ServerState } from '../../../../e2e/types'
 export type StepStatus = 'done' | 'active' | 'pending' | 'warn'
 export interface FlowStep { id: string; label: string; hint: string; status: StepStatus }
 export interface FlowInput {
-  hasSession: boolean; sourceRunning: boolean; sourceKind: 'none' | 'clip' | 'upload' | 'device'
+  hasSession: boolean; sourceRunning: boolean; sourceKind: 'none' | 'clip' | 'upload' | 'device' | 'simulated'
   state: ServerState | null; notifications: NotificationItem[]; connection: 'ok' | 'lost'
 }
 

@@ -128,7 +128,9 @@ def derive_occupancy(sensor: dict | None, vision: dict | None, now: datetime) ->
         return _occupancy("SUSPECTED", "RADAR_PRESENCE")
     if not sensor_fresh or not vision_fresh:
         return _occupancy("UNKNOWN", "SOURCE_UNAVAILABLE")
-    return _occupancy("ABSENT", "NO_OCCUPANT_EVIDENCE")
+    # A negative detector frame is not proof that the cabin is empty. In
+    # particular, the current model can miss rear-facing or occluded children.
+    return _occupancy("UNKNOWN", "NEGATIVE_VISION_INCONCLUSIVE")
 
 
 def _occupancy(state: str, reason: str) -> dict:
@@ -153,24 +155,32 @@ def has_baby_seat_evidence(vision: dict | None) -> bool:
 
 
 def _decide_risk(sensor: dict | None, vision: dict | None, now: datetime, occupancy: dict) -> dict:
-    if vision is not None and (now - datetime.fromisoformat(vision["timestamp"])).total_seconds() <= 3:
-        if vision["camera_status"] != "OK":
-            return _result("ERROR", "CAMERA_UNAVAILABLE", "Camera cannot verify cabin occupancy")
+    vision_age = (
+        (now - datetime.fromisoformat(vision["timestamp"])).total_seconds()
+        if vision is not None else None
+    )
+    camera_unavailable = (
+        vision is not None and -2 <= vision_age <= 3
+        and vision["camera_status"] != "OK"
+    )
 
     if sensor is None:
+        if camera_unavailable:
+            return _camera_unavailable(False)
         return _result("ERROR", "SENSOR_UNAVAILABLE", "Sensor data unavailable")
     sensor_age = (now - datetime.fromisoformat(sensor["timestamp"])).total_seconds()
     if sensor_age > 5 or sensor_age < -2:
+        if camera_unavailable:
+            return _camera_unavailable(False)
         return _result("ERROR", "SENSOR_STALE", "Sensor data is stale or in the future")
 
     radar = sensor["radar_presence"]
     if vision is None:
         return _radar_or_error(radar)
-    vision_age = (now - datetime.fromisoformat(vision["timestamp"])).total_seconds()
     if vision_age > 3 or vision_age < -2:
         return _radar_or_error(radar)
     if vision["camera_status"] != "OK":
-        return _result("ERROR", "CAMERA_UNAVAILABLE", "Camera cannot verify cabin occupancy")
+        return _camera_unavailable(radar)
 
     labels = {
         obj["class_name"].strip().lower().replace("_", " ")
@@ -229,6 +239,11 @@ def _decide_risk(sensor: dict | None, vision: dict | None, now: datetime, occupa
         return _result("WARNING", "SUSPECTED_OCCUPANT", "Detection requires occupant review", ["send_notification"])
     if labels & ITEMS and sensor["engine_status"] == "OFF":
         return _result("NOTICE", "FORGOTTEN_ITEM", "Possible item left in vehicle", ["send_notification"])
+    if occupancy["occupancy_state"] == "UNKNOWN":
+        return _result(
+            "ERROR", "OCCUPANCY_UNVERIFIED",
+            "Vision did not confirm an occupant; cabin emptiness cannot be verified",
+        )
     return _result("SAFE", "EMPTY_CABIN", "No occupant or radar presence detected")
 
 
@@ -236,6 +251,16 @@ def _radar_or_error(radar: bool) -> dict:
     if radar:
         return _result("WARNING", "RADAR_FALLBACK", "Vision unavailable; radar reports presence", ["send_notification"])
     return _result("ERROR", "VISION_UNAVAILABLE", "Vision data unavailable or stale")
+
+
+def _camera_unavailable(radar: bool) -> dict:
+    if radar:
+        return _result(
+            "ERROR", "CAMERA_UNAVAILABLE",
+            "Camera cannot verify cabin occupancy; radar reports possible presence",
+            ["send_notification"],
+        )
+    return _result("ERROR", "CAMERA_UNAVAILABLE", "Camera cannot verify cabin occupancy")
 
 
 def _result(risk: str, rule: str, reason: str, actions: list[str] | None = None) -> dict:

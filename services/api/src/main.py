@@ -1,4 +1,5 @@
 import logging
+import os
 import sqlite3
 import time
 from contextlib import asynccontextmanager
@@ -41,7 +42,19 @@ async def lifespan(app: FastAPI):
             "PLATFORM_SIGNING_KEY is unset; signed evidence URLs will become invalid after a restart",
         )
     app.state.vision_provider = None
-    if settings.model_path:
+    new_model_root = os.getenv("P068_MODEL_ROOT", "").strip()
+    if new_model_root:
+        # New model handoff (YOLO26s + face-age + YuNet). If it cannot load, say so and fall back to the configured model below.
+        try:
+            from src.vision.p068_provider import P068VisionProvider
+
+            app.state.vision_provider = P068VisionProvider(
+                new_model_root, device=os.getenv("P068_MODEL_DEVICE", "cpu"), geometry=os.getenv("P068_CABIN_GEOMETRY") or None,
+            )
+            logger.info("Vision provider: p068_vision handoff at %s", new_model_root)
+        except Exception:
+            logger.exception("P068_MODEL_ROOT is set but the new model failed to load; falling back to MODEL_PATH")
+    if app.state.vision_provider is None and settings.model_path:
         age_path = getattr(settings, "age_classifier_path", "")
         age_options = {}
         if age_path:

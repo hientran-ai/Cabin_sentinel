@@ -35,6 +35,7 @@ def evolve_incident(old_state, decision, sensor, vision, now):
     # Import legacy active decisions without inventing a reliable lock timestamp.
     if (
         incident is None
+        and "incident" not in old
         and old.get("incident_id")
         and previous in {"WARNING", "CRITICAL"}
         and old.get("occupancy_state") in {"PRESENT", "SUSPECTED"}

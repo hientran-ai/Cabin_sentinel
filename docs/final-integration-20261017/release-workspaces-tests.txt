@@ -1,0 +1,69 @@
+
+> cabinsentinel-platform@0.1.0 test
+> npm run test --workspace @cabinsentinel/api-client --workspace @cabinsentinel/auth --workspace @cabinsentinel/domain --workspace @cabinsentinel/operations-web && npm run test:worker
+
+
+> @cabinsentinel/api-client@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.3 /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/packages/api-client
+
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  21:41:12
+   Duration  204ms (transform 55%, tests 28%, import 13%, worker 4%)
+
+
+> @cabinsentinel/auth@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.3 /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/packages/auth
+
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  21:41:13
+   Duration  331ms (transform 61%, import 32%, tests 5%, worker 2%)
+
+
+> @cabinsentinel/domain@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.3 /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/packages/domain
+
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  21:41:13
+   Duration  166ms (tests 46%, transform 36%, import 14%, worker 4%)
+
+
+> @cabinsentinel/operations-web@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.3 /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/apps/operations-web
+
+
+ Test Files  2 passed (2)
+      Tests  5 passed (5)
+   Start at  21:41:14
+   Duration  203ms (transform 54%, import 34%, tests 7%, worker 5%)
+
+
+> cabinsentinel-platform@0.1.0 test:worker
+> vitest run workers/frontend-router.test.js
+
+
+ RUN  v5.0.3 /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017
+
+
+ Test Files  1 passed (1)
+      Tests  20 passed (20)
+   Start at  21:41:14
+   Duration  141ms (tests 43%, transform 34%, import 18%, worker 5%)
+

@@ -364,3 +364,4 @@ html.framed .topbar:has(.carsel) .brand-name { display: none; }   /* the phone f
 .topbar .carsel { flex: 1 1 0; }
 /* Alert card and alert photos on the incident page */
 .alert-card,.alert-photo{width:100%;height:auto;border-radius:12px;display:block;background:#111}
+.chip.pet svg { color: var(--accent); } .chip.pet.off { opacity: .6; }

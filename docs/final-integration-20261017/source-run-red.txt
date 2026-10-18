@@ -1,0 +1,45 @@
+
+> @cabinsentinel/cockpit-web@0.1.0 test
+> vitest run src/e2e/sourceModel.test.ts
+
+
+ RUN  v5.0.3 /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/apps/cockpit-web
+
+ ❯ src/e2e/sourceModel.test.ts (23 tests | 1 failed) 8ms
+   ❯ source badges (4)
+     × rejects a previous clip run even when both sources are DEMO 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/e2e/sourceModel.test.ts > source badges > rejects a previous clip run even when both sources are DEMO
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/e2e/sourceModel.test.ts:19:77
+     17| describe('source badges', () => {
+     18|   it('rejects a previous clip run even when both sources are DEMO', ()…
+     19|     expect(resultBelongsToSource('DEMO', 'DEMO', 'r2', 'session-r1-fra…
+       |                                                                             ^
+     20|     expect(resultBelongsToSource('DEMO', 'DEMO', 'r2', 'session-r2-fra…
+     21|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  20:40:09
+   Duration  136ms (transform 54%, tests 20%, import 19%, worker 6%)
+
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/apps/cockpit-web
+npm error workspace @cabinsentinel/cockpit-web@0.1.0
+npm error location /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/apps/cockpit-web
+npm error command failed
+npm error command sh -c vitest run src/e2e/sourceModel.test.ts

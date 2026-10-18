@@ -6,6 +6,7 @@ import { pollOnce, useE2e } from './store'
 import { connectionNow } from './hooks'
 import { deriveView, RULE_VI } from './view'
 import { CareSheet } from './CareSheet'
+import { petCareAvailable, startCareProfile, startPetCare } from './petCare'
 
 export const PHONE_W = 390
 export const PHONE_H = 800
@@ -15,12 +16,15 @@ declare global { interface Window { __phoneBridge?: unknown } }
 function installBridge() {
   const bridge = {
     snapshot: () => { const s = useE2e.getState(); return JSON.parse(JSON.stringify({ session: s.session ? { id: s.session.id } : null, state: s.state, notifications: s.notifications, history: s.history, connection: connectionNow() })) },
-    view: () => { const s = useE2e.getState(); return deriveView({ hasSession: !!s.session, state: s.state, connection: connectionNow() }) },
+    view: () => { const s = useE2e.getState(); return deriveView({ hasSession: !!s.session, state: s.state, connection: connectionNow(), link: s.state?.connectivity?.state }) },
     ruleText: (id: string | null, fallback: string) => (id && RULE_VI[id]) || fallback,
     acknowledge: () => useE2e.getState().acknowledge('PHONE'),
-    resolve: () => useE2e.getState().resolve('PHONE'),
+    resolve: (seenRevision?: number) => useE2e.getState().resolve('PHONE', seenRevision),
     refresh: () => pollOnce(),
     delivered: (id: number) => useE2e.getState().confirmDelivered(id),
+    petCareAvailable: () => petCareAvailable(useE2e.getState().state?.care),
+    startPetCare,
+    startCareProfile,
   }
   window.__phoneBridge = bridge
 }

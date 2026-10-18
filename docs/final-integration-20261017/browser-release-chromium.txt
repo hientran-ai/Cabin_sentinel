@@ -1,0 +1,52 @@
+(node:19513) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+Running 8 tests using 1 worker
+
+(node:19674) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:19674) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:19674) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-01 decodes actual video, runs actual model and cleans up (6.3s)
+  ✓  2 [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-02 decodes actual video, runs actual model and cleans up (5.8s)
+  ✓  3 [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-03 decodes actual video, runs actual model and cleans up (6.4s)
+  ✓  4 [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-04 decodes actual video, runs actual model and cleans up (5.3s)
+  ✓  5 [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-05 decodes actual video, runs actual model and cleans up (4.9s)
+  ✓  6 [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-06 decodes actual video, runs actual model and cleans up (4.9s)
+  ✘  7 [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-07 decodes actual video, runs actual model and cleans up (8.3s)
+(node:20790) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:20790) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:20790) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  8 [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-08 decodes actual video, runs actual model and cleans up (6.8s)
+
+
+  1) [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-07 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m"ATTENDED_DRIVING"[39m
+    Received: [31m"COOL_OCCUPANT"[39m
+
+      32 |     if (n === 2) expect(evidence.risk).toBe('ERROR')
+      33 |     if (n === 5) { expect(evidence.risk).toBe('CRITICAL'); expect(evidence.notifications.length).toBe(1) }
+    > 34 |     if (n === 7) { expect(evidence.rule).toBe('ATTENDED_DRIVING'); expect(evidence.incident).toBeNull(); expect(evidence.notifications).toHaveLength(0) }
+         |                                          ^
+      35 |     writeFileSync(info.outputPath(`${id}-actual.json`), JSON.stringify(evidence, null, 2))
+      36 |     await page.screenshot({ path: info.outputPath(`${id}-evidence.png`), fullPage: true })
+      37 |     // Native replay is a user operation on the mounted evidence player. Closing the panel detaches
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:34:42
+
+    [31mTest timeout of 90000ms exceeded.[39m
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-07-decode-457f0--actual-model-and-cleans-up-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-07-decode-457f0--actual-model-and-cleans-up-chromium/error-context.md
+
+  1 failed
+    [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-07 decodes actual video, runs actual model and cleans up 
+  7 passed (2.3m)

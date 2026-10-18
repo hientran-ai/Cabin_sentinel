@@ -1,5 +1,6 @@
 // Soft music generated in the browser with WebAudio, standing in for the car's speakers. The melodies are traditional /
 // public-domain (Twinkle Twinkle; Brahms' Wiegenlied, 1868), synthesised here, so no recording is copied or streamed.
+import { useE2e } from './store'
 type Note = [string | null, number] // [pitch, beats]; null = rest
 
 const SEMI: Record<string, number> = { C: -9, D: -7, E: -5, F: -4, G: -2, A: 0, B: 2 }
@@ -23,7 +24,8 @@ let master: GainNode | null = null
 let timer: ReturnType<typeof setTimeout> | null = null
 let playing: string | null = null
 const listeners = new Set<() => void>()
-export const audioState = () => ({ playing, blocked: !!ctx && ctx.state !== 'running' && !!playing })
+const safetyBlocked = () => { const s = useE2e.getState(); return !s.state?.decision_current || s.connection !== 'ok' || s.state.risk_level === 'CRITICAL' }
+export const audioState = () => ({ playing, blocked: !!ctx && ctx.state !== 'running' && !!playing, safetyBlocked: safetyBlocked() })
 export function onAudio(l: () => void) { listeners.add(l); return () => { listeners.delete(l) } }
 const emit = () => listeners.forEach((l) => l())
 
@@ -60,11 +62,12 @@ function schedule(id: string) {
 
 /** Start a track. Browsers block sound until the page has had a click; `blocked` then tells the UI to ask for one. */
 export function play(id: string) {
-  const key = trackOf(id) ? id : 'twinkle'
+  if (!trackOf(id) || safetyBlocked()) { stop(); return }
+  const key = id
   if (playing === key) { void ctx?.resume(); return }
   stop(); playing = key
-  void ensure().resume().finally(emit)
+  void ensure().resume().catch(() => undefined).finally(emit)
   schedule(key); emit()
 }
 export function stop() { if (timer) clearTimeout(timer); timer = null; playing = null; if (master && ctx) { master.disconnect(); master = null; ctx.close().catch(() => undefined); ctx = null } emit() }
-export function unlock() { void ctx?.resume().finally(emit) }
+export function unlock() { if (!safetyBlocked()) void ctx?.resume().catch(() => undefined).finally(emit) }

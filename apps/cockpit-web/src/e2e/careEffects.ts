@@ -10,6 +10,8 @@ const stepOf = (care: CareView | undefined, tool: string) => care?.plan.find((s)
 
 export function useCareEffects() {
   const care = useE2e((s) => s.state?.care)
+  const blocked = useE2e((s) => !s.state?.decision_current || s.connection !== 'ok' || s.state?.risk_level === 'CRITICAL')
+  useEffect(() => { if (blocked) stop() }, [blocked])
   const key = care?.status === 'ACTIVE' ? `${care.incident_id}:${care.started_at}` : null
   useEffect(() => {
     if (!key || !care) { stop(); return }

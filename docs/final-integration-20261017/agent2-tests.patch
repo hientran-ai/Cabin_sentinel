@@ -1,0 +1,347 @@
+diff --git a/tests/fleet_helpers.py b/tests/fleet_helpers.py
+index 6c01686..a466595 100644
+--- a/tests/fleet_helpers.py
++++ b/tests/fleet_helpers.py
+@@ -6,7 +6,7 @@ NOW = datetime(2026, 10, 3, 9, tzinfo=UTC)
+ 
+ SCENARIOS = {
+     # Thresholds are the existing rules.py values; nothing is redefined here.
+-    "SAFE": {"temperature": 24.0, "radar_presence": False, "objects": []},
++    "NO_OCCUPANT_DETECTION": {"temperature": 24.0, "radar_presence": False, "objects": []},
+     "WARNING": {"temperature": 28.0, "radar_presence": True, "objects": [{"class_name": "person", "confidence": 0.9}]},
+     "CRITICAL": {"temperature": 39.2, "radar_presence": True, "objects": [{"class_name": "person", "confidence": 0.9}]},
+ }
+diff --git a/tests/test_action_safety.py b/tests/test_action_safety.py
+index 301cc26..3cc44d0 100644
+--- a/tests/test_action_safety.py
++++ b/tests/test_action_safety.py
+@@ -67,15 +67,21 @@ def test_replaying_the_same_logical_input_never_reruns_actuators(rig):
+     assert len(keys) == len(set(keys))
+ 
+ 
+-def test_resolving_requires_fresh_empty_cabin_and_never_unlocks(rig):
++def test_human_cabin_check_resolves_without_turning_negative_vision_safe(rig):
+     service, spy, clock = rig
+     state = publish(service, clock, 1, "CRITICAL")
+     incident = state["incident"]["incident_id"]
+     with pytest.raises(ValueError):
+-        service.resolve(VEHICLE, incident, state["revision"])
++        service.resolve(VEHICLE, incident, state["revision"], cabin_checked=True)
+     clock[0] += timedelta(seconds=1)
+-    empty = publish(service, clock, 2, "SAFE")
+-    resolved = service.resolve(VEHICLE, incident, empty["revision"])
++    uncertain = publish(service, clock, 2, "NO_OCCUPANT_DETECTION")
++    assert uncertain["risk_level"] == "ERROR"
++    assert uncertain["occupancy_state"] == "UNKNOWN"
++    with pytest.raises(ValueError, match="Explicit cabin check"):
++        service.resolve(VEHICLE, incident, uncertain["revision"], cabin_checked=False)
++    resolved = service.resolve(VEHICLE, incident, uncertain["revision"], cabin_checked=True)
+     assert resolved["incident"]["status"] == "RESOLVED"
++    assert resolved["risk_level"] == "ERROR"
++    assert resolved["occupancy_state"] == "UNKNOWN"
+     assert resolved["unlock_request"]["status"] in {"canceled", "expired"}
+     assert "request_unlock" not in spy.calls
+diff --git a/tests/test_alert_graph.py b/tests/test_alert_graph.py
+index 875a486..96d6a84 100644
+--- a/tests/test_alert_graph.py
++++ b/tests/test_alert_graph.py
+@@ -2,7 +2,7 @@ from src.cabinsentinel.graph import safety_graph
+ from tests.test_cabinsentinel import NOW, sensor, vision
+ 
+ 
+-def test_unresolved_incident_routes_warning_inside_graph_even_with_empty_current_frame():
++def test_unresolved_incident_keeps_negative_vision_unverified_in_error_route():
+     state = safety_graph.invoke(
+         {
+             "sensor": sensor().model_dump(mode="json"),
+@@ -11,6 +11,7 @@ def test_unresolved_incident_routes_warning_inside_graph_even_with_empty_current
+             "unresolved_incident": True,
+         }
+     )
+-    assert state["risk_level"] == "WARNING"
+-    assert state["rule_id"] == "UNRESOLVED_OCCUPANT"
+-    assert state["route"] == "warning"
++    assert state["risk_level"] == "ERROR"
++    assert state["occupancy_state"] == "UNKNOWN"
++    assert state["rule_id"] == "OCCUPANCY_UNVERIFIED"
++    assert state["route"] == "error"
+diff --git a/tests/test_alert_incidents.py b/tests/test_alert_incidents.py
+index 4a7f387..956d01d 100644
+--- a/tests/test_alert_incidents.py
++++ b/tests/test_alert_incidents.py
+@@ -76,8 +76,9 @@ def test_fresh_empty_frame_and_ack_do_not_resolve_existing_incident(tmp_path):
+     clock[0] += timedelta(seconds=1)
+     service.ingest_sensor(sensor(at=clock[0], sequence=2))
+     empty = service.ingest_vision(vision([], at=clock[0], frame_id="empty"))
+-    assert empty["risk_level"] == "WARNING"
+-    assert empty["rule_id"] == "UNRESOLVED_OCCUPANT"
++    assert empty["risk_level"] == "ERROR"
++    assert empty["occupancy_state"] == "UNKNOWN"
++    assert empty["rule_id"] == "OCCUPANCY_UNVERIFIED"
+     assert empty["incident_id"] == first["incident_id"]
+     ack = service.acknowledge("CAR_1", first["incident_id"])
+     assert ack["incident"]["acknowledged_at"] == clock[0].isoformat()
+diff --git a/tests/test_alert_lifecycle.py b/tests/test_alert_lifecycle.py
+index a048a72..b88bd17 100644
+--- a/tests/test_alert_lifecycle.py
++++ b/tests/test_alert_lifecycle.py
+@@ -9,7 +9,7 @@ from tests.test_alert_incidents import occupied
+ from tests.test_cabinsentinel import NOW, sensor, vision
+ 
+ 
+-def test_resolution_requires_current_revision_fresh_empty_evidence_and_explicit_check(tmp_path):
++def test_resolution_requires_current_evidence_and_explicit_human_check(tmp_path):
+     clock = [NOW]
+     service = CabinService(tmp_path / "state.db", clock=lambda: clock[0])
+     first = occupied(service, clock)
+@@ -20,13 +20,14 @@ def test_resolution_requires_current_revision_fresh_empty_evidence_and_explicit_
+     current = service.ingest_vision(vision([], at=clock[0], frame_id="empty"))
+     with pytest.raises(ValueError):
+         service.resolve("CAR_1", first["incident_id"], first["revision"])
+-    done = service.resolve("CAR_1", first["incident_id"], current["revision"])
++    done = service.resolve("CAR_1", first["incident_id"], current["revision"], cabin_checked=True)
+     assert done["incident"]["status"] == "RESOLVED"
+-    assert done["risk_level"] == "SAFE"
+-    assert done["risk_route"] == "safe"
++    assert done["risk_level"] == "ERROR"
++    assert done["occupancy_state"] == "UNKNOWN"
++    assert done["risk_route"] == "error"
+     assert done["unlock_request"] is None
+     assert done["alert"]["stage"] == "RESOLVED"
+-    assert service.resolve("CAR_1", first["incident_id"], current["revision"]) == done
++    assert service.resolve("CAR_1", first["incident_id"], current["revision"], cabin_checked=True) == done
+     clock[0] += timedelta(seconds=1)
+     reopened = occupied(service, clock, seq=3)
+     assert reopened["incident_id"] != first["incident_id"]
+diff --git a/tests/test_cabinsentinel.py b/tests/test_cabinsentinel.py
+index c2ad567..c828e25 100644
+--- a/tests/test_cabinsentinel.py
++++ b/tests/test_cabinsentinel.py
+@@ -173,8 +173,11 @@ def test_reopening_service_preserves_decision_without_replaying_actions(tmp_path
+ def test_timer_marks_vision_stale_without_any_new_packet(tmp_path):
+     clock = [NOW]
+     service = CabinService(tmp_path / "state.db", clock=lambda: clock[0])
+-    service.ingest_sensor(sensor(25.0))
+-    safe = service.ingest_vision(vision([]))
++    service.ingest_sensor(sensor(
++        25.0, engine="ON", gear="D", vehicle_speed_kph=30,
++        driver_present=True, hvac_status="ACTIVE",
++    ))
++    safe = service.ingest_vision(vision([{"class_name": "person", "confidence": 0.9}]))
+     assert safe["risk_level"] == "SAFE"
+     clock[0] = NOW + timedelta(seconds=4)
+     stale = service.tick("CAR_1")
+diff --git a/tests/test_demo_api.py b/tests/test_demo_api.py
+index d81e219..b2e97e4 100644
+--- a/tests/test_demo_api.py
++++ b/tests/test_demo_api.py
+@@ -98,7 +98,7 @@ async def test_hot_occupant_upload_uses_service_rules_and_simulated_actions(tmp_
+     [
+         ("normal", [{"class": "person", "confidence": 0.9}], "SAFE", "ATTENDED_DRIVING"),
+         ("parked_locked", [{"class": "person", "confidence": 0.9}], "WARNING", "COOL_OCCUPANT"),
+-        ("hot_locked", [], "SAFE", "EMPTY_CABIN"),
++        ("hot_locked", [], "ERROR", "OCCUPANCY_UNVERIFIED"),
+         ("hot_locked", [{"class": "dog", "confidence": 0.9}], "CRITICAL", "HOT_OCCUPANT"),
+         ("hot_locked", [{"class": "cat", "confidence": 0.9}], "CRITICAL", "HOT_OCCUPANT"),
+     ],
+diff --git a/tests/test_demo_sessions.py b/tests/test_demo_sessions.py
+index 02ebc53..2d553ac 100644
+--- a/tests/test_demo_sessions.py
++++ b/tests/test_demo_sessions.py
+@@ -82,11 +82,13 @@ async def test_model_upload_session_refresh_poll_ack_and_resolution(tmp_path):
+                 files={"image": ("c.png", png(), "image/png")},
+             )
+             state = (await c.get(url, headers=headers)).json()
+-            assert state["risk_level"] == "WARNING"
++            assert state["risk_level"] == "ERROR"
++            assert state["occupancy_state"] == "UNKNOWN"
+             resolve = {"incident_id": incident, "revision": state["revision"], "cabin_checked": True}
+-            assert (await c.post(url + "/resolve", headers=headers, json=resolve)).json()["incident"][
+-                "status"
+-            ] == "RESOLVED"
++            resolved = await c.post(url + "/resolve", headers=headers, json=resolve)
++            assert resolved.status_code == 200
++            assert resolved.json()["incident"]["status"] == "RESOLVED"
++            assert resolved.json()["risk_level"] == "ERROR"
+             assert (await c.get(url + "/events", headers=headers)).status_code == 200
+             before = service.get_state("DEMO_" + sid)["revision"]
+             await c.get(url, headers=headers)
+diff --git a/tests/test_fleet_api.py b/tests/test_fleet_api.py
+index d375f8a..d19bd7c 100644
+--- a/tests/test_fleet_api.py
++++ b/tests/test_fleet_api.py
+@@ -72,7 +72,7 @@ def test_vehicle_without_data_is_unknown_not_safe(env):
+ 
+ 
+ @pytest.mark.parametrize(("scenario", "risk", "rule"), [
+-    ("SAFE", "SAFE", "EMPTY_CABIN"),
++    ("NO_OCCUPANT_DETECTION", "ERROR", "OCCUPANCY_UNVERIFIED"),
+     ("WARNING", "WARNING", "COOL_OCCUPANT"),
+     ("CRITICAL", "CRITICAL", "HOT_OCCUPANT"),
+ ])
+@@ -108,7 +108,7 @@ def test_replayed_sensor_and_frame_do_not_emit_actions_again(env):
+ 
+ 
+ def test_stale_vehicle_becomes_unknown_never_safe(env):
+-    feed(env, "VF8-DEMO-01", "SAFE", 1)
++    feed(env, "VF8-DEMO-01", "NO_OCCUPANT_DETECTION", 1)
+     env.clock[0] += timedelta(seconds=11)
+     env.service.tick("VF8-DEMO-01")
+     admin = login(env.client, "admin")
+@@ -121,7 +121,7 @@ def test_stale_vehicle_becomes_unknown_never_safe(env):
+ 
+ def test_device_and_role_boundaries(env):
+     owner = login(env.client, "owner", "demo-owner")
+-    body = sensor("VF8-DEMO-01", NOW, 1, "SAFE")
++    body = sensor("VF8-DEMO-01", NOW, 1, "NO_OCCUPANT_DETECTION")
+     assert env.client.post("/api/v1/vehicles/VF8-DEMO-01/sensors", json=body, headers=auth(owner)).status_code == 403
+     assert env.client.post("/api/v1/vehicles/NOPE/sensors", json={**body, "vehicle_id": "NOPE"}, headers=auth(DEVICE)).status_code == 403
+     mismatch = env.client.post("/api/v1/vehicles/VF9-DEMO-02/sensors", json=body, headers=auth(DEVICE))
+@@ -130,15 +130,15 @@ def test_device_and_role_boundaries(env):
+ 
+ 
+ def test_legacy_routes_no_longer_expose_fleet_vehicles_anonymously(env):
+-    feed(env, "VF8-DEMO-01", "SAFE", 1)
++    feed(env, "VF8-DEMO-01", "NO_OCCUPANT_DETECTION", 1)
+     assert env.client.get("/api/v1/state/VF8-DEMO-01").status_code == 401
+     assert env.client.get("/api/v1/events/VF8-DEMO-01").status_code == 401
+-    anonymous_write = env.client.post("/api/v1/vision", json=vision("VF8-DEMO-01", NOW, 9, "SAFE"))
++    anonymous_write = env.client.post("/api/v1/vision", json=vision("VF8-DEMO-01", NOW, 9, "NO_OCCUPANT_DETECTION"))
+     assert anonymous_write.status_code == 401
+     owner = login(env.client, "owner", "demo-owner")
+     assert env.client.get("/api/v1/state/VF8-DEMO-01", headers=auth(owner)).status_code == 200
+     # Unregistered legacy ids keep their previous behaviour.
+-    env.service.ingest_sensor(SensorPayload(**sensor("CAR_1", NOW, 1, "SAFE")))
++    env.service.ingest_sensor(SensorPayload(**sensor("CAR_1", NOW, 1, "NO_OCCUPANT_DETECTION")))
+     assert env.client.get("/api/v1/state/CAR_1").status_code == 200
+ 
+ 
+diff --git a/tests/test_occupancy.py b/tests/test_occupancy.py
+index 6098ae2..7e65bb4 100644
+--- a/tests/test_occupancy.py
++++ b/tests/test_occupancy.py
+@@ -228,15 +228,17 @@ def test_person_at_threshold_is_confirmed():
+     assert state["risk_level"] == "CRITICAL"
+ 
+ 
+-def test_fresh_empty_frame_and_negative_radar_are_absent():
++def test_hot_locked_empty_frame_is_unknown_not_safe_or_confirmed_child():
+     service = _service()
+     state = service.ingest_vision(VisionPayload(
+         vehicle_id="CAR_1", timestamp=NOW, frame_id="empty-1",
+         camera_status="OK", detected_objects=[],
+     ))
+-    assert state["occupancy_state"] == "ABSENT"
+-    assert state["occupancy_reason_code"] == "NO_OCCUPANT_EVIDENCE"
+-    assert state["risk_level"] == "SAFE"
++    assert state["occupancy_state"] == "UNKNOWN"
++    assert state["occupancy_reason_code"] == "NEGATIVE_VISION_INCONCLUSIVE"
++    assert state["risk_level"] == "ERROR"
++    assert state["rule_id"] == "OCCUPANCY_UNVERIFIED"
++    assert state["actions"] == []
+ 
+ 
+ def test_unknown_label_with_known_item_cannot_become_notice_or_safe():
+@@ -264,6 +266,41 @@ def test_stale_vision_is_unknown_and_error_with_negative_radar():
+     assert state["risk_level"] == "ERROR"
+ 
+ 
++def test_positive_radar_after_camera_block_sends_one_degraded_monitoring_alert():
++    clock = [NOW]
++    service = CabinService(":memory:", clock=lambda: clock[0])
++    service.ingest_sensor(SensorPayload(
++        vehicle_id="CAR_1", timestamp=NOW, sequence=1,
++        temperature=39, engine_status="OFF", doors_locked=True,
++        radar_presence=False,
++    ))
++    first = service.ingest_vision(VisionPayload(
++        vehicle_id="CAR_1", timestamp=NOW, frame_id="blocked-1",
++        camera_status="BLOCKED", detected_objects=[],
++    ))
++    assert first["risk_level"] == "ERROR"
++    assert first["occupancy_state"] == "UNKNOWN"
++
++    clock[0] = NOW + timedelta(seconds=1)
++    state = service.ingest_sensor(SensorPayload(
++        vehicle_id="CAR_1", timestamp=clock[0], sequence=2,
++        temperature=39, engine_status="OFF", doors_locked=True,
++        radar_presence=True,
++    ))
++    assert state["risk_level"] == "ERROR"
++    assert state["rule_id"] == "CAMERA_UNAVAILABLE"
++    assert state["occupancy_state"] == "SUSPECTED"
++    assert state["occupancy_reason_code"] == "RADAR_PRESENCE"
++    assert state["radar_presence"] is True
++    assert [item["tool"] for item in state["action_results"]] == ["send_notification"]
++    assert state["action_results"][0]["status"] == "simulated"
++    assert service.ingest_vision(VisionPayload(
++        vehicle_id="CAR_1", timestamp=clock[0], frame_id="blocked-2",
++        camera_status="BLOCKED", detected_objects=[],
++    ))["action_results"] == []
++    assert len(service.events("CAR_1", event_type="action_result")) == 1
++
++
+ def test_committed_occupancy_is_read_only_and_survives_restart():
+     with TemporaryDirectory() as directory:
+         path = Path(directory) / "occupancy.db"
+diff --git a/tests/test_phase2a_freshness.py b/tests/test_phase2a_freshness.py
+index f9b3356..f37c794 100644
+--- a/tests/test_phase2a_freshness.py
++++ b/tests/test_phase2a_freshness.py
+@@ -14,18 +14,19 @@ NOW = datetime(2026, 9, 26, 3, 0, tzinfo=UTC)
+ 
+ 
+ @pytest.mark.asyncio
+-async def test_restart_get_marks_old_safe_decision_stale_before_first_tick(tmp_path):
++async def test_restart_get_marks_old_attended_safe_decision_stale_before_first_tick(tmp_path):
+     clock = [NOW]
+     path = tmp_path / "state.db"
+     service = CabinService(path, clock=lambda: clock[0])
+     service.ingest_sensor(SensorPayload(
+         vehicle_id="CAR_1", timestamp=NOW, sequence=1,
+-        temperature=25, engine_status="OFF", doors_locked=True,
+-        radar_presence=False,
++        temperature=25, engine_status="ON", doors_locked=False,
++        radar_presence=False, driver_present=True, gear="D",
++        vehicle_speed_kph=30, hvac_status="ACTIVE",
+     ))
+     safe = service.ingest_vision(VisionPayload(
+         vehicle_id="CAR_1", timestamp=NOW, frame_id="empty-1",
+-        camera_status="OK", detected_objects=[],
++        camera_status="OK", detected_objects=[{"class_name": "person", "confidence": 0.9}],
+     ))
+     assert safe["risk_level"] == "SAFE"
+     service._db.close()
+diff --git a/tests/test_platform_api.py b/tests/test_platform_api.py
+index a7aa056..2afc792 100644
+--- a/tests/test_platform_api.py
++++ b/tests/test_platform_api.py
+@@ -175,8 +175,8 @@ def test_pairing_issues_device_token_scoped_to_its_vehicle_only(env):
+     add_vehicle(env, owner, "CAR-B")
+     device = pair(env, owner, "CAR-A")
+     token = device["device_token"]
+-    feed(env, token, "CAR-A", "SAFE", 1)
+-    wrong = env.client.post("/api/v1/vehicles/CAR-B/sensors", json=sensor("CAR-B", env.clock[0], 1, "SAFE"), headers=auth(token))
++    feed(env, token, "CAR-A", "NO_OCCUPANT_DETECTION", 1)
++    wrong = env.client.post("/api/v1/vehicles/CAR-B/sensors", json=sensor("CAR-B", env.clock[0], 1, "NO_OCCUPANT_DETECTION"), headers=auth(token))
+     assert wrong.status_code == 403
+     hb = env.client.post("/api/v1/device/heartbeat", json={"firmware": "1.0.1", "battery_pct": 88, "rssi_dbm": -60}, headers=auth(token))
+     assert hb.status_code == 200
+@@ -240,7 +240,7 @@ def test_telemetry_series_and_live_session_metadata_only(env):
+     owner = user_token(env, "tel@example.com")
+     add_vehicle(env, owner, "CAR-T")
+     token = pair(env, owner, "CAR-T")["device_token"]
+-    for step, scenario in enumerate(["SAFE", "WARNING", "CRITICAL"], start=1):
++    for step, scenario in enumerate(["NO_OCCUPANT_DETECTION", "WARNING", "CRITICAL"], start=1):
+         feed(env, token, "CAR-T", scenario, step)
+         env.clock[0] += timedelta(seconds=40)
+     series = env.client.get("/api/v1/vehicles/CAR-T/telemetry?minutes=30&bucket_seconds=30", headers=auth(owner)).json()
+@@ -381,7 +381,7 @@ def test_unlock_needs_current_critical_and_sms_needs_verified_contact(env):
+     add_vehicle(env, owner, "CAR-U")
+     token = pair(env, owner, "CAR-U")["device_token"]
+     assert env.client.post("/api/v1/vehicles/CAR-U/commands", json={"type": "unlock"}, headers=auth(owner)).status_code == 409  # no data
+-    feed(env, token, "CAR-U", "SAFE", 1)
++    feed(env, token, "CAR-U", "NO_OCCUPANT_DETECTION", 1)
+     assert env.client.post("/api/v1/vehicles/CAR-U/commands", json={"type": "unlock"}, headers=auth(owner)).status_code == 409
+     env.clock[0] += timedelta(seconds=1)  # observations must be newer than the committed ones
+     feed(env, token, "CAR-U", "CRITICAL", 2)

@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { AutomotiveDashboard } from './components/automotive/AutomotiveDashboard'
 import { E2ePage } from './e2e/E2ePage'
+import { ExitBar } from './components/common/ExitBar'
 import { useE2e } from './e2e/store'
 import './styles/index.css'
 
@@ -21,7 +22,7 @@ const playground = new URLSearchParams(location.search).get('mode') === 'playgro
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     {playground
-      ? <div className="relative h-full"><AutomotiveDashboard /><a href="?" className="absolute bottom-1 left-1/2 z-[60] -translate-x-1/2 rounded-full bg-black/70 px-3 py-0.5 text-xs text-white">MOCK PLAYGROUND · không đi qua backend · mở bản đầu-cuối</a></div>
+      ? <div className="relative h-full"><AutomotiveDashboard /><a href="?" className="absolute bottom-1 left-1/2 z-[60] -translate-x-1/2 rounded-full bg-black/70 px-3 py-0.5 text-xs text-white">MOCK PLAYGROUND · không đi qua backend · mở bản đầu-cuối</a><ExitBar label="Thoát bản mock" href={location.pathname} hint="" /></div>
       : <E2ePage />}
   </StrictMode>,
 )

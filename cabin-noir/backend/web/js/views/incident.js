@@ -91,11 +91,11 @@ function syncChecks() { document.querySelectorAll(".needs-checks").forEach((b) =
 
 async function submit(inc, ctx, override) {
   try {
-    const cur = await get(`/v1/incidents/${inc.id}`);
-    const rev = state.reject ? cur.revision : inc.revision;
-    const r = await post(`/v1/incidents/${inc.id}/confirm`, { revision: rev, checks: [...state.checks], override });
+    // The confirmation is bound to the revision the person is LOOKING AT (inc is re-read on every render). It is never silently re-bound
+    // to a newer revision: after "changed"/"stale" the ticks are cleared and the person must look again before sending.
+    const r = await post(`/v1/incidents/${inc.id}/confirm`, { revision: inc.revision, checks: [...state.checks], override });
     if (r.result === "resolved") { state.done = r; state.overridden = override; state.reject = null; await ctx.refresh(false); }
-    else state.reject = r.reject;
+    else { state.reject = r.reject; if (r.reject && (r.reject.code === "changed" || r.reject.code === "stale")) state.checks.clear(); }
   } catch (e) { toast(e instanceof ApiError ? e.message : "Không gửi được.", "err"); }
   ctx.rerender();
 }

@@ -72,7 +72,7 @@ def test_vehicle_without_data_is_unknown_not_safe(env):
 
 
 @pytest.mark.parametrize(("scenario", "risk", "rule"), [
-    ("SAFE", "SAFE", "EMPTY_CABIN"),
+    ("NO_OCCUPANT_DETECTION", "ERROR", "OCCUPANCY_UNVERIFIED"),
     ("WARNING", "WARNING", "COOL_OCCUPANT"),
     ("CRITICAL", "CRITICAL", "HOT_OCCUPANT"),
 ])
@@ -108,7 +108,7 @@ def test_replayed_sensor_and_frame_do_not_emit_actions_again(env):
 
 
 def test_stale_vehicle_becomes_unknown_never_safe(env):
-    feed(env, "VF8-DEMO-01", "SAFE", 1)
+    feed(env, "VF8-DEMO-01", "NO_OCCUPANT_DETECTION", 1)
     env.clock[0] += timedelta(seconds=11)
     env.service.tick("VF8-DEMO-01")
     admin = login(env.client, "admin")
@@ -121,7 +121,7 @@ def test_stale_vehicle_becomes_unknown_never_safe(env):
 
 def test_device_and_role_boundaries(env):
     owner = login(env.client, "owner", "demo-owner")
-    body = sensor("VF8-DEMO-01", NOW, 1, "SAFE")
+    body = sensor("VF8-DEMO-01", NOW, 1, "NO_OCCUPANT_DETECTION")
     assert env.client.post("/api/v1/vehicles/VF8-DEMO-01/sensors", json=body, headers=auth(owner)).status_code == 403
     assert env.client.post("/api/v1/vehicles/NOPE/sensors", json={**body, "vehicle_id": "NOPE"}, headers=auth(DEVICE)).status_code == 403
     mismatch = env.client.post("/api/v1/vehicles/VF9-DEMO-02/sensors", json=body, headers=auth(DEVICE))
@@ -130,15 +130,15 @@ def test_device_and_role_boundaries(env):
 
 
 def test_legacy_routes_no_longer_expose_fleet_vehicles_anonymously(env):
-    feed(env, "VF8-DEMO-01", "SAFE", 1)
+    feed(env, "VF8-DEMO-01", "NO_OCCUPANT_DETECTION", 1)
     assert env.client.get("/api/v1/state/VF8-DEMO-01").status_code == 401
     assert env.client.get("/api/v1/events/VF8-DEMO-01").status_code == 401
-    anonymous_write = env.client.post("/api/v1/vision", json=vision("VF8-DEMO-01", NOW, 9, "SAFE"))
+    anonymous_write = env.client.post("/api/v1/vision", json=vision("VF8-DEMO-01", NOW, 9, "NO_OCCUPANT_DETECTION"))
     assert anonymous_write.status_code == 401
     owner = login(env.client, "owner", "demo-owner")
     assert env.client.get("/api/v1/state/VF8-DEMO-01", headers=auth(owner)).status_code == 200
     # Unregistered legacy ids keep their previous behaviour.
-    env.service.ingest_sensor(SensorPayload(**sensor("CAR_1", NOW, 1, "SAFE")))
+    env.service.ingest_sensor(SensorPayload(**sensor("CAR_1", NOW, 1, "NO_OCCUPANT_DETECTION")))
     assert env.client.get("/api/v1/state/CAR_1").status_code == 200
 
 

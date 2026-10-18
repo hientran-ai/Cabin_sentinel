@@ -1,0 +1,42 @@
+(node:8569) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:8579) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:8579) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:8579) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › qa/vinfast-cockpit-audit/integration/player.spec.ts:2:1 › falls back to actual WebM frames when H.264 capability is unavailable (22.2s)
+
+
+  1) [chromium] › qa/vinfast-cockpit-audit/integration/player.spec.ts:2:1 › falls back to actual WebM frames when H.264 capability is unavailable 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoContain[2m([22m[32mexpected[39m[2m) // indexOf[22m
+
+    Expected substring: [32m".webm"[39m
+    Received string:    [31m"http://127.0.0.1:4187/cockpit/samples/scenarios/videos/empty-cabin.mp4"[39m
+
+    Call Log:
+    - Timeout 20000ms exceeded while waiting on the predicate
+
+       9 |   await page.waitForFunction(() => (window as any).__e2eCapture && (window as any).__e2e?.getState().session)
+      10 |   await page.evaluate(() => (window as any).__e2eCapture.startClip({ id: 'DEMO-02', label: 'DEMO-02 Cabin trống', file: 'scenarios/videos/empty-cabin.mp4', fallbackFile: 'scenarios/videos/empty-cabin.webm', note: '' }))
+    > 11 |   await expect.poll(() => page.evaluate(() => (window as any).__e2eCapture.getVideo()?.currentSrc ?? '')).toContain('.webm')
+         |   ^
+      12 |   await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted)).toBeGreaterThan(0)
+      13 |   expect(await page.evaluate(() => (window as any).__e2e.getState().metrics.lastReply?.vision.source)).toBe('MODEL_INFERENCE')
+      14 | })
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/player.spec.ts:11:3
+
+    [31mTest timeout of 90000ms exceeded.[39m
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/player-falls-back-to-actua-59636-4-capability-is-unavailable-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/player-falls-back-to-actua-59636-4-capability-is-unavailable-chromium/error-context.md
+
+  1 failed
+    [chromium] › qa/vinfast-cockpit-audit/integration/player.spec.ts:2:1 › falls back to actual WebM frames when H.264 capability is unavailable 

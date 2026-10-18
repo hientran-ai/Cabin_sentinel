@@ -1,0 +1,408 @@
+{
+  "source": "/Users/mac/AI/P-068/.claude/worktrees/oem-e2e",
+  "branch": "feat/cockpit-worker-backend",
+  "base": "70b48aafded55119e130d984fa4c3f0963fb0cdb",
+  "diff_sha256": "b7d6ba2db4bb8d9b4d499fe5ceff1c29349e4cb8f8cea41e65fdbd45595d8b80",
+  "files": [
+    {
+      "file": "apps/cockpit-web/package.json",
+      "sha256": "53706b36cdc6c1627d153b280da182d361e178f93d3d3c2c92a9dcfe35f06a3b",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "apps/cockpit-web/src/components/automotive/camera/CameraPanel.tsx",
+      "sha256": "d26910d121d302b5c4e90cf5c83127d1598e99dd5e6cc2df738c24727dfb11b2",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "apps/cockpit-web/src/components/automotive/vinfast/VinfastBlue.tsx",
+      "sha256": "8272997e7e76d470155261c2a3cc949ac8f7e22c5d60f6f4454064b5dd7b752d",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "apps/cockpit-web/src/components/automotive/vinfast/VinfastCabin.tsx",
+      "sha256": "cc6ec6d22ce7e389107ab9df46d648026a9bbff1e715120a658a29fbd9b993fa",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "apps/cockpit-web/src/components/automotive/vinfast/VinfastExperience.tsx",
+      "sha256": "ed8bc49099de1bc7a10d7d8b3dd74f5e7f6a6cd079494e1bbaedc2c097c3b967",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "apps/cockpit-web/src/components/automotive/vinfast/VinfastLeftPanel.tsx",
+      "sha256": "8985df93940e7cc8896459cd263436ffaea88fa96e380eacab55884fe6c10929",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "apps/cockpit-web/src/components/automotive/vinfast/demo/VinfastDemoPage.tsx",
+      "sha256": "53a3f0e7464c6e2b12566e68eab0265647ba5b42eaa89e4ffd45d43454f11d6a",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "apps/cockpit-web/src/components/automotive/vinfast/demo/demo.css",
+      "sha256": "fe70bb32fbcc3157b7782f85cdb6d6d3ce85215175562ec37e304858d5b15cfb",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "apps/cockpit-web/src/components/automotive/vinfast/vinfast.css",
+      "sha256": "bc7ab0d9360e160b6f41180248b92005511e497d78596a09fea24ad2f2b85db5",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "apps/cockpit-web/src/e2e/CabinCareScreen.tsx",
+      "sha256": "c5419e0fa46faf19ec19da14eed840150eebb65c130bac9119febd196d33f597",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "apps/cockpit-web/src/e2e/E2ePage.tsx",
+      "sha256": "e36daf8f61e8e96eb9f67fca0ee8288f3c4849f86458cd153ed4fbe87bd4744c",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "apps/cockpit-web/src/e2e/SimPanel.tsx",
+      "sha256": "402e2b5be33cbc67122f1512874d64a3921ebf62e0dff2d9ea61cfffdd51de34",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "apps/cockpit-web/src/e2e/capture.ts",
+      "sha256": "17cd47e1b4b932865b714391a4c8cb5699526145f4d5c960439f1eff6fc46382",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "apps/cockpit-web/src/e2e/store.ts",
+      "sha256": "90ff15fc5e222b773478de92e18fef77871abd7103957bd322627d0a41c5ba3a",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "apps/cockpit-web/src/main.tsx",
+      "sha256": "25ad1cb0a8dee40ac308634b534e701757ac3979a07b412f2120e725aa229c07",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "apps/cockpit-web/src/tesla-main.tsx",
+      "sha256": "b5742effec23c739e925f1972b1951e73f01533c5ff0dbba60fb4cc78bf040b1",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "apps/cockpit-web/src/vinfast-main.tsx",
+      "sha256": "6b15ad6e7725615cf13563b7e6977761a21265a3cbe256c97de52ba27c623deb",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "package-lock.json",
+      "sha256": "933eeae86ae4d949abf5d2fc71941d85722f5375998d9c0bb36b23a1e86a0fc1",
+      "input": "tracked-diff"
+    },
+    {
+      "file": "apps/cockpit-web/e2e-browser/judge/before-prod.mjs",
+      "sha256": "c759dd96f015af4d2155193b1537996d2e8eac3fc6f7a9906ee2715185486728",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/e2e-browser/judge/camera.e2e.mjs",
+      "sha256": "adddd53ab852023ba3ddf573ceb31f3906ced32b3e98faf60a07df357e5efc48",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/e2e-browser/judge/lib.mjs",
+      "sha256": "afaa2eac98ee44b1c8f7edbc519ea672ea7d7d26cde5f05a06dfcbd16594d836",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/e2e-browser/judge/nav.e2e.mjs",
+      "sha256": "52054cdf1e830625e791868b08590f5f34b5bbdce9d427071aed2f70957df0ae",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/e2e-browser/judge/responsive.e2e.mjs",
+      "sha256": "c8c3155a4eecdcae50cfcbb7e3e50c2aebef8cfc27ce355ea0e45239672f0378",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/e2e-browser/judge/shots.mjs",
+      "sha256": "f41f65b4e9f8cb47311ae1cb0e474b65358d56ef887b71407faf01290145a3f3",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/src/components/automotive/vinfast/CabinMonitor.tsx",
+      "sha256": "0d3d5f5c42d85418aef4fd9c2f328b8c9ebee71bdbfae008555f9469dbbd0a73",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/src/components/automotive/vinfast/cabinMonitor.css",
+      "sha256": "9d9b2d6b2a09d653161165dd12015a16b41ec792e89135d0f287b9213be2e715",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/src/components/common/ExitBar.tsx",
+      "sha256": "b6a89f485f05ddb045c63e41224b261c5e0ddccb627cab3c65f31a3b84734dfe",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/src/components/common/exitBar.css",
+      "sha256": "8acb4b71b422bdfaba2ded358ef123c47e4e3b20fc4e5f91e6cab30d4616458f",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/src/e2e/cabinUi.ts",
+      "sha256": "0ea3af49bbf9fab84a558df35cdac16b31107203bc2ebd9f98fd9dbe3d5dec35",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/src/e2e/careScreen.test.ts",
+      "sha256": "fdf2387f3b8dee824ef86713be5d6bde85289b5eb0b06f72891a2a7ab39ce82f",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/src/e2e/careScreen.ts",
+      "sha256": "caf593825c2f42a62d12adcbf70cc99dcedfbd03d62a787ab2a94360673a4165",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/src/e2e/config.ts",
+      "sha256": "653a6c8c557168598407a87803bb933d256ec043145525bc59c974f4b58444da",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/src/e2e/deviceCamera.test.ts",
+      "sha256": "6c358f2e87a7426edb785f90e0bc824c63cfcf3d959e73addfcad74916d264d9",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/src/e2e/deviceCamera.ts",
+      "sha256": "7743df838dd9a4822377ebd09d9291e3f0d07724a52b699fbac8f51f2ccd7a85",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/src/e2e/sourceModel.test.ts",
+      "sha256": "01f86fd32e6d5c4920662cc6fd9cea5e26d826d88fa3389515f849ea3c56ddfd",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/src/e2e/sourceModel.ts",
+      "sha256": "fc601b60a3c950df40b760986e0a67d7d9be83f6f6fd6e93df19f59886df433d",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/src/e2e/useSource.ts",
+      "sha256": "d5e692c90c94adade35a0edb9dc737abf983eab7bdb78c6fae5a191064170213",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/src/lib/layers.ts",
+      "sha256": "449f9c2afcc073de809d15fc2bd8649d6a339598270517abf77b34ab1a3d410e",
+      "input": "untracked"
+    },
+    {
+      "file": "apps/cockpit-web/src/lib/route.ts",
+      "sha256": "b822c970428ae75449b19b546315a9955c1c5aab8e85bb2ffeb981d6416c7c2e",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/BUG_REPORT.md",
+      "sha256": "a412e2e3a5a2356dd29e76094310a21a5f298c3317888e0b08cce20309949f23",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/FEATURE_INVENTORY.md",
+      "sha256": "ce934df0b9951b4a690ff37781d860ccc30ac36dc68ccea1d78ee6ee8eac69f6",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/FINAL_RELEASE_READINESS.md",
+      "sha256": "799b7b2fbea2dad8b4b30420b31740f1781cc0fd90ff4dc51dc3538a43d4576c",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/TEST_CASES.md",
+      "sha256": "496dc332d4d8969c6d50f57c3f17c8b78a4044ebba1a9e034a1100f33c8e35f4",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/UX_UI_AUDIT.md",
+      "sha256": "73e19b1bda3b2a7252358d3d317c6d2abbfd40ef90ed60c7a5af40c00e746e05",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/fixtures/<img src=x onerror=alert(1)>.jpg",
+      "sha256": "6866d1048d2e6e82d9284bccce964e78c40f195d918f400bd84b1d3c1e68a498",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/fixtures/anim.gif",
+      "sha256": "8047c204633380b0cf217e4243a332726ba4069eb58d70a597cedcf61acdd0e5",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/fixtures/child.png",
+      "sha256": "8a344a75424a2ee95ea935f3d70ca828f3991a53a1ffb0c67ee74754c55c2fae",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/fixtures/corrupt.jpg",
+      "sha256": "4b30650eee5857bb07229dcdd8857c24eb6ecb0a095829fe8d31d885d16eb669",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/fixtures/critical.json",
+      "sha256": "fa5f515e5fd9658f1cb1ed2b904529ad9528818e75aee44935f43cf4ae969dcc",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/fixtures/empty.jpg",
+      "sha256": "6866d1048d2e6e82d9284bccce964e78c40f195d918f400bd84b1d3c1e68a498",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/fixtures/huge-noise.jpg",
+      "sha256": "ace2564ecaa4f1546f3f20dcd16e32b6975239f15849e6ad52d8ed13783a527f",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/fixtures/safe.json",
+      "sha256": "4862b6178d508714e69da41a24f9b527f50f9403da7202d75067fe2a0e2d486e",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/fixtures/zero.jpg",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/package-lock.json",
+      "sha256": "962cae418b13b75720cd5827e3fe226cfcfa5ec8762ece4fcd083648f77c4307",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/package.json",
+      "sha256": "0b05ffa462a15d0d854117464c9e590dc11a35e66f5b2caaa590c8156ec1e15e",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/playwright.config.ts",
+      "sha256": "1517c13b603c9c8eda0d08e915f75a9d97549a7120d5b8c37deb6077c4b628f5",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/scripts/a11y-perf-sec.mjs",
+      "sha256": "5e6f6be4c81d2accd313eadec61a4531f1b77de80bb25fb28f59845c167f25aa",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/scripts/alarm-prompts.mjs",
+      "sha256": "8b42057d04cddd97a6dc7fd2a9496b89d6138c55aeb12d7ac9ba482bf38550be",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/scripts/capture-fixtures.mjs",
+      "sha256": "b312be8636969a846ee451db91cf341456b47ccf5aaccad5186328866b662086",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/scripts/debug1.mjs",
+      "sha256": "27160219db8ec58002e5022af033aac44202c2a530e691fc5aea257b7c3cc8fd",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/scripts/discover.mjs",
+      "sha256": "751276e9e8ac4b27cc9d81c79d6329c1fb0605c0f6c81ebd3d44c22b834949ac",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/scripts/gen_test_cases.py",
+      "sha256": "3fdf05c9552dd4e10134ddff52a5de9a234f41d79ac96171f074a8c889834f56",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/scripts/lib.mjs",
+      "sha256": "4a0cf511c44fc7dee7987ec049de3fbd8259835f039bcd1d0770033fe2e5556d",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/scripts/negative.mjs",
+      "sha256": "c3ad907659c38b3e7931e69c233ffc81ba4637dc2d51cdfc736f4634ae032092",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/scripts/sc-child-hot.mjs",
+      "sha256": "0b11d877c1cba33135d07569985ecd75b240adf0593eab4c897c93fc811fc029",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/scripts/sc-controls.mjs",
+      "sha256": "acc3b322cf993a26cb2d2b126c743e9cc8f229edf810e4c0619439f300e4b7e2",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/scripts/sc-escalation.mjs",
+      "sha256": "0a07b79e7c4f31cf2843e3b7794cdd0a0039da25a81b54d2819e542b61a26046",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/scripts/sc-matrix.mjs",
+      "sha256": "2af5285d1ad78021770baf6c682dee2630ab6bd38d29225d13bc8eb2244c5847",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/scripts/sc-rear-hot.mjs",
+      "sha256": "d0239ee827039909d77cc149f4bbc2efd22b31112ed680a0e10dcb6699a17413",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/scripts/upload-timing.mjs",
+      "sha256": "28906e438dc49be8a7f6bc47a0e50ab2006df246e4ff364d5c68153080ba4658",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/scripts/upload.mjs",
+      "sha256": "81e18cb61fa3ce8913e00d5ef5b5746d32e175d06e39c87c2b0a61faa53817e1",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/scripts/viewports.mjs",
+      "sha256": "d804167ec6263d71a0a73568a2e549e437d9b091ac35a599fe7390122dc6bb14",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/tests/a11y-responsive.spec.ts",
+      "sha256": "3d18f9f0aa8e49ff9b77b0b0f6832baa7a534863e50e0fde1506b5240534cd0b",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/tests/a11y-responsive.spec.ts-snapshots/cockpit-home-chrome-darwin.png",
+      "sha256": "41e95cfca05769d78bf714950c7eadc62397bea13d025f8015a2f978f6c9dd57",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/tests/controls.spec.ts",
+      "sha256": "0168aa9064c849653fe5959d2f867efcdd19aff0faa493fe11a13b2264b02a86",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/tests/helpers.ts",
+      "sha256": "38c5edc1414ff46a1b3ef985abe9e568cf247f6189071cee1ef30ce441066b1e",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/tests/navigation.spec.ts",
+      "sha256": "90632a2405a9adda51fd3700af35a1388cb4d78b0d467a18ea1d31122bdc19f4",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/tests/resilience.spec.ts",
+      "sha256": "7f2efba62952ee6e33353ee2ceb6b0e5eae28bfbc9393838b315e59dec3a3a65",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/tests/safety.spec.ts",
+      "sha256": "1e2ad9017aeff1e87df2c58b72de1a34f27de9b554d943a3912f9f1e092e0ea8",
+      "input": "untracked"
+    },
+    {
+      "file": "qa/vinfast-cockpit-audit/tests/smoke.spec.ts",
+      "sha256": "f0e1f922943f6bf0c6406970d7ad131a6c78f93819af6cc29e39f924303f75f0",
+      "input": "untracked"
+    }
+  ]
+}

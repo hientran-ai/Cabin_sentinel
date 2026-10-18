@@ -1,0 +1,15 @@
+(node:11459) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+Running 3 tests using 1 worker
+
+(node:11470) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:11470) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:11470) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:3:1 › critical state interrupts comfort audio (API fixture, not detection evidence) (2.3s)
+  ✓  2 [chromium] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:19:1 › phone demo cannot dial emergency services (API fixture, not detection evidence) (1.5s)
+  ✓  3 [chromium] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:27:1 › malformed JSON and missing nested state keep cockpit visible and old critical explicit (4.2s)
+
+  3 passed (8.7s)

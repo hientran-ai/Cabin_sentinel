@@ -10,7 +10,7 @@ const LEVEL = { critical: ["Nghiêm trọng", "red"], warning: ["Cảnh báo", "
 async function load(vid, owner) {
   if (ui.vid === vid && ui.loaded && Date.now() - ui.loaded < 3500) return;
   const [d, o, p, a] = await Promise.all([
-    get(`/v1/vehicles/${vid}/history?days=30&level=${ui.level}`).catch(() => ({ incidents: [], events: [] })),
+    get(`/v1/vehicles/${vid}/history?days=${getDays()}&level=${ui.level}`).catch(() => ({ incidents: [], events: [] })),
     get(`/v1/vehicles/${vid}/observations?hours=24&limit=2000`).catch(() => null),
     get(`/v1/vehicles/${vid}/photos`).catch(() => []),
     owner ? get(`/v1/vehicles/${vid}/audit?limit=40`).catch(() => null) : null,
@@ -103,7 +103,7 @@ function stepper(inc, row) {
 function incidentCard(inc, row) {
   const crit = inc.level === "critical", open = inc.status === "open";
   const tone = open ? (crit ? "red" : "orange") : "green";
-  return h("a", { class: `icard ${tone}`, href: `#/report/${inc.id}`, "aria-label": `${open ? "Sự cố đang mở" : "Sự cố đã đóng"}: ${inc.reason}` },
+  return h("a", { class: `icard ${tone}`, href: `#/incident/${inc.id}`, "aria-label": `${open ? "Sự cố đang mở" : "Sự cố đã đóng"}: ${inc.reason}` },
     h("div", { class: "row between" }, h("b", { class: "ititle" }, crit ? "Có thể có người trong xe" : "Cảnh báo cabin"),
       h("span", { class: `tag ${open ? tone : ""}` }, open ? "Đang mở" : (row && row.outcome_label) || "Đã đóng")),
     h("div", { class: "isub" }, `${inc.seat_label ? `${inc.seat_label} · ` : ""}${fmt.datetime(inc.created_at)}${row ? ` · ${fmt.dur(row.duration_s)}` : ""}`),
@@ -171,5 +171,5 @@ export async function render(ctx) {
     seg, ...(tab === "alerts" ? alerts() : activity()),
     h("div", { class: "actionbar glass" },
       canPhoto && h("a", { class: "btn primary grow", href: "#/check" }, icon("scan"), "Tự kiểm tra cabin"),
-      canPhoto && h("button", { class: "btn icon-only", "aria-label": "Tải nhật ký (CSV)", on: { click: (e) => busy(e.currentTarget, async () => { try { await downloadCsv(S.vid, getDays()); } catch (er) { toast(er.message, "err"); } }) } }, icon("download"))));
+      h("button", { class: "btn icon-only", "aria-label": "Tải nhật ký (CSV)", on: { click: (e) => busy(e.currentTarget, async () => { try { await downloadCsv(S.vid, getDays()); } catch (er) { toast(er.message, "err"); } }) } }, icon("download"))));
 }

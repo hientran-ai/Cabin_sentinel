@@ -1,0 +1,39 @@
+(node:15464) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:15476) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15476) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:15476) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-01 decodes actual video, runs actual model and cleans up (1.5m)
+
+
+  1) [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-01 decodes actual video, runs actual model and cleans up 
+
+    Test was interrupted.
+
+    Error: locator.click: Test ended.
+    Call log:
+    [2m  - waiting for getByTestId('cm-tab-evidence')[22m
+    [2m    - waiting for" http://127.0.0.1:4187/cockpit/vinfast/?debug=1" navigation to finish...[22m
+    [2m    - navigated to "http://127.0.0.1:4187/cockpit/vinfast/?debug=1"[22m
+
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await page.getByTestId('cm-tab-evidence').click()
+         |                                               ^
+      15 |     const video = page.getByTestId('actual-demo-video').locator('video')
+      16 |     await expect(video).toBeVisible()
+      17 |     const phase = await page.getByTestId('player-phase').textContent()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:47
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-01-decode-e8b9a--actual-model-and-cleans-up-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 interrupted
+    [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-01 decodes actual video, runs actual model and cleans up 

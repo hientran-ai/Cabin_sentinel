@@ -1,0 +1,12 @@
+{
+  "name": "vinfast-cockpit-qa",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "@axe-core/playwright": "4.10",
+    "@playwright/test": "1.56"
+  }
+}

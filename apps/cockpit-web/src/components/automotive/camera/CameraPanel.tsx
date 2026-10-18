@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
-import { Video, VideoOff, X } from 'lucide-react'
+import { useEffect, useRef } from 'react'
+import { RefreshCw, SwitchCamera, Video, VideoOff, X } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useVehicle } from '../../../store/vehicleStore'
 import { useUi, useT } from '../../../store/uiStore'
 import type { CameraView } from '../../../types/vehicle'
 import { Sheet } from '../ui'
 import { useCabin } from '../../../store/cabinStore'
+import { startDevice, stopSource, switchDeviceCamera } from '../../../e2e/capture'
+import { attachStream, flipDeviceCamera, getDeviceStream, useDeviceCamera } from '../../../e2e/deviceCamera'
 
 const VIEWS: CameraView[] = ['front', 'rear', 'left', 'right', 'cabin']
-type Feed = { kind: 'device'; stream: MediaStream } | { kind: 'sample' } | { kind: 'synthetic' }
 
 /** Synthetic road picture for exterior views when no camera is available. Clearly labelled as such. */
 function SyntheticRoad({ view }: { view: CameraView }) {
@@ -43,70 +44,61 @@ function SyntheticRoad({ view }: { view: CameraView }) {
   return <canvas ref={ref} className="h-full w-full" aria-label="synthetic" />
 }
 
-/** Layer 10. Device camera only after an explicit tap; failures fall back to samples. The cabin view is park-only and blurred. */
+/** Layer 10. The device camera starts only after an explicit tap and is the SAME camera as the cabin monitor (one stream, one stop button).
+ *  Here it is a local preview: nothing is sent anywhere. Failures say why and offer a retry; the sample / synthetic picture is only shown
+ *  when no camera is on, and is labelled as such. No blur: the picture is either the user's own camera or a synthetic / sample clip. */
 export function CameraPanel({ presentation = 'default' }: { presentation?: 'default' | 'tesla' | 'vinfast' }) {
   const t = useT()
   const ui = useUi()
   const gear = useVehicle((s) => s.gear), speed = useVehicle((s) => s.speed)
   const view = ui.cameraView
-  const [feed, setFeed] = useState<Feed>({ kind: 'synthetic' })
-  const [note, setNote] = useState('')
-  const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
-  const [deviceId, setDeviceId] = useState<string>('')
+  const dev = useDeviceCamera()
   const video = useRef<HTMLVideoElement>(null)
+  const live = dev.phase === 'live'
+  const owns = useRef(false)   // this panel switched the camera on, so closing the panel switches it off (no camera left running unseen)
   const cabinBlocked = view === 'cabin' && (gear !== 'P' || speed > 0.5)
   // the cabin sample follows the simulated Cabin Monitoring scenario (AI-generated child clip, or the empty cabin)
   const sample = useCabin((s) => (s.scenario === 'child_alone' ? 'ai-child.mp4' : 'empty-cabin.mp4'))
+  const facing = view === 'cabin' ? 'user' : 'environment'
 
-  useEffect(() => { if (feed.kind !== 'device') setFeed(view === 'cabin' ? { kind: 'sample' } : { kind: 'synthetic' }) }, [view]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => () => { if (feed.kind === 'device') feed.stream.getTracks().forEach((tr) => tr.stop()) }, [feed])
-  useEffect(() => { if (video.current && feed.kind === 'device') video.current.srcObject = feed.stream }, [feed])
+  useEffect(() => {
+    const v = video.current
+    if (!v) return
+    attachStream(v, live ? getDeviceStream() : null)
+    return () => { v.srcObject = null }
+  }, [live, dev.streamId])
+  useEffect(() => () => { if (owns.current) stopSource() }, [])
+  const begin = () => { owns.current = true; void startDevice({ previewOnly: true, facing }) }
 
-  async function startDevice(id?: string) {
-    if (!navigator.mediaDevices?.getUserMedia) { setNote(t('cameraNone')); return }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: id ? { deviceId: { exact: id } } : { facingMode: view === 'cabin' ? 'user' : 'environment' }, audio: false })
-      if (feed.kind === 'device') feed.stream.getTracks().forEach((tr) => tr.stop())
-      setFeed({ kind: 'device', stream }); setNote('')
-      const all = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput')
-      setDevices(all); setDeviceId(stream.getVideoTracks()[0]?.getSettings().deviceId ?? '')
-    } catch (e) {
-      const name = (e as DOMException).name
-      setNote(name === 'NotAllowedError' ? t('cameraDenied') : t('cameraNone'))
-      setFeed(view === 'cabin' ? { kind: 'sample' } : { kind: 'synthetic' })
-    }
-  }
-  const stopDevice = () => { if (feed.kind === 'device') feed.stream.getTracks().forEach((tr) => tr.stop()); setFeed(view === 'cabin' ? { kind: 'sample' } : { kind: 'synthetic' }) }
-
-  const blur = view === 'cabin' ? 'blur(10px)' : undefined
   const content = <>
       <div data-camera-toolbar className="flex min-h-[5.5rem] items-center gap-3 pl-6 pr-24">
         <div className="cx-seg" role="radiogroup" aria-label={t('camera')}>
           {VIEWS.map((v) => <button key={v} type="button" role="radio" aria-checked={view === v} onClick={() => ui.set({ cameraView: v })}>{t(v)}</button>)}
         </div>
         <span className="grow" />
-        {devices.length > 1 && feed.kind === 'device' && (
-          <select value={deviceId} onChange={(e) => void startDevice(e.target.value)} className="h-14 rounded-lg bg-surface-2 px-3 text-sm" aria-label="Camera device">
-            {devices.map((d, i) => <option key={d.deviceId} value={d.deviceId}>{d.label || `Camera ${i + 1}`}</option>)}
-          </select>
-        )}
-        {feed.kind === 'device'
-          ? <button type="button" className="cx-btn h-14 gap-2 px-4 text-sm" onClick={stopDevice}><VideoOff size="1.5rem" />{t('sample')}</button>
-          : <button type="button" className="cx-btn h-14 gap-2 bg-surface-2 px-4 text-sm" disabled={cabinBlocked} onClick={() => void startDevice()}><Video size="1.5rem" />{t('useDevice')}</button>}
+        {live && dev.canFlip && <button type="button" className="cx-btn h-14 gap-2 bg-surface-2 px-4 text-sm" data-testid="camera-flip" onClick={() => void switchDeviceCamera(flipDeviceCamera)}><SwitchCamera size="1.5rem" />Đổi camera</button>}
+        {live
+          ? <button type="button" className="cx-btn h-14 gap-2 px-4 text-sm" data-testid="camera-stop" onClick={() => stopSource()}><VideoOff size="1.5rem" />Tắt camera</button>
+          : <button type="button" className="cx-btn h-14 gap-2 bg-surface-2 px-4 text-sm" data-testid="camera-start" disabled={cabinBlocked || dev.phase === 'requesting'} onClick={begin}><Video size="1.5rem" />{dev.phase === 'requesting' ? 'Đang chờ cho phép…' : t('useDevice')}</button>}
       </div>
       <div data-camera-feed className="relative mx-4 mb-4 min-h-0 flex-1 overflow-hidden rounded-xl bg-black">
         {cabinBlocked ? (
           <div className="grid h-full place-items-center p-8 text-center t-label text-white/80">{t('cabinParkOnly')}</div>
-        ) : feed.kind === 'device' ? (
-          <video ref={video} autoPlay muted playsInline className="h-full w-full object-contain" style={{ filter: blur }} />
-        ) : feed.kind === 'sample' ? (
-          <video key="sample" src={`${import.meta.env.BASE_URL}samples/${sample}`} autoPlay muted loop playsInline className="h-full w-full object-contain" style={{ filter: blur }} />
+        ) : live ? (
+          <video ref={video} autoPlay muted playsInline className="h-full w-full object-contain" data-testid="camera-live-video" />
+        ) : view === 'cabin' ? (
+          <video key="sample" src={`${import.meta.env.BASE_URL}samples/${sample}`} autoPlay muted loop playsInline className="h-full w-full object-contain" />
         ) : <SyntheticRoad view={view} />}
         <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-          {feed.kind !== 'device' && !cabinBlocked && <span className="cx-chip bg-black/60 text-white">{feed.kind === 'synthetic' ? t('syntheticFeed') : t('sample')}</span>}
-          {view === 'cabin' && !cabinBlocked && <span className="cx-chip bg-black/60 text-white">{t('cabinBlurred')}</span>}
+          {live && <span className="cx-chip bg-red-600 text-white" data-testid="camera-live-chip">LIVE · camera của thiết bị</span>}
+          {!live && !cabinBlocked && <span className="cx-chip bg-black/60 text-white">{view === 'cabin' ? `DEMO · ${t('sample')}` : t('syntheticFeed')}</span>}
         </div>
-        {note && <div className="absolute inset-x-0 bottom-3 mx-auto w-fit rounded-full bg-black/70 px-4 py-1.5 text-sm text-white">{note}</div>}
+        {(dev.phase === 'requesting') && <div className="absolute inset-x-0 bottom-3 mx-auto w-fit rounded-full bg-black/70 px-4 py-1.5 text-sm text-white" role="status">Đang chờ bạn cho phép camera…</div>}
+        {!live && dev.title && (
+          <div className="absolute inset-x-4 bottom-3 mx-auto flex max-w-xl flex-wrap items-center gap-3 rounded-2xl bg-black/80 px-4 py-3 text-sm text-white" role="alert" data-testid="camera-error">
+            <span className="min-w-0 flex-1"><b className="block">{dev.title}</b><span className="opacity-80">{dev.hint}</span></span>
+            {dev.retry && <button type="button" className="cx-btn h-12 gap-2 bg-accent px-4 text-sm text-white" onClick={begin}><RefreshCw size="1.3rem" />Thử lại</button>}
+          </div>)}
       </div>
     </>
   if (presentation === 'vinfast') return (

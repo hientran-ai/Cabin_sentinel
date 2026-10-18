@@ -51,7 +51,8 @@ def test_provider_loads_once_and_returns_tam_frame(monkeypatch, tmp_path):
 
     assert calls["loads"] == 1
     assert calls["predict"] == [
-        {"classes": [0, 15, 16], "device": "cpu", "conf": 0.25, "imgsz": 640, "verbose": False},
+        # Approved separate item analytics; occupant detections remain person/cat/dog only.
+        {"classes": [0, 15, 16, 24, 67], "device": "cpu", "conf": 0.25, "imgsz": 640, "verbose": False},
     ] * 2
     assert first["frame_id"] == second["frame_id"] == 1
     # Without a classifier a person is never assumed adult: age_group stays unknown.

@@ -12,6 +12,8 @@ await mkdir(outputDirectory, { recursive: true })
 await cp(operationsBuild, join(outputDirectory, 'admin'), { recursive: true })
 // End-to-end demo (cockpit + owner phone). Vite base is /cockpit/, so it is served from the same origin as /api.
 await cp(cockpitBuild, join(outputDirectory, 'cockpit'), { recursive: true })
+// The demo is VinFast only: Tesla's Figma exports are copied from public/ by Vite but nothing in the VinFast build uses them.
+await rm(join(outputDirectory, 'cockpit', 'tesla-figma'), { recursive: true, force: true })
 // Workers Static Assets handles both SPA fallbacks; Pages-style redirects would loop.
 await rm(join(outputDirectory, 'admin', '_redirects'), { force: true })
 

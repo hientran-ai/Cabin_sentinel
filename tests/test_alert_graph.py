@@ -2,7 +2,7 @@ from src.cabinsentinel.graph import safety_graph
 from tests.test_cabinsentinel import NOW, sensor, vision
 
 
-def test_unresolved_incident_routes_warning_inside_graph_even_with_empty_current_frame():
+def test_unresolved_incident_keeps_negative_vision_unverified_in_error_route():
     state = safety_graph.invoke(
         {
             "sensor": sensor().model_dump(mode="json"),
@@ -11,6 +11,7 @@ def test_unresolved_incident_routes_warning_inside_graph_even_with_empty_current
             "unresolved_incident": True,
         }
     )
-    assert state["risk_level"] == "WARNING"
-    assert state["rule_id"] == "UNRESOLVED_OCCUPANT"
-    assert state["route"] == "warning"
+    assert state["risk_level"] == "ERROR"
+    assert state["occupancy_state"] == "UNKNOWN"
+    assert state["rule_id"] == "OCCUPANCY_UNVERIFIED"
+    assert state["route"] == "error"

@@ -1,0 +1,13 @@
+
+> cabinsentinel-platform@0.1.0 test:worker
+> vitest run workers/frontend-router.test.js
+
+
+ RUN  v5.0.3 /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017
+
+
+ Test Files  1 passed (1)
+      Tests  20 passed (20)
+   Start at  21:03:26
+   Duration  188ms (transform 39%, tests 39%, import 17%, worker 5%)
+

@@ -1,0 +1,334 @@
+........................................................................ [ 19%]
+...............................................FFFFFF................... [ 38%]
+........................................................................ [ 57%]
+........................................................................ [ 77%]
+............................................................... [ 93%]
+.......................                                                  [100%]
+=================================== FAILURES ===================================
+_ test_docker_probe_distinguishes_live_backend_from_failed_store[200-body0-0] __
+
+status = 200
+body = {'status': 'ok', 'backend': 'ready', 'database': 'ready', 'vision': 'ready'}
+expected_exit = 0
+
+    @pytest.mark.parametrize(("status", "body", "expected_exit"), [
+        (200, {"status": "ok", "backend": "ready", "database": "ready", "vision": "ready"}, 0),
+        (503, {"status": "degraded", "backend": "ready", "database": "ready", "vision": "unavailable"}, 0),
+        (503, {"status": "degraded", "backend": "unavailable", "database": "unavailable", "vision": "ready"}, 1),
+        (500, {"backend": "ready", "database": "ready"}, 1),
+        (200, {}, 1),
+        (200, b"not-json", 1),
+    ])
+    def test_docker_probe_distinguishes_live_backend_from_failed_store(status, body, expected_exit):
+        response = body if isinstance(body, bytes) else json.dumps(body).encode()
+    
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                assert self.path == "/health"
+                self.send_response(status)
+                self.end_headers()
+                self.wfile.write(response)
+    
+            def log_message(self, *args):
+                pass
+    
+>       server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_container_healthcheck.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/socketserver.py:456: in __init__
+    self.server_bind()
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/server.py:140: in server_bind
+    socketserver.TCPServer.server_bind(self)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <http.server.ThreadingHTTPServer object at 0x11e982350>
+
+    def server_bind(self):
+        """Called by constructor to bind the socket.
+    
+        May be overridden.
+    
+        """
+        if self.allow_reuse_address and hasattr(socket, "SO_REUSEADDR"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if self.allow_reuse_port and hasattr(socket, "SO_REUSEPORT"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+>       self.socket.bind(self.server_address)
+E       PermissionError: [Errno 1] Operation not permitted
+
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/socketserver.py:472: PermissionError
+_ test_docker_probe_distinguishes_live_backend_from_failed_store[503-body1-0] __
+
+status = 503
+body = {'status': 'degraded', 'backend': 'ready', 'database': 'ready', 'vision': 'unavailable'}
+expected_exit = 0
+
+    @pytest.mark.parametrize(("status", "body", "expected_exit"), [
+        (200, {"status": "ok", "backend": "ready", "database": "ready", "vision": "ready"}, 0),
+        (503, {"status": "degraded", "backend": "ready", "database": "ready", "vision": "unavailable"}, 0),
+        (503, {"status": "degraded", "backend": "unavailable", "database": "unavailable", "vision": "ready"}, 1),
+        (500, {"backend": "ready", "database": "ready"}, 1),
+        (200, {}, 1),
+        (200, b"not-json", 1),
+    ])
+    def test_docker_probe_distinguishes_live_backend_from_failed_store(status, body, expected_exit):
+        response = body if isinstance(body, bytes) else json.dumps(body).encode()
+    
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                assert self.path == "/health"
+                self.send_response(status)
+                self.end_headers()
+                self.wfile.write(response)
+    
+            def log_message(self, *args):
+                pass
+    
+>       server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_container_healthcheck.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/socketserver.py:456: in __init__
+    self.server_bind()
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/server.py:140: in server_bind
+    socketserver.TCPServer.server_bind(self)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <http.server.ThreadingHTTPServer object at 0x11e1c3390>
+
+    def server_bind(self):
+        """Called by constructor to bind the socket.
+    
+        May be overridden.
+    
+        """
+        if self.allow_reuse_address and hasattr(socket, "SO_REUSEADDR"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if self.allow_reuse_port and hasattr(socket, "SO_REUSEPORT"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+>       self.socket.bind(self.server_address)
+E       PermissionError: [Errno 1] Operation not permitted
+
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/socketserver.py:472: PermissionError
+_ test_docker_probe_distinguishes_live_backend_from_failed_store[503-body2-1] __
+
+status = 503
+body = {'status': 'degraded', 'backend': 'unavailable', 'database': 'unavailable', 'vision': 'ready'}
+expected_exit = 1
+
+    @pytest.mark.parametrize(("status", "body", "expected_exit"), [
+        (200, {"status": "ok", "backend": "ready", "database": "ready", "vision": "ready"}, 0),
+        (503, {"status": "degraded", "backend": "ready", "database": "ready", "vision": "unavailable"}, 0),
+        (503, {"status": "degraded", "backend": "unavailable", "database": "unavailable", "vision": "ready"}, 1),
+        (500, {"backend": "ready", "database": "ready"}, 1),
+        (200, {}, 1),
+        (200, b"not-json", 1),
+    ])
+    def test_docker_probe_distinguishes_live_backend_from_failed_store(status, body, expected_exit):
+        response = body if isinstance(body, bytes) else json.dumps(body).encode()
+    
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                assert self.path == "/health"
+                self.send_response(status)
+                self.end_headers()
+                self.wfile.write(response)
+    
+            def log_message(self, *args):
+                pass
+    
+>       server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_container_healthcheck.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/socketserver.py:456: in __init__
+    self.server_bind()
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/server.py:140: in server_bind
+    socketserver.TCPServer.server_bind(self)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <http.server.ThreadingHTTPServer object at 0x11e96b3d0>
+
+    def server_bind(self):
+        """Called by constructor to bind the socket.
+    
+        May be overridden.
+    
+        """
+        if self.allow_reuse_address and hasattr(socket, "SO_REUSEADDR"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if self.allow_reuse_port and hasattr(socket, "SO_REUSEPORT"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+>       self.socket.bind(self.server_address)
+E       PermissionError: [Errno 1] Operation not permitted
+
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/socketserver.py:472: PermissionError
+_ test_docker_probe_distinguishes_live_backend_from_failed_store[500-body3-1] __
+
+status = 500, body = {'backend': 'ready', 'database': 'ready'}
+expected_exit = 1
+
+    @pytest.mark.parametrize(("status", "body", "expected_exit"), [
+        (200, {"status": "ok", "backend": "ready", "database": "ready", "vision": "ready"}, 0),
+        (503, {"status": "degraded", "backend": "ready", "database": "ready", "vision": "unavailable"}, 0),
+        (503, {"status": "degraded", "backend": "unavailable", "database": "unavailable", "vision": "ready"}, 1),
+        (500, {"backend": "ready", "database": "ready"}, 1),
+        (200, {}, 1),
+        (200, b"not-json", 1),
+    ])
+    def test_docker_probe_distinguishes_live_backend_from_failed_store(status, body, expected_exit):
+        response = body if isinstance(body, bytes) else json.dumps(body).encode()
+    
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                assert self.path == "/health"
+                self.send_response(status)
+                self.end_headers()
+                self.wfile.write(response)
+    
+            def log_message(self, *args):
+                pass
+    
+>       server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_container_healthcheck.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/socketserver.py:456: in __init__
+    self.server_bind()
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/server.py:140: in server_bind
+    socketserver.TCPServer.server_bind(self)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <http.server.ThreadingHTTPServer object at 0x11e09bcd0>
+
+    def server_bind(self):
+        """Called by constructor to bind the socket.
+    
+        May be overridden.
+    
+        """
+        if self.allow_reuse_address and hasattr(socket, "SO_REUSEADDR"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if self.allow_reuse_port and hasattr(socket, "SO_REUSEPORT"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+>       self.socket.bind(self.server_address)
+E       PermissionError: [Errno 1] Operation not permitted
+
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/socketserver.py:472: PermissionError
+_ test_docker_probe_distinguishes_live_backend_from_failed_store[200-body4-1] __
+
+status = 200, body = {}, expected_exit = 1
+
+    @pytest.mark.parametrize(("status", "body", "expected_exit"), [
+        (200, {"status": "ok", "backend": "ready", "database": "ready", "vision": "ready"}, 0),
+        (503, {"status": "degraded", "backend": "ready", "database": "ready", "vision": "unavailable"}, 0),
+        (503, {"status": "degraded", "backend": "unavailable", "database": "unavailable", "vision": "ready"}, 1),
+        (500, {"backend": "ready", "database": "ready"}, 1),
+        (200, {}, 1),
+        (200, b"not-json", 1),
+    ])
+    def test_docker_probe_distinguishes_live_backend_from_failed_store(status, body, expected_exit):
+        response = body if isinstance(body, bytes) else json.dumps(body).encode()
+    
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                assert self.path == "/health"
+                self.send_response(status)
+                self.end_headers()
+                self.wfile.write(response)
+    
+            def log_message(self, *args):
+                pass
+    
+>       server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_container_healthcheck.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/socketserver.py:456: in __init__
+    self.server_bind()
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/server.py:140: in server_bind
+    socketserver.TCPServer.server_bind(self)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <http.server.ThreadingHTTPServer object at 0x11e9a68d0>
+
+    def server_bind(self):
+        """Called by constructor to bind the socket.
+    
+        May be overridden.
+    
+        """
+        if self.allow_reuse_address and hasattr(socket, "SO_REUSEADDR"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if self.allow_reuse_port and hasattr(socket, "SO_REUSEPORT"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+>       self.socket.bind(self.server_address)
+E       PermissionError: [Errno 1] Operation not permitted
+
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/socketserver.py:472: PermissionError
+_ test_docker_probe_distinguishes_live_backend_from_failed_store[200-not-json-1] _
+
+status = 200, body = b'not-json', expected_exit = 1
+
+    @pytest.mark.parametrize(("status", "body", "expected_exit"), [
+        (200, {"status": "ok", "backend": "ready", "database": "ready", "vision": "ready"}, 0),
+        (503, {"status": "degraded", "backend": "ready", "database": "ready", "vision": "unavailable"}, 0),
+        (503, {"status": "degraded", "backend": "unavailable", "database": "unavailable", "vision": "ready"}, 1),
+        (500, {"backend": "ready", "database": "ready"}, 1),
+        (200, {}, 1),
+        (200, b"not-json", 1),
+    ])
+    def test_docker_probe_distinguishes_live_backend_from_failed_store(status, body, expected_exit):
+        response = body if isinstance(body, bytes) else json.dumps(body).encode()
+    
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                assert self.path == "/health"
+                self.send_response(status)
+                self.end_headers()
+                self.wfile.write(response)
+    
+            def log_message(self, *args):
+                pass
+    
+>       server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_container_healthcheck.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/socketserver.py:456: in __init__
+    self.server_bind()
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/server.py:140: in server_bind
+    socketserver.TCPServer.server_bind(self)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <http.server.ThreadingHTTPServer object at 0x11e966290>
+
+    def server_bind(self):
+        """Called by constructor to bind the socket.
+    
+        May be overridden.
+    
+        """
+        if self.allow_reuse_address and hasattr(socket, "SO_REUSEADDR"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if self.allow_reuse_port and hasattr(socket, "SO_REUSEPORT"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+>       self.socket.bind(self.server_address)
+E       PermissionError: [Errno 1] Operation not permitted
+
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/socketserver.py:472: PermissionError
+=========================== short test summary info ============================
+FAILED tests/test_container_healthcheck.py::test_docker_probe_distinguishes_live_backend_from_failed_store[200-body0-0]
+FAILED tests/test_container_healthcheck.py::test_docker_probe_distinguishes_live_backend_from_failed_store[503-body1-0]
+FAILED tests/test_container_healthcheck.py::test_docker_probe_distinguishes_live_backend_from_failed_store[503-body2-1]
+FAILED tests/test_container_healthcheck.py::test_docker_probe_distinguishes_live_backend_from_failed_store[500-body3-1]
+FAILED tests/test_container_healthcheck.py::test_docker_probe_distinguishes_live_backend_from_failed_store[200-body4-1]
+FAILED tests/test_container_healthcheck.py::test_docker_probe_distinguishes_live_backend_from_failed_store[200-not-json-1]
+6 failed, 368 passed, 9 subtests passed in 21.67s

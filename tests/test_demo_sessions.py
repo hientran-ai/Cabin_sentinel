@@ -82,11 +82,13 @@ async def test_model_upload_session_refresh_poll_ack_and_resolution(tmp_path):
                 files={"image": ("c.png", png(), "image/png")},
             )
             state = (await c.get(url, headers=headers)).json()
-            assert state["risk_level"] == "WARNING"
+            assert state["risk_level"] == "ERROR"
+            assert state["occupancy_state"] == "UNKNOWN"
             resolve = {"incident_id": incident, "revision": state["revision"], "cabin_checked": True}
-            assert (await c.post(url + "/resolve", headers=headers, json=resolve)).json()["incident"][
-                "status"
-            ] == "RESOLVED"
+            resolved = await c.post(url + "/resolve", headers=headers, json=resolve)
+            assert resolved.status_code == 200
+            assert resolved.json()["incident"]["status"] == "RESOLVED"
+            assert resolved.json()["risk_level"] == "ERROR"
             assert (await c.get(url + "/events", headers=headers)).status_code == 200
             before = service.get_state("DEMO_" + sid)["revision"]
             await c.get(url, headers=headers)

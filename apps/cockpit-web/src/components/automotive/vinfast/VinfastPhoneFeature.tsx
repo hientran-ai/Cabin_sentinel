@@ -1,6 +1,7 @@
 // Cockpit side of the phone companion: what the cabin told the owner's phone and what the owner did. Read-only.
 // "Đã xem" (acknowledge) and "đã kiểm tra cabin" (resolve) are different facts and are shown separately.
-import { MessageSquareOff, PhoneOff } from 'lucide-react'
+import { MessageSquareOff, PhoneOff, Smartphone } from 'lucide-react'
+import { focusPhone } from '../../../e2e/focusPhone'
 import { useE2e } from '../../../e2e/store'
 import { useTick } from '../../../e2e/hooks'
 import { clock } from '../../../e2e/hooks'
@@ -14,6 +15,14 @@ export function VinfastPhoneFeature() {
   return (
     <Panel title="Điện thoại chủ xe" label="Điện thoại chủ xe" tag={<SimChip text="CONCEPT · MÔ PHỎNG" />}>
       <div className="vf-content" data-testid="vf-phone">
+        <h3 className="vf-ctl" style={{ margin: '4px 0' }}>Xe và điện thoại phối hợp thế nào</h3>
+        <div data-testid="vf-car-phone">
+          <Row title="1 · Màn xe" sub={`Hiện kết quả của máy chủ · bản ghi #${state?.revision ?? '—'}`} />
+          <Row title="2 · Điện thoại chủ xe" sub={notes.length ? `Đọc cùng bản ghi. Đã nhận ${notes.length} thông báo (mô phỏng)${incident?.acknowledged_at ? ', chủ xe đã xem' : ''}` : 'Đọc cùng bản ghi từ máy chủ. Chưa có thông báo'} />
+          <Row title="3 · Chủ xe thao tác" sub="“Đã xem” và “Đã kiểm tra cabin” bấm trên điện thoại; màn xe đổi theo ngay" />
+          <button type="button" className="vf-btn" data-testid="vf-go-phone" style={{ margin: '8px 0 4px' }} onClick={() => { focusPhone() }}><Smartphone {...IC} /> Mở điện thoại chủ xe</button>
+          <p className="vf-note" style={{ margin: '6px 0 18px' }}>Thử: chọn tình huống nguy hiểm, bấm “Đã xem” trên điện thoại, rồi quay lại màn này để thấy chủ xe đã xem.</p>
+        </div>
         <h3 className="vf-ctl" style={{ margin: '4px 0' }}>Thông báo cabin</h3>
         {latest ? <>
           <Row title={`Giai đoạn ${latest.stage} · revision ${latest.revision}`} sub={`${latest.rule_id ? RULE_VI[latest.rule_id] ?? latest.rule_id : latest.reason ?? ''} · gửi ${clock(latest.sent_at)}`}><span className="vf-chip">{latest.risk_level ?? '—'}</span></Row>

@@ -1,0 +1,13 @@
+.vs-dialog { width: min(1160px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 24px; color: #f3f7ff; background: #0d1d35; border: 1px solid #42618a; border-radius: 20px; font: 15px/1.5 Mulish, system-ui, sans-serif; overflow: auto; }
+.vs-dialog::backdrop { background: rgb(0 7 20 / .8); }
+.vs-dialog header, .vs-dialog footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.vs-dialog h2 { margin: 0; font-size: 24px; }.vs-dialog p { margin: 8px 0 16px; color: #c5d4ea; }.vs-dialog h3 { font-size: 18px; margin: 6px 0; }
+.vs-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 20px 0; }
+.vs-grid article { background: #152a47; border: 1px solid #38587f; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
+.vs-grid article > div { padding: 16px; flex: 1; display: flex; flex-direction: column; align-items: flex-start; }.vs-grid article p { flex: 1; }
+.vs-grid img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }.vs-dialog button { min-height: 48px; }.vs-dialog button:focus-visible { outline: 3px solid #8bc8ff; outline-offset: 3px; }
+.vs-warning { padding: 16px; background: #7a2028; border-radius: 12px; color: white !important; }
+@media (max-width: 1000px) { .vs-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .vs-grid { grid-template-columns: 1fr; }.vs-dialog { padding: 16px; }.vs-dialog header, .vs-dialog footer { align-items: flex-start; flex-wrap: wrap; } }
+
+.vs-sim { border: 2px dashed #F5B942; border-radius: 12px; padding: 14px; } .vs-sim .vs-src { font-size: 13px; color: var(--text-secondary); }

@@ -1,0 +1,13 @@
+# Personalization integration results
+
+| Area | Integrated behavior | Verification | Status / limitation |
+|---|---|---|---|
+| Baby comfort | `auto_consent` defaults false. No sound starts from a timer. A selected supported lullaby is explicit; age is not inferred from `person`. Critical/unverified/lost state stops audio. | `tests/test_release_care_consent.py`; focused frontend tests; local Playwright critical-audio interruption. | **PASS locally.** No production/OEM audio device tested. |
+| Pet mode | Existing Pet mode is reused. Care does not schedule ambient/comfort audio for pets. Risk remains owned by rules. | Backend care plan tests and existing UI typecheck/build. | **PARTIAL.** Full Pet-mode E2E walkthrough not yet run. |
+| Adult/Camping | Adult music defaults OFF; app/podcast are explicit simulated actions. | Frontend typecheck/build and care backend tests. | **PARTIAL.** Full Camping start/stop and escape path not verified in Playwright. |
+| Object analytics | YOLO COCO backpack/phone classes are returned under a separate analytics field. They are excluded from `detected_objects`, occupancy and safety rules. | `tests/test_release_items.py`; model provider contract test; real supplied clip evaluation. | **PASS for separation; FAIL for DEMO-08 visual target.** DEMO-08 backpack missed. |
+| Reminder lifecycle | Two distinct fresh accepted frames, same source/class, after explicit simulated trip end and departed-driver telemetry; no living-occupant detections; one id per trip/class. “Đã lấy” and explicit “Nhắc lại sau 5 phút” mutate only the demo reminder. Snooze never creates an emergency. | API fixture tests exercise delay, replay, dedup, response and no emergency action. | **PARTIAL.** Fixture passes; DEMO-08 actual clip has no backpack evidence, so no actual reminder walkthrough. |
+| Smart interaction | One card chooses open safety incident first, then an item reminder, then care suggestion; nonessential card hidden while moving. Critical CTA opens incident. | Code path + typecheck/build. | **PARTIAL.** Browser scenario response and notification sequencing not fully verified. |
+| Notifications | The in-app demo keeps one current toast and incident/card surface; item notices are separated from risk. | Existing backend notification regressions plus browser fixture smoke. | **PARTIAL.** No authorized real test recipient configured; push/SMS callbacks not sent or hardware-tested. |
+
+New optional fields (`trip_ended`, `vision.items`, read-model `items`) are additive. Older clients that omit `trip_ended` do not create item reminders. Current source branch remains isolated and unmerged.

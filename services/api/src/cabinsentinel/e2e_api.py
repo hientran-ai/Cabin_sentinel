@@ -21,7 +21,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Reques
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.concurrency import run_in_threadpool
 
-from src.cabinsentinel import care
+from src.cabinsentinel import care, items, link
 from src.cabinsentinel.actions import DemoActions
 from src.cabinsentinel.api import get_cabin_service
 from src.cabinsentinel.auth import authorize_session, session_bearer
@@ -58,9 +58,13 @@ def _file_sha256(path: str, mtime_ns: int) -> str:
 def model_provenance(request: Request) -> dict[str, Any]:
     """Describe the weights actually loaded; ``ready=false`` when inference is not available."""
     provider = getattr(request.app.state, "vision_provider", None)
-    path = get_settings().model_path
+    path = str(getattr(provider, "model_path", None) or get_settings().model_path or "")
     info: dict[str, Any] = {"ready": provider is not None, "framework": "ultralytics", "runtime": "pytorch-cpu",
-                            "classes_used": ["person", "cat", "dog"], "confidence_threshold": get_settings().model_confidence}
+                            "classes_used": ["person", "cat", "dog"], "item_classes": ["backpack", "cell phone"],
+                            "items_tracking": bool(provider and getattr(provider, "supports_items", False)), "confidence_threshold": getattr(provider, "confidence", get_settings().model_confidence)}
+    if getattr(provider, "framework", None):
+        info["framework"] = provider.framework
+        info["age_model"] = "cabin-age-repair-20261015.pt (MobileNetV3-Small)"
     if path and Path(path).is_file():
         stat = Path(path).stat()
         info.update(file=Path(path).name, size_bytes=stat.st_size, sha256=_file_sha256(path, stat.st_mtime_ns))
@@ -102,6 +106,13 @@ class SimulatedSensorInput(BaseModel):
     powertrain_type: Literal["EV", "ICE", "UNKNOWN"] = "UNKNOWN"
     operation_mode: Literal["NONE", "PET", "CAMP", "REMOTE_START", "UNKNOWN"] = "UNKNOWN"
     battery_soc_pct: float | None = Field(default=None, ge=0, le=100)
+    trip_ended: bool | None = None  # optional demo analytics, excluded from safety SensorPayload
+
+
+class ItemResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    response: Literal["TAKEN", "SNOOZE"]
+    snooze_minutes: int | None = Field(default=None, ge=1, le=60)
 
 
 class CameraStatusInput(BaseModel):
@@ -154,6 +165,18 @@ class CareConsent(BaseModel):
     surface: Literal["PHONE", "COCKPIT"]
 
 
+class LinkInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    action: Literal["DROP", "RESTORE"]
+
+
+def _vehicle_writes_allowed(vehicle_id: str) -> None:
+    """The simulated vehicle link of THIS session is down: vehicle writes are refused (not queued, not faked). Other sessions are unaffected."""
+    if link.blocked(vehicle_id):
+        raise HTTPException(status_code=409, detail="Vehicle link is down (simulated): update refused")
+
+
 class FaultInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -201,10 +224,13 @@ def create_session(service: CabinService = Depends(get_cabin_service)) -> dict:
 def post_sensor(session_id: str, payload: SimulatedSensorInput, request: Request,
                 service: CabinService = Depends(get_cabin_service)) -> dict:
     vehicle_id = _session(request, service, session_id)
+    _vehicle_writes_allowed(vehicle_id)
     try:
-        state = service.ingest_simulated_sensor(vehicle_id, payload.model_dump())
+        state = service.ingest_simulated_sensor(vehicle_id, payload.model_dump(exclude={"trip_ended"}))
+        items.trip(service, vehicle_id, payload.trip_ended)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    link.accept(vehicle_id, "sensor", service.clock())
     return {"source": "SIMULATED", "committed": _summary(state)}
 
 
@@ -222,9 +248,11 @@ async def post_observation(
     capture_age_ms: float = Form(default=0, ge=0, le=60000),
     source: Literal["UPLOAD", "CLIP_FRAME", "DEVICE_CAMERA"] = Form(default="UPLOAD"),
     source_label: str = Form(default=""),
+    media_time_s: float | None = Form(default=None, ge=0, le=36000),
     service: CabinService = Depends(get_cabin_service),
 ) -> dict:
     vehicle_id = _session(request, service, session_id)
+    _vehicle_writes_allowed(vehicle_id)
     if not FRAME_ID.fullmatch(frame_id) or not LABEL.fullmatch(source_label):
         raise HTTPException(status_code=422, detail="Invalid frame_id or source_label")
     started = time.perf_counter()
@@ -238,7 +266,14 @@ async def post_observation(
     validate_image_bytes(data, image.content_type)
     validated = time.perf_counter()
     try:
-        frame = await run_in_threadpool(provider.infer, data)
+        # one tracker/age-smoothing stream per playback run (the client puts the run in the frame id: "<session>-r<run>-<n>-<ts>")
+        run = frame_id.split("-")[1] if frame_id.count("-") >= 3 else "0"
+        if getattr(provider, "supports_stream", False):
+            # DEMO-01 / DEMO-02 were recorded by one camera whose cabin footprint is calibrated in vision/geometry (demo calibration only)
+            camera = "DEMO-WIDE-01" if source_label.startswith(("DEMO-01", "DEMO-02")) else None
+            frame = await run_in_threadpool(provider.infer, data, f"{vehicle_id}:{run}", camera)
+        else:
+            frame = await run_in_threadpool(provider.infer, data)
     except Exception as exc:
         logger.exception("Vision inference failed")
         raise HTTPException(status_code=503, detail="Vision inference unavailable") from exc
@@ -259,13 +294,16 @@ async def post_observation(
     committed = time.perf_counter()
     state = service.get_state(vehicle_id)
     accepted = service.vision_frame_committed(vehicle_id, vision.frame_id)
+    link.accept(vehicle_id, "observation", service.clock())
     response = {
         "session_id": session_id, "frame_id": frame_id, "source": source, "source_label": source_label,
         "accepted": accepted, "replayed": False,
         "ignored_reason": None if accepted else "OUT_OF_ORDER_OR_SUPERSEDED",
         "observed_at": observed_at.isoformat(), "received_at": received_at.isoformat(),
         "capture_age_ms": capture_age_ms,
-        "vision": {"source": "MODEL_INFERENCE", "detections": _detections(frame, vision),
+        "media_time_s": media_time_s,
+        "vision": {"source": "MODEL_INFERENCE", "exterior_count": int(frame.get("exterior_count") or 0), "detections": _detections(frame, vision),
+                   "items": items.sanitize(frame.get("item_detections")),
                    "age_classifier": age_classifier_status(frame)},
         "model": model_provenance(request),
         "timings_ms": {
@@ -281,14 +319,19 @@ async def post_observation(
     service.observation_put(vehicle_id, frame_id, response)
     _audit(service, vehicle_id, "observation", {k: response[k] for k in (
         "frame_id", "source", "source_label", "accepted", "ignored_reason", "observed_at", "received_at",
-        "capture_age_ms", "vision", "timings_ms")} | {"model": {k: response["model"].get(k) for k in ("file", "sha256", "ultralytics_version")}})
-    return response
+        "capture_age_ms", "media_time_s", "vision", "timings_ms")} | {"model": {k: response["model"].get(k) for k in ("file", "sha256", "ultralytics_version")}})
+    if accepted:
+        items.observe(service, vehicle_id)
+    # The masked picture is for the caller to display once. It is NOT stored with the replay record or the audit log.
+    preview = frame.get("preview")
+    return {**response, "preview": preview} if isinstance(preview, dict) else response
 
 
 @protected.post("/sessions/{session_id}/camera-status")
 def post_camera_status(session_id: str, payload: CameraStatusInput, request: Request,
                        service: CabinService = Depends(get_cabin_service)) -> dict:
     vehicle_id = _session(request, service, session_id)
+    _vehicle_writes_allowed(vehicle_id)
     replay = service.observation_get(vehicle_id, payload.frame_id)
     if replay is not None:
         return {**replay, "replayed": True}
@@ -303,6 +346,7 @@ def post_camera_status(session_id: str, payload: CameraStatusInput, request: Req
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     accepted = service.vision_frame_committed(vehicle_id, vision.frame_id)
+    link.accept(vehicle_id, "camera_status", service.clock())
     response = {
         "session_id": session_id, "frame_id": payload.frame_id, "camera_status": payload.status,
         "origin": payload.origin, "reason": payload.reason, "accepted": accepted, "replayed": False,
@@ -333,14 +377,27 @@ def read_state(session_id: str, request: Request, service: CabinService = Depend
     return {
         **state, "session_id": session_id, "care": care.view(service, vehicle_id, state), "simulation": SIMULATION, "ttl_s": TTL_S,
         "server_time": service.clock().isoformat(), "last_observation": _last_observation(service, vehicle_id),
-        "model": model_provenance(request),
+        "model": model_provenance(request), "items": items.view(service, vehicle_id),
+        "connectivity": link.view(vehicle_id, service.clock()),
     }
 
 
 HISTORY_TYPES = {
     "alert", "action_intent", "action_attempt", "action_result", "acknowledgment", "incident_resolution",
-    "unlock_request", "notification_delivery", "operator_action", "camera_status", "care",
+    "unlock_request", "notification_delivery", "operator_action", "camera_status", "care", "demo_trip", "item_reminder", "item_response",
 }
+
+
+@protected.post("/sessions/{session_id}/items/{reminder_id}/respond")
+def respond_to_item(session_id: str, reminder_id: str, payload: ItemResponse, request: Request,
+                    service: CabinService = Depends(get_cabin_service)) -> dict:
+    vehicle_id = _session(request, service, session_id)
+    try:
+        return items.respond(service, vehicle_id, reminder_id, payload.response, payload.snooze_minutes)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 def _history_item(event: dict, *, observations: bool = False) -> dict | None:
@@ -454,7 +511,7 @@ def resolve(session_id: str, payload: ResolveInput, request: Request,
     vehicle_id = _session(request, service, session_id)
     actor = {"surface": payload.surface, "authentication": "DEMO_SESSION_TOKEN"}
     try:
-        state = service.resolve(vehicle_id, payload.incident_id, payload.revision)
+        state = service.resolve(vehicle_id, payload.incident_id, payload.revision, cabin_checked=payload.cabin_checked)
     except ValueError as exc:
         _audit(service, vehicle_id, "operator_action", {
             "action": "resolve", "result": "REJECTED", "incident_id": payload.incident_id,
@@ -512,7 +569,18 @@ def erase_session(session_id: str, request: Request, service: CabinService = Dep
     vehicle_id = _session(request, service, session_id)
     if isinstance(service.actions, DemoActions):
         service.actions.set_failing(vehicle_id, set())
+    link.forget(vehicle_id)
     return {"deleted": service.delete_demo_session(vehicle_id)}
+
+
+@protected.post("/sessions/{session_id}/link")
+def set_link(session_id: str, payload: LinkInput, request: Request, service: CabinService = Depends(get_cabin_service)) -> dict:
+    """Demo switch for ONE session: drop or restore the SIMULATED vehicle link. Never touches incidents, risk, other sessions or the service."""
+    vehicle_id = _session(request, service, session_id)
+    now = service.clock()
+    view = link.drop(vehicle_id, now) if payload.action == "DROP" else link.restore(vehicle_id, now)
+    _audit(service, vehicle_id, "operator_action", {"action": "vehicle_link_" + payload.action.lower(), "result": "OK", "state": view["state"]})
+    return {"connectivity": view, "source": "SIMULATED"}
 
 
 @protected.post("/sessions/{session_id}/faults")

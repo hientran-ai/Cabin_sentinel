@@ -98,7 +98,7 @@ async def test_hot_occupant_upload_uses_service_rules_and_simulated_actions(tmp_
     [
         ("normal", [{"class": "person", "confidence": 0.9}], "SAFE", "ATTENDED_DRIVING"),
         ("parked_locked", [{"class": "person", "confidence": 0.9}], "WARNING", "COOL_OCCUPANT"),
-        ("hot_locked", [], "SAFE", "EMPTY_CABIN"),
+        ("hot_locked", [], "ERROR", "OCCUPANCY_UNVERIFIED"),
         ("hot_locked", [{"class": "dog", "confidence": 0.9}], "CRITICAL", "HOT_OCCUPANT"),
         ("hot_locked", [{"class": "cat", "confidence": 0.9}], "CRITICAL", "HOT_OCCUPANT"),
     ],

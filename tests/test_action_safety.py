@@ -67,15 +67,21 @@ def test_replaying_the_same_logical_input_never_reruns_actuators(rig):
     assert len(keys) == len(set(keys))
 
 
-def test_resolving_requires_fresh_empty_cabin_and_never_unlocks(rig):
+def test_human_cabin_check_resolves_without_turning_negative_vision_safe(rig):
     service, spy, clock = rig
     state = publish(service, clock, 1, "CRITICAL")
     incident = state["incident"]["incident_id"]
     with pytest.raises(ValueError):
-        service.resolve(VEHICLE, incident, state["revision"])
+        service.resolve(VEHICLE, incident, state["revision"], cabin_checked=True)
     clock[0] += timedelta(seconds=1)
-    empty = publish(service, clock, 2, "SAFE")
-    resolved = service.resolve(VEHICLE, incident, empty["revision"])
+    uncertain = publish(service, clock, 2, "NO_OCCUPANT_DETECTION")
+    assert uncertain["risk_level"] == "ERROR"
+    assert uncertain["occupancy_state"] == "UNKNOWN"
+    with pytest.raises(ValueError, match="Explicit cabin check"):
+        service.resolve(VEHICLE, incident, uncertain["revision"], cabin_checked=False)
+    resolved = service.resolve(VEHICLE, incident, uncertain["revision"], cabin_checked=True)
     assert resolved["incident"]["status"] == "RESOLVED"
+    assert resolved["risk_level"] == "ERROR"
+    assert resolved["occupancy_state"] == "UNKNOWN"
     assert resolved["unlock_request"]["status"] in {"canceled", "expired"}
     assert "request_unlock" not in spy.calls

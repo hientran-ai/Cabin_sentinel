@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
+import { Tent } from 'lucide-react'
 import { AnimatePresence, MotionConfig } from 'motion/react'
 import { useVehicleSimulation } from '../../../hooks/useVehicleSimulation'
 import { useUi } from '../../../store/uiStore'
 import { useVehicle } from '../../../store/vehicleStore'
 import { CabinCareScreen } from '../../../e2e/CabinCareScreen'
-import { useE2e } from '../../../e2e/store'
+import { showCareScreen, useCareState } from '../../../e2e/careScreen'
+import { closeTopLayer, installLayerHistory } from '../../../lib/layers'
 import { CameraPanel } from '../camera/CameraPanel'
 import { VinfastToasts } from './VinfastAlert'
-import { VinfastCabinDetail } from './VinfastCabin'
+import { CabinMonitorDialog } from './CabinMonitor'
 import { VinfastCarMode } from './VinfastCarMode'
 import { VinfastClimatePanel } from './VinfastClimatePanel'
 import { VinfastDashboard } from './VinfastDashboard'
@@ -30,7 +32,7 @@ export function VinfastExperience() {
   const overlay = useUi((s) => s.overlay), language = useUi((s) => s.language)
   const gear = useVehicle((s) => s.gear)
   const mode = useMode()
-  const careActive = useE2e((s) => s.state?.care?.status === 'ACTIVE')
+  const care = useCareState()
   useEffect(() => {
     const el = document.documentElement
     el.dataset.brand = 'vinfast'; el.dataset.mode = mode; el.lang = language
@@ -45,11 +47,13 @@ export function VinfastExperience() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return
-      if (e.key === 'Escape') useUi.getState().setOverlay(null)
+      // Esc closes the top layer (overlay first, then the care screen); preventDefault tells the page-level Esc handler it was used
+      if (e.key === 'Escape' && closeTopLayer()) e.preventDefault()
     }
     addEventListener('keydown', onKey)
     return () => removeEventListener('keydown', onKey)
   }, [])
+  useEffect(() => installLayerHistory(), [])   // browser Back closes the top layer instead of leaving the page
   return (
     <MotionConfig reducedMotion="user">
       <VinfastDashboard>
@@ -57,15 +61,16 @@ export function VinfastExperience() {
           {overlay === 'climate' && <VinfastClimatePanel key="climate" />}
           {overlay === 'vehicle' && <VinfastSettings key="vehicle" />}
           {overlay === 'camera' && <CameraPanel key="camera" presentation="vinfast" />}
-          {overlay === 'cabin' && <VinfastCabinDetail key="cabin" />}
           {overlay === 'cabinset' && <VinfastSettings key="cabinset" initial="cabin" />}
           {overlay === 'phone' && <VinfastPhoneFeature key="phone" />}
           {overlay === 'media' && <VinfastMediaPanel key="media" />}
           {overlay === 'carmode' && <VinfastCarMode key="carmode" />}
           {overlay === 'library' && <VinfastLibrary key="library" />}
         </AnimatePresence>
-        {careActive && overlay !== 'cabin' && <div className="vf-abs vf-glass" style={{ left: 608, top: 88, width: 1288, height: 856, zIndex: 21, overflow: 'hidden' }} data-testid="vf-care"><CabinCareScreen /></div>}
+        {care.visible && overlay !== 'cabin' && <div className="vf-abs vf-glass" style={{ left: 608, top: 88, width: 1288, height: 856, zIndex: 21, overflow: 'hidden' }} data-testid="vf-care"><CabinCareScreen /></div>}
+        {care.hidden && <button type="button" className="vf-care-chip vf-press" data-testid="vf-care-chip" onClick={showCareScreen} aria-label={`Chế độ ${care.name} đang chạy. Mở lại màn hình`}><Tent size={30} strokeWidth={1.8} aria-hidden /><span>Chế độ {care.name} đang chạy · Mở lại</span></button>}
         <VinfastToasts />
+        {overlay === 'cabin' && <CabinMonitorDialog inCar />}
         <Intro />
       </VinfastDashboard>
     </MotionConfig>
