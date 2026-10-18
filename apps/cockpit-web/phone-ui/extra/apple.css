@@ -89,3 +89,6 @@ input[type=range] { accent-color: var(--accent); }
 .tester-note { margin: 0; color: var(--muted); font-size: 13px; }
 .acct { display: flex; align-items: center; gap: 12px; }
 .acct .avatar-s { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-weight: 700; font-size: 18px; flex: none; }
+
+/* alerts drop in below the header row: the Cabin Care button of the car demo lives in the header, so a banner can never sit under it */
+.banners { top: calc(60px + var(--safe-t)) !important; }

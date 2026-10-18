@@ -41,11 +41,12 @@ export function CareSheet() {
   const chooseMusic = music === 'off' ? 'off' : childLike ? ['twinkle', 'brahms'].includes(music) ? music : 'off' : ADULT_AUDIO.some(([id]) => id === music) ? music : 'off'
 
   return (
-    <div className={`absolute inset-x-[10px] z-10 text-[13px] text-white ${open ? 'bottom-[86px]' : 'top-[64px]'}`} data-testid="care-sheet">
-      {/* collapsed pill sits under the header so it never covers the incident buttons (Đã xem, Xử lý ngay); the opened sheet slides up from the tab bar */}
+    <div className={`absolute inset-x-[10px] z-10 text-[13px] text-white ${open ? 'bottom-[86px]' : 'pointer-events-none top-[10px] flex justify-end pr-[62px]'}`} data-testid="care-sheet">
+      {/* collapsed = a small round button in the phone header (left of the bell): the alert banner is pushed below the header and the incident buttons stay free; the opened sheet slides up from the tab bar */}
       {!open && (
-        <button type="button" onClick={() => setOpen(true)} className={`mx-auto flex items-center gap-2 rounded-full px-4 py-2 font-semibold shadow-lg ${active ? 'bg-[#2f7d5b]' : care.countdown.armed ? 'bg-[#b5502c]' : 'bg-[#2a2d33]'}`}>
-          <span aria-hidden>{active ? '💗' : '🛡️'}</span>{pill}
+        <button type="button" onClick={() => setOpen(true)} aria-label={pill} title={pill} className={`pointer-events-auto relative flex h-10 w-10 items-center justify-center rounded-full text-[18px] shadow-lg ${active ? 'bg-[#2f7d5b]' : care.countdown.armed ? 'bg-[#b5502c]' : 'bg-[#2a2d33]'}`}>
+          <span aria-hidden>{active ? '💗' : '🛡️'}</span>
+          {care.countdown.armed && !active && <span className="absolute -top-1 right-0 rounded-full bg-white px-1.5 text-[11px] font-bold text-[#b5502c]">{care.countdown.remaining_s}s</span>}
         </button>)}
       {open && (
         <div className="max-h-[560px] overflow-y-auto rounded-[22px] border border-white/10 bg-[#17191d]/95 p-4 shadow-2xl backdrop-blur">

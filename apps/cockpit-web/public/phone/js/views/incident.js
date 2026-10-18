@@ -29,7 +29,15 @@ function evidence(inc) {
     h("p", { class: "small muted", style: "margin:0" }, "Hình vẽ từ dữ liệu cảm biến, giống tin gửi qua Telegram. Không phải ảnh camera."),
     photos.length > 0 && [h("h3", {}, "Ảnh từ camera trong xe"),
       photos.map((id) => pic(`photo:${id}`, `/v1/vehicles/${inc.vehicle_id}/photos/${id}`, "Ảnh cảnh báo, người đã được làm mờ", "alert-photo")),
-      h("p", { class: "small muted", style: "margin:0" }, "Người được phát hiện đã được làm mờ ngay trên thiết bị. Ảnh tự xóa sau 24 giờ.")]);
+      h("p", { class: "small muted", style: "margin:0" }, "Khung hình mô phỏng do xe vừa phân tích, đã che mặt hoặc làm mờ toàn khung. Chỉ giữ trong bộ nhớ trình duyệt, mất khi đóng trang.")]);
+}
+
+function reportFrame(inc) {
+  const photos = inc.alert_photos || [];
+  if (!photos.length) return null;
+  return h("section", { class: "card gap report-frame" }, h("h3", {}, "Khung hình báo cáo từ xe"),
+    photos.map((id) => pic(`photo:${id}`, `/v1/vehicles/${inc.vehicle_id}/photos/${id}`, "Khung hình báo cáo, đã che mặt hoặc làm mờ", "alert-photo")),
+    h("p", { class: "small muted", style: "margin:0" }, "Khung hình mô phỏng do xe vừa phân tích, đã che mặt hoặc làm mờ toàn khung. Chỉ giữ trong bộ nhớ trình duyệt, mất khi đóng trang."));
 }
 
 export async function render(ctx) {
@@ -58,6 +66,7 @@ export async function render(ctx) {
     h("div", { class: "actions3" }, h("button", { class: "btn danger", on: { click: () => toast("DEMO: không thực hiện cuộc gọi khẩn cấp.", "info") } }, icon("phone"), "Hỗ trợ (mô phỏng)"),
       canAct && !inc.viewed_at && h("button", { class: "btn", on: { click: (e) => busy(e.target, async () => { try { await post(`/v1/incidents/${inc.id}/view`); toast("Đã ghi nhận bạn đã xem. Sự cố vẫn mở.", "ok"); refresh(); } catch (er) { toast(er.message, "err"); } }) } }, "Đã xem")),
     h("p", { class: "small muted", style: "margin:0" }, "“Đã xem” chỉ ghi nhận bạn đã xem, không đóng sự cố và không dừng nhắc lặp. Sự cố chỉ đóng khi bạn xác nhận đã kiểm tra xe và dữ liệu mới đáp ứng điều kiện kiểm tra. Không phát hiện qua camera chưa xác minh xe trống."),
+    reportFrame(inc),
     esc && h("section", { class: "card gap" }, h("h3", {}, "Kế hoạch xử lý"), h("div", { class: "steps" }, esc.steps.map((st) => h("div", { class: "step" }, h("i", { class: `dot ${st.state}` }),
       h("div", {}, h("div", {}, st.title), h("div", { class: "small muted" }, `${st.note}${st.state === "skipped" || st.state === "failed" ? " · " + (st.detail || st.state) : ""}`)))))),
     canAct ? h("section", { class: "card gap" }, h("h2", {}, "Xác nhận đã kiểm tra xe"),

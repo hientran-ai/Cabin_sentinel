@@ -8,6 +8,7 @@ export class ApiError extends Error {
 }
 export interface Session { id: string; token: string }
 /** The simulator can cut the browser→backend link on purpose; nothing else about the backend changes. */
+let tripEndedAccepted = true
 export const linkState = { cutUntil: 0 }
 
 async function call<T>(path: string, init: RequestInit & { token?: string; timeoutMs?: number } = {}): Promise<T> {
@@ -46,7 +47,13 @@ export const api = {
   state: (s: Session) => call<ServerState>(`/sessions/${s.id}/state`, { token: s.token }),
   notifications: (s: Session) => call<NotificationItem[]>(`/sessions/${s.id}/notifications`, { token: s.token }),
   history: (s: Session, after: number) => call<{ items: HistoryItem[]; next_after: number }>(`/sessions/${s.id}/history?after=${after}`, { token: s.token }),
-  sensor: (s: Session, body: SensorInput) => call<{ committed: { revision: number } | null }>(`/sessions/${s.id}/sensor`, { ...json(body), token: s.token }),
+  sensor: async (s: Session, body: SensorInput) => {
+    const send = (b: SensorInput) => call<{ committed: { revision: number } | null }>(`/sessions/${s.id}/sensor`, { ...json(b), token: s.token })
+    const { trip_ended: tripEnded, ...base } = body
+    if (tripEnded === undefined || !tripEndedAccepted) return send(base)
+    // an older backend rejects the optional demo field `trip_ended` with 422 and would then never take a sensor update (stale data, no alert on the phone): drop it and remember
+    try { return await send(body) } catch (e) { if (e instanceof ApiError && e.status === 422) { tripEndedAccepted = false; return send(base) } throw e }
+  },
   observation: (s: Session, blob: Blob, meta: { frameId: string; captureAgeMs: number; source: 'UPLOAD' | 'CLIP_FRAME' | 'DEVICE_CAMERA'; label: string; mediaTimeS?: number }) => {
     const form = new FormData()
     form.set('image', blob, `${meta.frameId}.jpg`)
