@@ -37,6 +37,8 @@ _USE_PERSISTENT = _PERSISTENT_DIR.is_dir() and os.access(_PERSISTENT_DIR, os.W_O
 os.environ.setdefault("CABINSENTINEL_DB_PATH", str((_PERSISTENT_DIR if _USE_PERSISTENT else APP_DIR / "data") / "cabinsentinel.db"))
 os.environ.setdefault("MAX_CONCURRENT_DEMO_REQUESTS", "2")
 os.environ.setdefault("MODEL_PATH", str(WEIGHTS))
+if (APP_DIR / "models" / "age_router.pt").is_file():
+    os.environ.setdefault("AGE_CLASSIFIER_PATH", str(APP_DIR / "models" / "age_router.pt"))
 os.environ.setdefault("YOLO_AUTOINSTALL", "false")
 os.environ.setdefault("YOLO_OFFLINE", "true")
 os.environ.setdefault("YOLO_CONFIG_DIR", "/tmp/ultralytics")

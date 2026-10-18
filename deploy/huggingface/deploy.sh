@@ -28,7 +28,21 @@ mkdir -p "$STAGE/models"
 cp "$YUNET" "$REPO/models/YUNET-LICENSE" "$STAGE/models/"
 # Never ignore models/: the Hub silently drops ignored files, the YuNet model then never reaches the Space and
 # /health reports privacy_model.available=false (reason=model_missing).
-printf '__pycache__/\n*.pyc\n/data/\n*.db\n/models/*.pt\n' > "$STAGE/.gitignore"
+printf '__pycache__/\n*.pyc\n/data/\n*.db\n/models/yolo*.pt\n' > "$STAGE/.gitignore"
+
+# Optional age router (evidence only, never an input to risk). Owner accepted responsibility on 2026-10-18 for NON-COMMERCIAL competition use;
+# lineage includes SVIRO (CC BY-NC-SA 4.0), so the file ships with an attribution/licence notice. Skipped when AGE_CHECKPOINT is unset/missing.
+AGE_CHECKPOINT="${AGE_CHECKPOINT:-/Users/mac/AI/P-068/.claude/worktrees/oem-e2e/runs/age-real-router-20261002/best.pt}"
+AGE_SHA256="4c71685b8522e781de7b7b370c05c41ddeadb8819af34cfd81bda12a388e3ce2"
+if [ -f "$AGE_CHECKPOINT" ]; then
+  [ "$(shasum -a 256 "$AGE_CHECKPOINT" | cut -d' ' -f1)" = "$AGE_SHA256" ] || { echo "Refusing: age checkpoint sha256 mismatch" >&2; exit 1; }
+  cp "$AGE_CHECKPOINT" "$STAGE/models/age_router.pt"
+  cat > "$STAGE/models/AGE-ROUTER-NOTICE.md" <<NOTICE
+# age_router.pt (sha256 $AGE_SHA256)
+Non-commercial demo use only (competition / research). Lineage includes SVIRO (https://sviro.kl.dfki.de/, CC BY-NC-SA 4.0): attribution required,
+derivatives must stay CC BY-NC-SA 4.0. Rights to the real-video crops used for adaptation are NOT verified. Age is evidence only and never changes the risk level.
+NOTICE
+fi
 
 REV="$(git -C "$REPO" rev-parse --short HEAD)"
 if [ "$DRY_RUN" = "--dry-run" ]; then
