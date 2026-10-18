@@ -76,8 +76,9 @@ def test_fresh_empty_frame_and_ack_do_not_resolve_existing_incident(tmp_path):
     clock[0] += timedelta(seconds=1)
     service.ingest_sensor(sensor(at=clock[0], sequence=2))
     empty = service.ingest_vision(vision([], at=clock[0], frame_id="empty"))
-    assert empty["risk_level"] == "WARNING"
-    assert empty["rule_id"] == "UNRESOLVED_OCCUPANT"
+    assert empty["risk_level"] == "ERROR"
+    assert empty["occupancy_state"] == "UNKNOWN"
+    assert empty["rule_id"] == "OCCUPANCY_UNVERIFIED"
     assert empty["incident_id"] == first["incident_id"]
     ack = service.acknowledge("CAR_1", first["incident_id"])
     assert ack["incident"]["acknowledged_at"] == clock[0].isoformat()

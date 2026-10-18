@@ -26,7 +26,8 @@ export function useConnection(): 'ok' | 'lost' {
 export function useView(): View {
   const session = useE2e((s) => s.session), state = useE2e((s) => s.state)
   const connection = useConnection()
-  return useMemo(() => deriveView({ hasSession: !!session, state, connection }), [session, state, connection])
+  const link = state?.connectivity?.state
+  return useMemo(() => deriveView({ hasSession: !!session, state, connection, link }), [session, state, connection, link])
 }
 
 /** Age of a source now = age when the backend answered + time since we received that answer. */
@@ -37,3 +38,9 @@ export function liveAge(src: SourceAge | undefined, receivedPerf: number): numbe
 
 export const clock = (iso: string | null | undefined, withSeconds = true) =>
   iso ? new Date(iso).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', ...(withSeconds ? { second: '2-digit' } : {}) }) : '—'
+
+/** Vehicle link of this session as the backend reports it (CONNECTED when it says nothing). */
+export function useVehicleLink() {
+  const c = useE2e((s) => s.state?.connectivity)
+  return c ?? null
+}

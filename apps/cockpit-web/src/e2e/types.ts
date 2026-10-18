@@ -12,12 +12,13 @@ export interface ActionResult { tool: string; status: string; revision?: number;
 export interface Detection { class: string; confidence: number; bbox?: number[] | null; age_group?: string | null }
 export interface ModelInfo { ready: boolean; file?: string; sha256?: string; size_bytes?: number; ultralytics_version?: string; framework?: string; runtime?: string; classes_used?: string[]; confidence_threshold?: number; age_classifier?: string
   /** Reserved: true only when the server really exposes a forgotten-item tracking channel. No such field exists today. */
-  items_tracking?: boolean }
+  items_tracking?: boolean; item_classes?: string[] }
 
 export interface ObservationEvent {
   event_id: number; event_type: 'observation' | 'camera_status'; frame_id: string; accepted: boolean
   source?: string; source_label?: string; observed_at: string; received_at: string; capture_age_ms?: number
-  vision?: { source: string; detections: Detection[]; age_classifier?: { status: string } }
+  vision?: { source: string; exterior_count?: number; detections: Detection[]; items?: Detection[]; age_classifier?: { status: string } }
+  media_time_s?: number | null
   timings_ms?: Record<string, number>; model?: { file?: string; sha256?: string; ultralytics_version?: string }
   camera_status?: string; origin?: string; reason?: string
 }
@@ -39,9 +40,12 @@ export interface ServerState {
   freshness: { as_of: string; sensor: SourceAge; vision: SourceAge }
   simulation: { vehicle_source: string; action_mode: string; vision_source: string; runtime: string }
   ttl_s: { sensor: number; vision: number }; server_time: string
+  connectivity?: Connectivity
   last_observation: ObservationEvent | null; model: ModelInfo
   care?: CareView
+  items?: { source: string; telemetry_source: string; identity_tracking: false; reminders: ItemReminder[] }
 }
+export interface ItemReminder { id: string; class: string; status: 'OPEN' | 'TAKEN' | 'SNOOZED'; evidence_frames: string[]; snoozed_until?: string; simulated: true; not_emergency: true }
 
 export type CareProfile = 'CHILD' | 'ADULT' | 'PET' | 'UNKNOWN'
 export interface CareStep { tool: string; status?: string; skipped?: string; parameters?: Record<string, unknown> }
@@ -72,6 +76,7 @@ export interface ServiceStatus {
 }
 
 export interface SensorInput {
+  trip_ended?: boolean
   temperature: number; engine_status: 'ON' | 'OFF' | 'UNKNOWN'; doors_locked: boolean; radar_presence: boolean
   driver_present: boolean | null; gear: 'P' | 'R' | 'N' | 'D' | 'UNKNOWN'; vehicle_speed_kph: number | null
   hvac_status: 'ACTIVE' | 'INACTIVE' | 'FAULT' | 'UNKNOWN'; window_status: 'CLOSED' | 'VENTED' | 'OPEN' | 'UNKNOWN'
@@ -83,4 +88,13 @@ export interface ObservationReply {
   frame_id: string; accepted: boolean; replayed: boolean; ignored_reason: string | null
   observed_at: string; received_at: string; capture_age_ms: number
   vision: { detections: Detection[] }; timings_ms: Record<string, number>; committed: { revision: number; risk_level: RiskLevel } | null
+  /** face-masked picture of THIS frame, returned once and never stored by the backend. Absent when the model has no masker. */
+  preview?: { status: 'PROCESSED' | 'UNAVAILABLE'; data_url: string | null; method?: string; detected_faces?: number; masked_regions?: number; coverage_verified?: false }
+}
+
+/** State of the (simulated) vehicle edge link of this session, owned by the backend. Not the browser connection, not camera health. */
+export interface Connectivity {
+  state: 'CONNECTED' | 'RECONNECTING' | 'DISCONNECTED' | 'SYNCING'; link: 'UP' | 'DROPPED'; simulated: true; reason: string
+  dropped_at: string | null; restored_at: string | null; last_vehicle_message_at: string | null; changed_at: string | null
+  disconnect_after_s: number; drops: number; note: string; incidents_unchanged: true
 }

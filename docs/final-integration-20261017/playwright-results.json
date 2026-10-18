@@ -1,0 +1,436 @@
+{
+  "config": {
+    "configFile": "/Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/playwright.integration.config.ts",
+    "rootDir": "/Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "../../docs/final-integration-20261017/playwright-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/docs/final-integration-20261017/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 90000
+      },
+      {
+        "outputDir": "/Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/docs/final-integration-20261017/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chrome",
+        "name": "chrome",
+        "testDir": "/Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 90000
+      },
+      {
+        "outputDir": "/Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/docs/final-integration-20261017/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 90000
+      },
+      {
+        "outputDir": "/Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/docs/final-integration-20261017/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-webkit",
+        "name": "mobile-webkit",
+        "testDir": "/Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 90000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.56.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "eight-clips.spec.ts",
+      "file": "eight-clips.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "DEMO-01 decodes actual video, runs actual model and cleans up",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6326,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T14:41:04.744Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a9dd37a8b0ff732f3174-952685ade429c5c46b21",
+          "file": "eight-clips.spec.ts",
+          "line": 5,
+          "column": 3
+        },
+        {
+          "title": "DEMO-02 decodes actual video, runs actual model and cleans up",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5849,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T14:41:11.420Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a9dd37a8b0ff732f3174-063c5e5b72c69b506982",
+          "file": "eight-clips.spec.ts",
+          "line": 5,
+          "column": 3
+        },
+        {
+          "title": "DEMO-03 decodes actual video, runs actual model and cleans up",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6396,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T14:41:17.279Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a9dd37a8b0ff732f3174-fb65507fc9b2569f4f84",
+          "file": "eight-clips.spec.ts",
+          "line": 5,
+          "column": 3
+        },
+        {
+          "title": "DEMO-04 decodes actual video, runs actual model and cleans up",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5265,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T14:41:23.684Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a9dd37a8b0ff732f3174-ff1c0dfdfe0f6ae67516",
+          "file": "eight-clips.spec.ts",
+          "line": 5,
+          "column": 3
+        },
+        {
+          "title": "DEMO-05 decodes actual video, runs actual model and cleans up",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4899,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T14:41:28.959Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a9dd37a8b0ff732f3174-34b45ed32ef4f21ce53a",
+          "file": "eight-clips.spec.ts",
+          "line": 5,
+          "column": 3
+        },
+        {
+          "title": "DEMO-06 decodes actual video, runs actual model and cleans up",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4910,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T14:41:33.865Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a9dd37a8b0ff732f3174-c3e86f900fa8ad9f99ca",
+          "file": "eight-clips.spec.ts",
+          "line": 5,
+          "column": 3
+        },
+        {
+          "title": "DEMO-07 decodes actual video, runs actual model and cleans up",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 8250,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"ATTENDED_DRIVING\"\u001b[39m\nReceived: \u001b[31m\"COOL_OCCUPANT\"\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"ATTENDED_DRIVING\"\u001b[39m\nReceived: \u001b[31m\"COOL_OCCUPANT\"\u001b[39m\n    at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:34:42",
+                    "location": {
+                      "file": "/Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts",
+                      "column": 42,
+                      "line": 34
+                    },
+                    "snippet": "  32 |     if (n === 2) expect(evidence.risk).toBe('ERROR')\n  33 |     if (n === 5) { expect(evidence.risk).toBe('CRITICAL'); expect(evidence.notifications.length).toBe(1) }\n> 34 |     if (n === 7) { expect(evidence.rule).toBe('ATTENDED_DRIVING'); expect(evidence.incident).toBeNull(); expect(evidence.notifications).toHaveLength(0) }\n     |                                          ^\n  35 |     writeFileSync(info.outputPath(`${id}-actual.json`), JSON.stringify(evidence, null, 2))\n  36 |     await page.screenshot({ path: info.outputPath(`${id}-evidence.png`), fullPage: true })\n  37 |     // Native replay is a user operation on the mounted evidence player. Closing the panel detaches"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts",
+                        "column": 42,
+                        "line": 34
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"ATTENDED_DRIVING\"\u001b[39m\nReceived: \u001b[31m\"COOL_OCCUPANT\"\u001b[39m\n\n  32 |     if (n === 2) expect(evidence.risk).toBe('ERROR')\n  33 |     if (n === 5) { expect(evidence.risk).toBe('CRITICAL'); expect(evidence.notifications.length).toBe(1) }\n> 34 |     if (n === 7) { expect(evidence.rule).toBe('ATTENDED_DRIVING'); expect(evidence.incident).toBeNull(); expect(evidence.notifications).toHaveLength(0) }\n     |                                          ^\n  35 |     writeFileSync(info.outputPath(`${id}-actual.json`), JSON.stringify(evidence, null, 2))\n  36 |     await page.screenshot({ path: info.outputPath(`${id}-evidence.png`), fullPage: true })\n  37 |     // Native replay is a user operation on the mounted evidence player. Closing the panel detaches\n    at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:34:42"
+                    },
+                    {
+                      "message": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T14:41:38.780Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-07-decode-457f0--actual-model-and-cleans-up-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-07-decode-457f0--actual-model-and-cleans-up-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts",
+                    "column": 42,
+                    "line": 34
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a9dd37a8b0ff732f3174-c97a8e623cd89012147e",
+          "file": "eight-clips.spec.ts",
+          "line": 5,
+          "column": 3
+        },
+        {
+          "title": "DEMO-08 decodes actual video, runs actual model and cleans up",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6793,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T14:43:17.656Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a9dd37a8b0ff732f3174-0de3bc2d5b5cea10828d",
+          "file": "eight-clips.spec.ts",
+          "line": 5,
+          "column": 3
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-17T14:41:03.973Z",
+    "duration": 140833.456,
+    "expected": 7,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

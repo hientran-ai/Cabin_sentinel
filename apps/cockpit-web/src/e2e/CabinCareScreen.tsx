@@ -3,9 +3,10 @@
 // temperature. It never says the car is cool, that someone is coming back, or that the occupant is fine.
 // Starting/stopping follows the backend plan; nothing here changes the alert or the incident.
 import { useEffect, useState } from 'react'
-import { Fan, Music, PawPrint, Square, Tent } from 'lucide-react'
+import { Fan, House, Music, PawPrint, Square, Tent } from 'lucide-react'
 import { api } from './api'
 import { useE2e } from './store'
+import { hideCareScreen, useCareState } from './careScreen'
 import { audioState, onAudio, play, stop, trackOf, unlock } from './comfortAudio'
 import { useVehicle } from '../store/vehicleStore'
 import { SimTag } from '../components/automotive/ui'
@@ -27,7 +28,8 @@ export function CabinCareScreen() {
   const measured = useE2e((s) => s.state?.sensor_snapshot?.temperature)
   const sim = useVehicle((s) => s.cabinTemperature)
   const audio = useAudio()
-  if (!care || care.status !== 'ACTIVE') return null
+  const shown = useCareState().visible
+  if (!care || care.status !== 'ACTIVE' || !shown) return null
   const cabin = typeof measured === 'number' ? measured : sim
   const childLike = care.profile === 'CHILD' || care.profile === 'UNKNOWN'
   const source = String(care.plan.find((s) => s.tool === 'play_comfort_audio')?.parameters?.source ?? '')
@@ -36,7 +38,13 @@ export function CabinCareScreen() {
 
   return (
     <section className="cx-enter absolute inset-0 z-20 flex flex-col bg-surface px-16 pb-8 pt-10" data-testid={childLike ? 'care-child' : care.profile === 'PET' ? 'care-pet' : 'care-adult'} onPointerDown={unlock}>
-      <div className="flex items-center gap-3 text-sm text-text-2">Cabin Care<SimTag text="MÔ PHỎNG" /></div>
+      {/* the way out sits top-LEFT: notifications stack on the right and must never cover it. Home only hides this screen (the mode keeps running);
+          Stop ends the mode through the same backend call as the phone. */}
+      <div className="flex flex-wrap items-center gap-3 text-sm text-text-2">
+        <button type="button" data-testid="care-home" className="cx-btn h-16 gap-3 bg-surface-2 px-6 text-sm text-text" onClick={hideCareScreen}><House size="1.6rem" />Về màn hình chính</button>
+        <button type="button" data-testid="care-stop" className="cx-btn h-16 gap-3 bg-surface-2 px-6 text-sm text-text" onClick={() => void run((s) => api.careStop(s, 'COCKPIT'), 'Đã tắt chế độ. Sự cố vẫn mở nếu chưa ai kiểm tra cabin.')}><Square size="1.4rem" />Tắt chế độ</button>
+        <span className="ml-2 flex items-center gap-3">Cabin Care<SimTag text="MÔ PHỎNG" /></span>
+      </div>
 
       {childLike && <>
         <h2 className="mt-auto t-title">Xin chào, hãy ngồi yên nhé.</h2>
@@ -62,7 +70,6 @@ export function CabinCareScreen() {
           <button type="button" disabled className="cx-btn h-16 px-6 text-sm bg-surface-2">Ứng dụng nhạc · chưa tích hợp</button>
           <button type="button" disabled className="cx-btn h-16 px-6 text-sm bg-surface-2">Podcast · chưa tích hợp</button>
         </div>
-        <button type="button" className="cx-btn mt-6 h-16 w-fit gap-3 bg-surface-2 px-6 text-sm" onClick={() => void run((s) => api.careStop(s, 'COCKPIT'), 'Đã tắt chế độ cắm trại.')}><Square size="1.6rem" />Tắt chế độ cắm trại</button>
       </>}
 
       {footer}

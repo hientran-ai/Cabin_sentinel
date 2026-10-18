@@ -73,10 +73,13 @@ async def test_actual_model_miss_is_recorded_not_replaced(provider, tmp_path):
     obs, state = await run(provider, tmp_path, "child-rear", 40.0)
     # SR-01: the stock detector sees nobody in the rear-facing seat. The output is kept as is.
     assert obs["vision"]["detections"] == []
-    assert state["detected_objects"] == [] and state["occupancy_state"] == "ABSENT"
+    # Approved decision 20261017-UNKNOWN-PROJECTION: no detection is not proof of absence.
+    assert state["detected_objects"] == [] and state["occupancy_state"] == "UNKNOWN"
+    assert state["risk_level"] == "ERROR" and state["rule_id"] == "OCCUPANCY_UNVERIFIED"
 
 
 @pytest.mark.asyncio
 async def test_actual_model_empty_cabin_frame(provider, tmp_path):
     obs, state = await run(provider, tmp_path, "empty-cabin", 25.0)
-    assert obs["vision"]["detections"] == [] and state["occupancy_state"] == "ABSENT"
+    assert obs["vision"]["detections"] == [] and state["occupancy_state"] == "UNKNOWN"
+    assert state["risk_level"] == "ERROR" and state["rule_id"] == "OCCUPANCY_UNVERIFIED"

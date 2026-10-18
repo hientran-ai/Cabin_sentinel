@@ -23,7 +23,7 @@ export interface FrameCounts {
   dog: number | null
   cat: number | null
   /** other objects: no analytics channel exists yet, so this is always null */
-  items: null
+  items: number | null
   /** last counts of an old frame, kept only so a stale screen can say what it last saw; never a current number */
   lastKnown: { person: number; pet: number; frameId: string } | null
 }
@@ -77,7 +77,7 @@ export function frameCounts(i: { state: ServerState | null; sessionId: string | 
   const adult = ageOk ? people.filter((d) => d.age_group === 'adult').length : null
   const counts = {
     person: people.length, child, adult, ageUnknown: ageOk ? people.length - (child ?? 0) - (adult ?? 0) : people.length,
-    pet: dog + cat, dog, cat, items: null,
+    pet: dog + cat, dog, cat, items: state.model?.items_tracking === true && Array.isArray(obs.vision?.items) ? obs.vision.items.length : null,
   }
   const current = i.visionFresh && i.connection === 'ok'
   if (!current) {
@@ -102,6 +102,6 @@ export function trackingCaps(model: { ready?: boolean; classes_used?: string[]; 
     { key: 'child', status: age === 'AVAILABLE' ? 'READY' : age === 'ERROR' || age === 'LOAD_FAILED' ? 'ERROR' : age === 'DISABLED' ? 'OFF' : 'UNKNOWN', reason: age === 'AVAILABLE' ? 'Bộ phân loại tuổi đang chạy' : AGE_TEXT[age] },
     { key: 'person', status: det('person') ? 'READY' : ready ? 'NOT_SUPPORTED' : 'ERROR', reason: det('person') ? 'Model phát hiện người' : ready ? 'Model không báo lớp người' : 'Model chưa sẵn sàng' },
     { key: 'pet', status: det('dog') || det('cat') ? 'READY' : ready ? 'NOT_SUPPORTED' : 'ERROR', reason: det('dog') || det('cat') ? `Chỉ nhận ${[det('dog') ? 'chó' : '', det('cat') ? 'mèo' : ''].filter(Boolean).join(' và ')}` : 'Model không báo lớp thú cưng' },
-    { key: 'items', status: model.items_tracking === true ? 'READY' : 'NOT_SUPPORTED', reason: model.items_tracking === true ? 'Máy chủ có kênh theo dõi đồ vật' : 'Máy chủ chưa có kênh theo dõi đồ vật bỏ quên (cần theo dõi theo thời gian, không chỉ một khung)' },
+    { key: 'items', status: ready && model.items_tracking === true ? 'READY' : 'NOT_SUPPORTED', reason: ready && model.items_tracking === true ? 'Nhận nhãn ba lô/điện thoại theo khung; chưa xác minh danh tính đồ vật' : 'Máy chủ chưa có kênh đồ vật sẵn sàng' },
   ]
 }

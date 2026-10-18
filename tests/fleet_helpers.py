@@ -6,7 +6,7 @@ NOW = datetime(2026, 10, 3, 9, tzinfo=UTC)
 
 SCENARIOS = {
     # Thresholds are the existing rules.py values; nothing is redefined here.
-    "SAFE": {"temperature": 24.0, "radar_presence": False, "objects": []},
+    "NO_OCCUPANT_DETECTION": {"temperature": 24.0, "radar_presence": False, "objects": []},
     "WARNING": {"temperature": 28.0, "radar_presence": True, "objects": [{"class_name": "person", "confidence": 0.9}]},
     "CRITICAL": {"temperature": 39.2, "radar_presence": True, "objects": [{"class_name": "person", "confidence": 0.9}]},
 }

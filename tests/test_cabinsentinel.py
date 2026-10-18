@@ -173,8 +173,11 @@ def test_reopening_service_preserves_decision_without_replaying_actions(tmp_path
 def test_timer_marks_vision_stale_without_any_new_packet(tmp_path):
     clock = [NOW]
     service = CabinService(tmp_path / "state.db", clock=lambda: clock[0])
-    service.ingest_sensor(sensor(25.0))
-    safe = service.ingest_vision(vision([]))
+    service.ingest_sensor(sensor(
+        25.0, engine="ON", gear="D", vehicle_speed_kph=30,
+        driver_present=True, hvac_status="ACTIVE",
+    ))
+    safe = service.ingest_vision(vision([{"class_name": "person", "confidence": 0.9}]))
     assert safe["risk_level"] == "SAFE"
     clock[0] = NOW + timedelta(seconds=4)
     stale = service.tick("CAR_1")

@@ -256,6 +256,6 @@ def acknowledge_session(session_id: str, payload: AcknowledgeInput, request: Req
 def resolve_session(session_id: str, payload: ResolveInput, request: Request, service: CabinService = Depends(get_cabin_service)):
     vehicle_id = authorize_session(request, service, session_id)
     try:
-        return service.resolve(vehicle_id, payload.incident_id, payload.revision)
+        return service.resolve(vehicle_id, payload.incident_id, payload.revision, cabin_checked=payload.cabin_checked)
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc

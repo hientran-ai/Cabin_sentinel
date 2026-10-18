@@ -5,7 +5,9 @@
 // (pause, climate, photos, accounts, school) answers "not in this demo" instead of pretending.
 (function () {
   "use strict";
-  try { localStorage.setItem("cn.token", "e2e-session"); } catch (e) { /* storage blocked: the app shows its login */ }
+  // Demo sign-in: the phone starts on the login screen. There is no SMS and no real account; the code is shown on screen (see /v1/auth/otp).
+  const DEMO_CODE = "246810", USER_KEY = "cn.demo.user";
+  const demoUser = () => { try { return JSON.parse(localStorage.getItem(USER_KEY) || "null"); } catch (e) { return null; } };
   const style = document.createElement("style");
   style.textContent = ".frame-toggle{display:none!important}";
   document.addEventListener("DOMContentLoaded", () => document.head.append(style));
@@ -21,7 +23,19 @@
     stale: ["Dữ liệu đã cũ", "Xe chưa gửi dữ liệu mới. Cần quan sát mới còn hiệu lực rồi gửi lại."],
     camera: ["Camera chưa nhìn được cabin", "Camera đang lỗi hoặc bị che. Hệ thống không thể xác minh cabin."],
     presence: ["Vẫn phát hiện người hoặc thú trong xe", "Hệ thống vẫn thấy có người hoặc thú. Kiểm tra lại cabin."],
+    check: ["Cần kiểm tra cabin trực tiếp", "Xác nhận bạn đã kiểm tra tất cả ghế, sàn và cốp xe rồi thử lại."],
+    conflict: ["Các nguồn dữ liệu chưa thống nhất", "Cần quan sát mới và kiểm tra cabin trực tiếp trước khi đóng sự cố."],
   };
+  const CAMERA = { OK: "Hoạt động", BLOCKED: "Bị che", DISCONNECTED: "Mất kết nối", NO_FEED: "Chưa có hình", ERROR: "Lỗi camera" };
+  function rejection(detail, s, b) {
+    if (/revision|changed|state.*new/i.test(detail || "")) return "changed";
+    if (/cabin_checked|explicit.*check/i.test(detail || "")) return "check";
+    if (/conflict/i.test(detail || "")) return "conflict";
+    if (!b.view().current || /fresh|stale|clock/i.test(detail || "")) return "stale";
+    if (s.state && s.state.camera_status !== "OK") return "camera";
+    if (s.state && ["PRESENT", "SUSPECTED"].includes(s.state.occupancy_state)) return "presence";
+    return "changed";
+  }
 
   function snap() { const b = B(); return b ? b.snapshot() : null; }
 
@@ -48,12 +62,12 @@
       case "incident_resolution": return { ...base, at: epoch(h.resolved_at) || at, kind: "resolved", title: "Sự cố đã đóng", detail: "Sau kiểm tra cabin và quan sát mới còn hiệu lực" };
       case "operator_action": {
         if (h.action === "resolve") return h.result === "OK" ? { ...base, kind: "resolved", title: "Xác nhận kiểm tra cabin", detail: "Từ " + (h.actor && h.actor.surface === "PHONE" ? "điện thoại" : "màn xe") }
-          : { ...base, kind: "reject", title: "Từ chối xác nhận", detail: h.reason || "" };
+          : { ...base, kind: "reject", title: "Từ chối xác nhận", detail: REJECT[rejection(h.reason, snap(), B())][1] };
         if (h.action === "acknowledge") return null;
         return { ...base, title: h.action + ": " + h.result };
       }
       case "risk_change": return { ...base, title: "Mức rủi ro " + (h.previous_risk_level || "—") + " → " + h.risk_level, detail: (B() && B().ruleText(h.rule_id, "")) || h.rule_id || "" };
-      case "camera_status": return { ...base, title: "Camera: " + h.camera_status, detail: h.origin === "SIMULATED_FAULT" ? "Lỗi mô phỏng" : "Bộ chuyển đổi camera" };
+      case "camera_status": return { ...base, title: "Camera: " + (CAMERA[h.camera_status] || "Chưa rõ"), detail: h.origin === "SIMULATED_FAULT" ? "Lỗi mô phỏng" : "Bộ chuyển đổi camera" };
       case "notification_delivery": return { ...base, title: "Điện thoại đã nhận thông báo #" + h.notification_id, detail: "" };
       default: return null;
     }
@@ -109,7 +123,7 @@
       tiles: [
         { label: "Cửa", value: snapT.doors_locked ? "Đã khoá" : "Chưa khoá", tone: "plain" },
         { label: "Nhiệt độ cabin (mô phỏng)", value: snapT.temperature != null ? snapT.temperature + "°C" : "—", tone: snapT.temperature >= 35 ? "orange" : "plain" },
-        { label: "Camera", value: camOk ? "Hoạt động" : state.camera_status || "Không rõ", tone: camOk ? "plain" : "orange" },
+        { label: "Camera", value: CAMERA[state.camera_status] || "Chưa rõ", tone: camOk ? "plain" : "orange" },
       ],
       seats: seats(state), items: [], cabin_temp: snapT.temperature != null ? snapT.temperature : null, outside_temp: null,
       doors_locked: !!snapT.doors_locked, lock_known: true, engine_on: snapT.engine_status === "ON", camera: camOk ? "ok" : "blocked",
@@ -144,7 +158,19 @@
     let s = snap();
     let m;
     if (method === "GET" && path === "/v1/config") return json(200, { simulation: false });
-    if (method === "GET" && path === "/v1/me") return json(200, { id: "e2e", name: "Chủ xe (demo)", phone: "—", settings: { mute_until: 0, mute_indefinite: false } });
+    if (method === "POST" && path === "/v1/auth/otp") {
+      const phone = String((body && body.phone) || "").replace(/\s/g, "");
+      if (!/^0\d{9}$/.test(phone)) return fail(422, "bad_phone", "Số điện thoại gồm 10 chữ số, bắt đầu bằng 0.");
+      return json(200, { sent: false, demo: true, dev_code: DEMO_CODE, telegram: null });
+    }
+    if (method === "POST" && path === "/v1/auth/verify") {
+      const phone = String((body && body.phone) || "").replace(/\s/g, "");
+      if (!/^0\d{9}$/.test(phone)) return fail(422, "bad_phone", "Số điện thoại gồm 10 chữ số, bắt đầu bằng 0.");
+      if (String((body && body.code) || "") !== DEMO_CODE) return fail(401, "bad_code", "Mã không đúng. Mã demo được hiện sẵn trên màn hình.");
+      try { localStorage.setItem(USER_KEY, JSON.stringify({ phone, name: String((body && body.name) || "").slice(0, 40) || "Chủ xe (demo)" })); } catch (e) { /* ignore */ }
+      return json(200, { token: "e2e-session" });
+    }
+    if (method === "GET" && path === "/v1/me") { const u = demoUser(); return json(200, { id: "e2e", name: (u && u.name) || "Chủ xe (demo)", phone: (u && u.phone) || "—", settings: { mute_until: 0, mute_indefinite: false } }); }
     if (method === "GET" && path === "/v1/vehicles") {
       const st = status(s);
       return json(200, [{ vehicle: vehicleRow(), role: "owner", level: st.verdict.level, title: st.verdict.title, incident_id: st.incident ? st.incident.id : null }]);
@@ -153,22 +179,35 @@
     if (method === "GET" && path === "/v1/vehicles/" + VEHICLE_ID + "/trips") return json(200, []);
     if (method === "GET" && path === "/v1/vehicles/" + VEHICLE_ID + "/photos") return json(200, []);
     if (method === "GET" && path === "/v1/vehicles/" + VEHICLE_ID + "/camera") return json(200, { available: false, message: "Điện thoại không xem camera. Camera và suy luận chạy ở xe (ở demo này: máy chủ demo)." });
-    if (method === "GET" && path === "/v1/vehicles/" + VEHICLE_ID + "/history") {
-      const level = query.get("level");
-      let incidents = incidentsFromHistory(s);
+    const DH = window.__demoHistory, V = "/v1/vehicles/" + VEHICLE_ID;
+    const nowS = () => Date.now() / 1000;
+    const days = () => Math.max(1, Math.min(+query.get("days") || 30, 365));
+    // Real incidents of this session first, then the simulated sample history (basis "simulated") so the page is never empty for a tester.
+    const liveRows = (s) => incidentsFromHistory(s).map((i) => {
+      const note = s.notifications.filter((n) => n.incident_id === i.id).sort((a, b) => epoch(a.sent_at) - epoch(b.sent_at))[0];
+      return { id: "live-" + i.id, kind: "left_behind", label: "Bỏ quên người/vật trong xe", started_at: i.created_at, ended_at: i.resolved_at, duration_s: Math.round(Math.max(0, (i.resolved_at || nowS()) - i.created_at)),
+        ongoing: i.status === "open", seat: null, seat_label: null, level: i.level, incident_id: i.id, outcome: i.status === "open" ? null : "confirmed", outcome_label: i.status === "open" ? "Đang mở" : "Đã kiểm tra xe",
+        basis: "simulated", ack_s: i.viewed_at ? Math.round(i.viewed_at - i.created_at) : null, notify_s: note ? Math.round(Math.max(0, epoch(note.sent_at) - i.created_at)) : null, sealed: false, clip: null, conf_max: null, note: null };
+    });
+    const allRows = (s, d) => liveRows(s).concat(DH ? DH.build(nowS(), d) : []).sort((a, b) => b.started_at - a.started_at);
+    if (method === "GET" && path === V + "/history") {
+      const level = query.get("level"), d = days();
+      let incidents = incidentsFromHistory(s).concat(DH ? DH.incidents(nowS()).filter((i) => i.created_at >= nowS() - d * 86400) : []).sort((a, b) => b.created_at - a.created_at);
       if (level === "warning" || level === "critical") incidents = incidents.filter((i) => i.level === level);
-      return json(200, { incidents, events: s.history.map(eventOf).filter((e) => e && e.at).reverse() });
+      const events = s.history.map(eventOf).filter((e) => e && e.at).reverse().concat(DH ? DH.events(nowS()) : []).sort((a, b) => b.at - a.at);
+      return json(200, { incidents, events });
     }
-    if (method === "GET" && path === "/v1/vehicles/" + VEHICLE_ID + "/log") {
-      if (query.get("kind") !== "left_behind") return fail(404, "not_in_demo", "Nhật ký hoạt động thiết bị không có trong bản demo.");
-      const items = incidentsFromHistory(s).map((i) => {
-        const note = s.notifications.filter((n) => n.incident_id === i.id).sort((a, b) => epoch(a.sent_at) - epoch(b.sent_at))[0];
-        return { kind: "left_behind", incident_id: i.id, started_at: i.created_at, ended_at: i.resolved_at, ongoing: i.status === "open", basis: "simulated",
-          duration_s: Math.max(0, (i.resolved_at || Date.now() / 1000) - i.created_at), notify_s: note ? Math.max(0, epoch(note.sent_at) - i.created_at) : null,
-          ack_s: i.viewed_at ? i.viewed_at - i.created_at : null, outcome_label: i.status === "open" ? "Đang mở" : "Đã đóng sau kiểm tra cabin" };
-      });
-      return json(200, { items, stats: null, chain: { ok: true, checked: 0 } });
+    if (method === "GET" && path === V + "/log") {
+      const kind = query.get("kind"), rows = allRows(s, days());
+      const items = rows.filter((r) => kind === "activity" ? r.kind !== "left_behind" : kind && kind !== "all" ? r.kind === kind : true);
+      return json(200, { items, stats: DH ? DH.stats(rows) : null, chain: { ok: true, checked: 0 } });
     }
+    if (method === "GET" && path === V + "/log/summary") {
+      return json(200, DH ? DH.summary(nowS(), days(), +query.get("tz") || 0, allRows(s, 90), incidentsFromHistory(s)) : { days: [], coverage: null, tz_min: 0 });
+    }
+    if (method === "GET" && path === V + "/log.csv") return new Response(DH ? DH.csv(allRows(s, days())) : "", { status: 200, headers: { "Content-Type": "text/csv; charset=utf-8" } });
+    if (method === "GET" && path === V + "/observations") return json(200, DH ? DH.observations(nowS(), +query.get("hours") || 24) : { retention_hours: 24, items: [] });
+    if (method === "GET" && path === V + "/audit") return json(200, DH ? DH.audit(nowS()) : { retention_days: 365, items: [] });
     if (method === "GET" && path === "/v1/me/notifications") {
       const items = s.notifications.map((n) => {
         const push = n.channels.push.state;
@@ -180,27 +219,28 @@
       return json(200, { items, server_build: "e2e" });
     }
     if ((m = path.match(/^\/v1\/incidents\/([^/]+)$/)) && method === "GET") {
+      if (window.__demoHistory && /^demo-inc-\d+$/.test(decodeURIComponent(m[1]))) { const d = window.__demoHistory.incidents(Date.now() / 1000).find((i) => i.id === decodeURIComponent(m[1])); if (d) return json(200, { ...d, escalation: null, events: [], alert_photos: [] }); }
       await b.refresh(); s = snap();
       const inc = currentIncident(s, decodeURIComponent(m[1]));
       return inc ? json(200, inc) : fail(404, "not_found", "Không tìm thấy sự cố này trong phiên demo.");
     }
     if ((m = path.match(/^\/v1\/incidents\/([^/]+)\/view$/)) && method === "POST") {
+      if (!currentIncident(s, decodeURIComponent(m[1]))) return fail(409, "changed", REJECT.changed[1]);
       const r = await b.acknowledge();
       s = snap();
       if (!r.ok) return fail(409, "ack_rejected", r.detail || "Không ghi nhận được.");
       return json(200, incidentJson(s, true));
     }
     if ((m = path.match(/^\/v1\/incidents\/([^/]+)\/confirm$/)) && method === "POST") {
+      if (!currentIncident(s, decodeURIComponent(m[1]))) return fail(409, "changed", REJECT.changed[1]);
       if (body && body.override) return fail(422, "override_unsupported", "Bản demo không cho đóng thủ công khi hệ thống còn thấy người hoặc thú.");
-      const r = await b.resolve();
+      // the confirmation names the revision the person was looking at and needs all three physical checks; neither is filled in for them
+      if (!body || !Array.isArray(body.checks) || body.checks.length < 3) return json(200, { ...incidentJson(s, true), result: "rejected", reject: { code: "check", title: REJECT.check[0], message: REJECT.check[1] } });
+      const r = await b.resolve(body.revision);
       s = snap();
       const inc = incidentJson(s, true);
       if (r.ok) return json(200, { ...inc, status: "resolved", result: "resolved" });
-      const st = s.state;
-      let code = "changed";
-      if (/empty-cabin|Fresh, consistent/i.test(r.detail || "")) {
-        code = !b.view().current || (st && st.data_quality && st.data_quality.status !== "CURRENT") ? "stale" : st && st.camera_status !== "OK" ? "camera" : st && ["PRESENT", "SUSPECTED"].includes(st.occupancy_state) ? "presence" : "stale";
-      }
+      const code = rejection(r.detail, s, b);
       return json(200, { ...inc, result: "rejected", reject: { code, title: REJECT[code][0], message: REJECT[code][1] } });
     }
     if (method === "POST" && /\/refresh$/.test(path)) { await b.refresh(); return json(200, status(snap())); }
@@ -214,7 +254,7 @@
       const method = ((init && init.method) || (typeof input !== "string" && input.method) || "GET").toUpperCase();
       let body = null;
       try { body = init && typeof init.body === "string" ? JSON.parse(init.body) : null; } catch (e) { body = null; }
-      return handle(method, url.pathname, url.searchParams, body).catch((e) => fail(500, "bridge_error", String(e && e.message || e)));
+      return handle(method, url.pathname, url.searchParams, body).catch(() => fail(500, "bridge_error", "Chưa đọc được dữ liệu demo. Thử cập nhật trạng thái."));
     }
     return realFetch(input, init);
   };

@@ -23,6 +23,8 @@ class TamVisionProvider:
     evidence is unchanged; a missing, failed or unsure classifier yields ``unknown``.
     """
 
+    supports_items = True
+
     def __init__(
         self, model_path: str | Path, *, confidence: float = 0.25,
         age_classifier: Any = None, age_load_error: str | None = None,
@@ -35,8 +37,10 @@ class TamVisionProvider:
         from ultralytics import YOLO
 
         self._model = YOLO(str(path))
+        self.model_path = path.resolve()
+        self.confidence = confidence
         self._options = {
-            "classes": [0, 15, 16], "device": "cpu", "conf": confidence,
+            "classes": [0, 15, 16, 24, 67], "device": "cpu", "conf": confidence,
             "imgsz": 640, "verbose": False,
         }
         self._age = age_classifier
@@ -69,7 +73,7 @@ class TamVisionProvider:
             started = perf_counter()
             result = self._model.predict(decoded, **self._options)[0]
             detector_ms = (perf_counter() - started) * 1000
-            detections = [
+            all_detections = [
                 {
                     "class": result.names[int(box.cls.item())],
                     "confidence": float(box.conf.item()),
@@ -77,6 +81,8 @@ class TamVisionProvider:
                 }
                 for box in result.boxes
             ]
+            detections = [d for d in all_detections if d["class"] in {"person", "dog", "cat"}]
+            item_detections = [d for d in all_detections if d["class"] in {"backpack", "cell phone"}]
             age_status, age_ms = self.age_status, 0.0
             people = [d for d in detections if d["class"] == "person"]
             for detection in people:
@@ -102,7 +108,7 @@ class TamVisionProvider:
             latency_ms = (perf_counter() - started) * 1000
         return {
             "timestamp": datetime.now(UTC).isoformat(), "frame_id": 1,
-            "detections": detections, "latency_ms": latency_ms,
+            "detections": detections, "item_detections": item_detections, "latency_ms": latency_ms,
             "detector_latency_ms": detector_ms, "age_latency_ms": age_ms,
             "age_classifier": {
                 "status": age_status,

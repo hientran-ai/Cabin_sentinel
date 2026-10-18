@@ -16,9 +16,9 @@ let lastIncident = null;
 
 const VIEWS = {
   home: () => import("./views/home.js"), incident: () => import("./views/incident.js"),
-  history: () => import("./views/history.js"),
+  history: () => import("./views/history.js"), modes: () => import("./views/modes.js"),
 };
-const TABS = [["home", "Xe", "car"], ["history", "Lịch sử", "hist"]];
+const TABS = [["home", "Xe", "car"], ["history", "Lịch sử", "hist"], ["modes", "Cá nhân hoá", "gear"]];
 
 export const go = (hash) => { location.hash = hash; };
 export const vehicle = () => S.vehicles.find((v) => v.vehicle.id === S.vid);

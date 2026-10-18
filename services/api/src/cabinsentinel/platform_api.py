@@ -12,7 +12,8 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, Response, UploadFile
 from fastapi.responses import Response as RawResponse
-from PIL import Image, UnidentifiedImageError
+from PIL import UnidentifiedImageError
+from PIL.Image import open as open_image
 from pydantic import BaseModel, Field
 
 from src.cabinsentinel.fleet import AccessDeniedError, Fleet, Grant
@@ -601,7 +602,8 @@ async def upload_evidence(vehicle_id: str, request: Request, image: UploadFile =
     if not data or len(data) > settings.evidence_max_bytes:
         raise HTTPException(status_code=413 if data else 422, detail="Snapshot empty or too large")
     try:
-        with Image.open(BytesIO(data)) as decoded:
+        # Keep Pillow validation independent of Vision's global Image.open patch.
+        with open_image(BytesIO(data), formats=["JPEG", "PNG"]) as decoded:
             if decoded.format != EVIDENCE_TYPES[image.content_type] or decoded.width * decoded.height > settings.max_image_pixels:
                 raise HTTPException(status_code=422, detail="Snapshot format or size not acceptable")
             decoded.verify()
@@ -713,7 +715,7 @@ def resolve_incident(vehicle_id: str, incident_id: str, payload: ResolveInput, r
     _incident_actor(store, grant, vehicle_id, manage=True)
     if store.incident_ops(incident_id, vehicle_id)["keep_active"]:
         raise HTTPException(status_code=409, detail="Incident is held active; release the hold first")
-    guard(lambda: fleet.service.resolve(vehicle_id, incident_id, payload.revision))
+    guard(lambda: fleet.service.resolve(vehicle_id, incident_id, payload.revision, cabin_checked=payload.cabin_checked))
     store.update_incident_ops(incident_id, vehicle_id, store.incident_ops(incident_id, vehicle_id)["version"],
                               actor=grant.subject, ops_status="RESOLVED")
     audit(request, store, grant, "incident.resolve", incident_id, vehicle=vehicle_id, revision=payload.revision)

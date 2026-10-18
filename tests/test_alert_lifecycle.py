@@ -9,7 +9,7 @@ from tests.test_alert_incidents import occupied
 from tests.test_cabinsentinel import NOW, sensor, vision
 
 
-def test_resolution_requires_current_revision_fresh_empty_evidence_and_explicit_check(tmp_path):
+def test_resolution_requires_current_evidence_and_explicit_human_check(tmp_path):
     clock = [NOW]
     service = CabinService(tmp_path / "state.db", clock=lambda: clock[0])
     first = occupied(service, clock)
@@ -20,13 +20,14 @@ def test_resolution_requires_current_revision_fresh_empty_evidence_and_explicit_
     current = service.ingest_vision(vision([], at=clock[0], frame_id="empty"))
     with pytest.raises(ValueError):
         service.resolve("CAR_1", first["incident_id"], first["revision"])
-    done = service.resolve("CAR_1", first["incident_id"], current["revision"])
+    done = service.resolve("CAR_1", first["incident_id"], current["revision"], cabin_checked=True)
     assert done["incident"]["status"] == "RESOLVED"
-    assert done["risk_level"] == "SAFE"
-    assert done["risk_route"] == "safe"
+    assert done["risk_level"] == "ERROR"
+    assert done["occupancy_state"] == "UNKNOWN"
+    assert done["risk_route"] == "error"
     assert done["unlock_request"] is None
     assert done["alert"]["stage"] == "RESOLVED"
-    assert service.resolve("CAR_1", first["incident_id"], current["revision"]) == done
+    assert service.resolve("CAR_1", first["incident_id"], current["revision"], cabin_checked=True) == done
     clock[0] += timedelta(seconds=1)
     reopened = occupied(service, clock, seq=3)
     assert reopened["incident_id"] != first["incident_id"]

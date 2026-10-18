@@ -18,6 +18,12 @@ const fresh = { sessionId: 's1', visionFresh: true, connection: 'ok' as const }
 const person = (age_group?: string | null): Detection => ({ class: 'person', confidence: 0.9, age_group })
 
 describe('frameCounts: count per accepted frame', () => {
+  it('counts supported item detections in their separate channel without counting occupants', () => {
+    const o = obs({ vision: { source: 'MODEL_INFERENCE', detections: [], items: [{ class: 'backpack', confidence: 0.8 }, { class: 'cell phone', confidence: 0.7 }] } })
+    const c = frameCounts({ state: state(o, { model: { ready: true, items_tracking: true } }), ...fresh })
+    expect(c.items).toBe(2)
+    expect(c.person).toBe(0)
+  })
   it('no state or no observation is NO_DATA with every count null (not zero)', () => {
     const a = frameCounts({ state: null, ...fresh })
     expect(a.status).toBe('NO_DATA'); expect([a.person, a.child, a.adult, a.pet, a.items]).toEqual([null, null, null, null, null])

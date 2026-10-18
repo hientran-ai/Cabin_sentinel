@@ -1,0 +1,78 @@
+(node:10005) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:10016) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:10016) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:10016) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:3:1 › critical state interrupts comfort audio (API fixture, not detection evidence) (2.8s)
+(node:10191) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:10191) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:10191) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [chromium] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:19:1 › phone demo cannot dial emergency services (API fixture, not detection evidence) (23.0s)
+
+
+  1) [chromium] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:3:1 › critical state interrupts comfort audio (API fixture, not detection evidence) 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeNull[2m()[22m
+
+    Received: [31m"ambient"[39m
+
+      10 |     return audio.audioState().playing
+      11 |   })
+    > 12 |   expect(playing).toBeNull()
+         |                   ^
+      13 | })
+      14 |
+      15 | test('phone demo cannot dial emergency services (API fixture, not detection evidence)', async ({ page }) => {
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/recovery.spec.ts:12:19
+
+    [31mTest timeout of 90000ms exceeded.[39m
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/recovery-critical-state-in-68ffa-ure-not-detection-evidence--chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/recovery-critical-state-in-68ffa-ure-not-detection-evidence--chromium/error-context.md
+
+  2) [chromium] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:19:1 › phone demo cannot dial emergency services (API fixture, not detection evidence) 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveCount[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator:  locator('[data-testid=phone] iframe').contentFrame().locator('a[href^="tel:"]')
+    Expected: [32m0[39m
+    Received: [31m1[39m
+    Timeout:  20000ms
+
+    Call log:
+    [2m  - Expect "toHaveCount" with timeout 20000ms[22m
+    [2m  - waiting for locator('[data-testid=phone] iframe').contentFrame().locator('a[href^="tel:"]')[22m
+    [2m    23 × locator resolved to 1 element[22m
+    [2m       - unexpected value "1"[22m
+
+
+      16 |   await mockBackend(page, CRITICAL.state); await openDemo(page)
+      17 |   await expect(phone(page).locator('.verdict').first()).toBeVisible()
+    > 18 |   await expect(phone(page).locator('a[href^="tel:"]')).toHaveCount(0)
+         |                                                        ^
+      19 | })
+      20 |
+      21 | test('malformed JSON and missing nested state keep cockpit visible and old critical explicit', async ({ page }) => {
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/recovery.spec.ts:18:56
+
+    [31mTest timeout of 90000ms exceeded.[39m
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/recovery-phone-demo-cannot-adeab-ure-not-detection-evidence--chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/recovery-phone-demo-cannot-adeab-ure-not-detection-evidence--chromium/error-context.md
+
+  2 failed
+    [chromium] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:3:1 › critical state interrupts comfort audio (API fixture, not detection evidence) 
+    [chromium] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:19:1 › phone demo cannot dial emergency services (API fixture, not detection evidence) 

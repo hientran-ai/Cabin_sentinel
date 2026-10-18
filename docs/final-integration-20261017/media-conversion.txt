@@ -1,0 +1,9 @@
+DEMO-01 WebM ready
+DEMO-02 WebM ready
+DEMO-03 WebM ready
+DEMO-04 WebM ready
+DEMO-05 WebM ready
+DEMO-06 WebM ready
+DEMO-07 WebM ready
+DEMO-08 WebM ready
+Eight actual clips and three legacy fallbacks converted; contact sheet ready

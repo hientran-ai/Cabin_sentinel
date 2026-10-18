@@ -23,22 +23,26 @@ export function stepText(s: CareView['plan'][number]): string {
   return s.tool
 }
 
+// the phone iframe shares this origin's storage: no sheet over the sign-in screen
+const phoneSignedIn = () => { try { return !!localStorage.getItem('cn.token') } catch { return true } }
+
 export function CareSheet() {
   useTick(1000)
   const care = useE2e((s) => s.state?.care)
   const run = useE2e((s) => s.care)
   const [open, setOpen] = useState(false)
-  const [music, setMusic] = useState<string>('twinkle')
-  if (!care || (!care.can_start && care.status !== 'ACTIVE')) return null
+  const [music, setMusic] = useState<string>('off')
+  if (!care || (!care.can_start && care.status !== 'ACTIVE') || !phoneSignedIn()) return null
   const profile = care.profile
   const childLike = profile === 'CHILD' || profile === 'UNKNOWN'
   const active = care.status === 'ACTIVE'
   const pill = active ? `Cabin Care đang bật · ${childLike ? 'chăm sóc trẻ' : profile === 'ADULT' ? 'cắm trại' : 'thú cưng'}`
     : care.countdown.armed ? `Cabin Care tự bật sau ${care.countdown.remaining_s}s` : 'Cabin Care'
-  const chooseMusic = childLike ? trackOf(music) && music !== 'ambient' ? music : 'twinkle' : music === 'twinkle' || music === 'brahms' ? 'ambient' : music
+  const chooseMusic = music === 'off' ? 'off' : childLike ? ['twinkle', 'brahms'].includes(music) ? music : 'off' : ADULT_AUDIO.some(([id]) => id === music) ? music : 'off'
 
   return (
-    <div className="absolute inset-x-[10px] bottom-[86px] z-10 text-[13px] text-white" data-testid="care-sheet">
+    <div className={`absolute inset-x-[10px] z-10 text-[13px] text-white ${open ? 'bottom-[86px]' : 'top-[64px]'}`} data-testid="care-sheet">
+      {/* collapsed pill sits under the header so it never covers the incident buttons (Đã xem, Xử lý ngay); the opened sheet slides up from the tab bar */}
       {!open && (
         <button type="button" onClick={() => setOpen(true)} className={`mx-auto flex items-center gap-2 rounded-full px-4 py-2 font-semibold shadow-lg ${active ? 'bg-[#2f7d5b]' : care.countdown.armed ? 'bg-[#b5502c]' : 'bg-[#2a2d33]'}`}>
           <span aria-hidden>{active ? '💗' : '🛡️'}</span>{pill}
@@ -60,15 +64,16 @@ export function CareSheet() {
               <div className="mt-2 grid grid-cols-4 gap-1.5">{WHO.map(([id, icon, label]) => (
                 <button key={id} type="button" aria-pressed={profile === id && !!care.responded_at}
                   onClick={() => void run((s) => api.careDeclare(s, id, 'PHONE'), `Đã ghi nhận: ${label}. Cảnh báo không đổi.`)}
-                  className={`rounded-xl py-2 ${profile === id && care.responded_at ? 'bg-[#f5c400] text-black' : 'bg-white/10'}`}><div className="text-[20px]">{icon}</div>{label}</button>))}</div>
+                  className={`rounded-xl py-2 ${profile === id && care.responded_at ? 'bg-[#0a84ff] text-white' : 'bg-white/10'}`}><div className="text-[20px]">{icon}</div>{label}</button>))}</div>
               {care.suggestion && <p className="mt-3 rounded-xl bg-white/5 p-2.5 text-white/85">{care.suggestion.text}</p>}
               {(childLike || profile === 'ADULT') && (
                 <label className="mt-2 flex items-center gap-2">Âm thanh
                   <select value={chooseMusic} onChange={(e) => setMusic(e.target.value)} className="grow rounded-lg bg-white/10 px-2 py-1.5">
+                    <option value="off" className="text-black">Không bật âm thanh (mặc định)</option>
                     {(childLike ? [['twinkle', TRACKS.twinkle.label], ['brahms', TRACKS.brahms.label]] : ADULT_AUDIO).map(([id, label]) => <option key={id} value={id} className="text-black">{label}</option>)}
                   </select></label>)}
-              <button type="button" className="mt-3 w-full rounded-xl bg-[#f5c400] py-2.5 font-semibold text-black"
-                onClick={() => void run((s) => api.careStart(s, { profile, music: profile === 'PET' ? undefined : chooseMusic }, 'PHONE'), 'Đã bật Cabin Care. Hãy quay lại xe.')}>
+              <button type="button" className="mt-3 w-full rounded-xl bg-[#0a84ff] py-2.5 font-semibold text-white"
+                onClick={() => void run((s) => api.careStart(s, { profile, music: profile === 'PET' || chooseMusic === 'off' ? undefined : chooseMusic }, 'PHONE'), 'Đã bật Cabin Care. Hãy quay lại xe.')}>
                 {childLike ? 'Bật chăm sóc trẻ từ xa' : profile === 'ADULT' ? 'Bật chế độ cắm trại' : 'Bật chế độ thú cưng'}</button>
               <label className="mt-3 flex items-start gap-2 text-white/80">
                 <input type="checkbox" checked={care.auto_consent} className="mt-0.5"

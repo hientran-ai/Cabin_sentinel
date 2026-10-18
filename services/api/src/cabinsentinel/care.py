@@ -19,7 +19,7 @@ MIN_BATTERY_PCT = 30            # same floor the pet-mode rule uses before trust
 PROFILES = ("CHILD", "ADULT", "PET", "UNKNOWN")
 LULLABIES = ("twinkle", "brahms")
 ADULT_AUDIO = ("ambient", "podcast_app", "music_app")
-IDLE = {"status": "IDLE", "profile": "UNKNOWN", "incident_id": None, "auto_consent": True, "responded_at": None,
+IDLE = {"status": "IDLE", "profile": "UNKNOWN", "incident_id": None, "auto_consent": False, "responded_at": None,
         "started_by": None, "started_at": None, "music": None, "ended_at": None, "ended_by": None, "end_reason": None, "plan": []}
 
 SUGGESTIONS = {
@@ -37,11 +37,11 @@ def _plan(profile: str, music: str | None, battery: float | None) -> list[dict]:
         climate = {"tool": "set_climate", "skipped": "BATTERY_UNKNOWN_OR_LOW", "parameters": {"battery_pct": battery}}
     if profile == "ADULT":
         return [climate, {"tool": "set_operation_mode", "parameters": {"mode": "CAMP"}},
-                {"tool": "play_comfort_audio", "parameters": {"source": music or "ambient", "volume_pct": 25}}]
+                *([{"tool": "play_comfort_audio", "parameters": {"source": music, "volume_pct": 25}}] if music in ADULT_AUDIO else [])]
     if profile == "PET":
         return [climate, {"tool": "set_operation_mode", "parameters": {"mode": "PET"}},
                 {"tool": "show_cabin_screen", "parameters": {"screen": "PET_NOTICE", "message": "no_children"}}]
-    return [climate, {"tool": "play_comfort_audio", "parameters": {"source": music if music in LULLABIES else "twinkle", "volume_pct": 20}},
+    return [climate, *([{"tool": "play_comfort_audio", "parameters": {"source": music, "volume_pct": 20}}] if music in LULLABIES else []),
             {"tool": "show_cabin_screen", "parameters": {"screen": "CHILD_FRIENDLY", "message": "owner_notified"}}]
 
 

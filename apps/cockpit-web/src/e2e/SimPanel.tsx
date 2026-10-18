@@ -10,12 +10,7 @@ import { useE2e } from './store'
 import { Chip } from './ui'
 import type { SensorInput } from './types'
 
-/** Real faces must not go to a hosted demo server by default (COMPLIANCE DP-03, DP-07). The laptop camera is on when the page
- * is served from this machine (localhost, so the frames stay on it) or when a build opts in with VITE_ENABLE_DEVICE_CAMERA=true;
- * VITE_ENABLE_DEVICE_CAMERA=false switches it off everywhere. getUserMedia also needs localhost or https. */
-const FLAG = import.meta.env.VITE_ENABLE_DEVICE_CAMERA
-const LOCAL_HOST = typeof location !== 'undefined' && ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)
-export const DEVICE_CAMERA_ENABLED = FLAG === 'true' || (FLAG !== 'false' && LOCAL_HOST)
+import { DEVICE_CAMERA_ENABLED } from './config'
 const MODES: SensorInput['operation_mode'][] = ['NONE', 'PET', 'CAMP', 'REMOTE_START']
 
 export function SimPanel() {

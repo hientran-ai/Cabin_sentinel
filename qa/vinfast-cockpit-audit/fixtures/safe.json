@@ -1,0 +1,230 @@
+{
+ "state": {
+  "vehicle_id": "DEMO_1cdadd86a902434bb6b3d62b052334e9",
+  "revision": 4,
+  "previous_risk_level": "SAFE",
+  "risk_level": "SAFE",
+  "rule_id": "EMPTY_CABIN",
+  "reason": "No occupant or radar presence detected",
+  "occupancy_state": "ABSENT",
+  "occupancy_reason_code": "NO_OCCUPANT_EVIDENCE",
+  "evidence_conflicts": [],
+  "seat_configuration_state": "NOT_ENOUGH_EVIDENCE",
+  "actions": [],
+  "action_results": [],
+  "incident_id": null,
+  "incident": null,
+  "alert": null,
+  "data_quality": {
+   "status": "CURRENT",
+   "issues": []
+  },
+  "ruleset_version": "demo-alerts-2026-09-30",
+  "risk_route": "safe",
+  "unlock_request": null,
+  "sensor_snapshot": {
+   "schema_version": 1,
+   "vehicle_id": "DEMO_1cdadd86a902434bb6b3d62b052334e9",
+   "timestamp": "2026-10-17T11:39:46.987976Z",
+   "sequence": 3,
+   "temperature": 25,
+   "engine_status": "OFF",
+   "doors_locked": true,
+   "radar_presence": false,
+   "locked_at": "2026-10-17T11:39:46.709904Z",
+   "lock_event_id": "1581b3404caf49748fb02f2dad394c88",
+   "lock_event_source": "SIMULATED",
+   "powertrain_type": "EV",
+   "operation_mode": "NONE",
+   "hvac_status": "INACTIVE",
+   "battery_soc_pct": 68,
+   "remote_start_expires_at": null,
+   "driver_present": false,
+   "gear": "P",
+   "vehicle_speed_kph": 0,
+   "window_status": "CLOSED"
+  },
+  "temperature": 25,
+  "engine_status": "OFF",
+  "doors_locked": true,
+  "radar_presence": false,
+  "detected_objects": [],
+  "seat_evidence": [],
+  "camera_status": "OK",
+  "evaluated_at": "2026-10-17T11:39:46.987976+00:00",
+  "reasoning_latency_ms": 1.338,
+  "freshness": {
+   "as_of": "2026-10-17T11:39:47.394072+00:00",
+   "sensor": {
+    "status": "FRESH",
+    "age_s": 0.406096,
+    "observed_at": "2026-10-17T11:39:46.987976+00:00"
+   },
+   "vision": {
+    "status": "FRESH",
+    "age_s": 0.82366,
+    "observed_at": "2026-10-17T11:39:46.570412+00:00"
+   },
+   "orientation": {
+    "status": "UNKNOWN",
+    "age_s": null,
+    "evidence": []
+   }
+  },
+  "action_ledger": [],
+  "decision_current": true,
+  "session_id": "1cdadd86a902434bb6b3d62b052334e9",
+  "care": {
+   "status": "IDLE",
+   "profile": "UNKNOWN",
+   "incident_id": null,
+   "auto_consent": true,
+   "responded_at": null,
+   "started_by": null,
+   "started_at": null,
+   "music": null,
+   "ended_at": null,
+   "ended_by": null,
+   "end_reason": null,
+   "plan": [],
+   "simulated": true,
+   "can_start": false,
+   "occupancy_evidence": false,
+   "countdown": {
+    "armed": false,
+    "remaining_s": null,
+    "after_s": 90
+   },
+   "suggestion": null,
+   "never_resolves_incident": true,
+   "target_c": 25,
+   "notes": [
+    "Chăm sóc chỉ là biện pháp tạm: rủi ro và sự cố vẫn do luật và người xác nhận quyết định.",
+    "Mô phỏng: chưa có kết nối điều hoà, loa hay màn hình xe thật (OEM_NOT_VERIFIED)."
+   ]
+  },
+  "simulation": {
+   "vehicle_source": "SIMULATED",
+   "action_mode": "SIMULATED",
+   "vision_source": "MODEL_INFERENCE",
+   "runtime": "HOSTED_SIMULATION"
+  },
+  "ttl_s": {
+   "sensor": 5,
+   "vision": 3
+  },
+  "server_time": "2026-10-17T11:39:47.406238+00:00",
+  "last_observation": {
+   "event_id": 11374,
+   "event_type": "observation",
+   "at": "2026-10-17T11:39:46.633091+00:00",
+   "frame_id": "1cdadd86-6-mvcbqvkx",
+   "source": "CLIP_FRAME",
+   "source_label": "Cabin trống",
+   "accepted": true,
+   "ignored_reason": null,
+   "observed_at": "2026-10-17T11:39:46.570412+00:00",
+   "received_at": "2026-10-17T11:39:46.588412+00:00",
+   "capture_age_ms": 18,
+   "vision": {
+    "source": "MODEL_INFERENCE",
+    "detections": [],
+    "age_classifier": {
+     "status": "disabled"
+    }
+   },
+   "timings_ms": {
+    "validate": 1.56,
+    "infer_detector": 30.91,
+    "infer_total": 31.01,
+    "infer_wall": 32.62,
+    "commit": 6.05,
+    "server_total": 40.22
+   },
+   "model": {
+    "file": "yolov8n.pt",
+    "sha256": "f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36",
+    "ultralytics_version": "8.4.159"
+   }
+  },
+  "model": {
+   "ready": true,
+   "framework": "ultralytics",
+   "runtime": "pytorch-cpu",
+   "classes_used": [
+    "person",
+    "cat",
+    "dog"
+   ],
+   "confidence_threshold": 0.25,
+   "file": "yolov8n.pt",
+   "size_bytes": 6549796,
+   "sha256": "f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36",
+   "ultralytics_version": "8.4.159",
+   "age_classifier": "disabled"
+  }
+ },
+ "notifications": [],
+ "history": {
+  "items": [
+   {
+    "event_id": 11365,
+    "type": "risk_change",
+    "at": "2026-10-17T11:39:44.982251+00:00",
+    "revision": 1,
+    "previous_risk_level": null,
+    "risk_level": "ERROR",
+    "rule_id": "VISION_UNAVAILABLE",
+    "reason": "Vision data unavailable or stale",
+    "occupancy_state": "UNKNOWN",
+    "incident_id": "de958de4-1958-4851-b56f-a2f07707e26f"
+   },
+   {
+    "event_id": 11373,
+    "type": "risk_change",
+    "at": "2026-10-17T11:39:46.622727+00:00",
+    "revision": 2,
+    "previous_risk_level": "ERROR",
+    "risk_level": "SAFE",
+    "rule_id": "EMPTY_CABIN",
+    "reason": "No occupant or radar presence detected",
+    "occupancy_state": "ABSENT",
+    "incident_id": null
+   }
+  ],
+  "next_after": 11380
+ },
+ "status": {
+  "mode": "HOSTED_SIMULATION",
+  "simulation": {
+   "vehicle_source": "SIMULATED",
+   "action_mode": "SIMULATED",
+   "vision_source": "MODEL_INFERENCE",
+   "runtime": "HOSTED_SIMULATION"
+  },
+  "model": {
+   "ready": true,
+   "framework": "ultralytics",
+   "runtime": "pytorch-cpu",
+   "classes_used": [
+    "person",
+    "cat",
+    "dog"
+   ],
+   "confidence_threshold": 0.25,
+   "file": "yolov8n.pt",
+   "size_bytes": 6549796,
+   "sha256": "f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36",
+   "ultralytics_version": "8.4.159",
+   "age_classifier": "disabled"
+  },
+  "ttl_s": {
+   "sensor": 5,
+   "vision": 3
+  },
+  "database": "ready",
+  "push_os": "PUSH_OS_NOT_VERIFIED",
+  "oem": "OEM_NOT_VERIFIED",
+  "upload_limit_bytes": 5242880
+ }
+}

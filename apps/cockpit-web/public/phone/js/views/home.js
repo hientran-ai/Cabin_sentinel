@@ -2,8 +2,9 @@ import { get, post, del, ApiError } from "../api.js";
 import { h, icon, carPic, fmt, toast, sheet, confirmDialog, busy } from "../ui.js";
 const loadMap = () => {};
 import { addVehicle, setupCard } from "./setup.js";
+import { scheduleBanner } from "./modes.js";
 
-const LEVEL = { critical: "Nghiêm trọng", warning: "Cảnh báo", notice: "Lưu ý", paused: "Tạm dừng", ok: "Bình thường", safe: "Bình thường", unknown: "Chưa rõ" };
+const LEVEL = { critical: "Nghiêm trọng", warning: "Cảnh báo", notice: "Lưu ý", paused: "Tạm dừng", ok: "Chưa thấy nguy cơ", safe: "Chưa thấy nguy cơ", unknown: "Chưa rõ" };
 
 // Fresh, real data only. "unknown" and stale data are never drawn as safe.
 function fresh(s) { return s && !s.restricted && s.verdict && s.verdict.current !== false && !s.no_real_data && (s.camera || "ok") === "ok" && s.seats; }
@@ -27,6 +28,15 @@ function glance(s) {
       (s.items || []).length ? h("div", { class: "card pad0 list" }, s.items.map((i) => h("div", { class: "item" }, icon("bag"), `${i.name} · ${i.seat}`))) : h("p", { class: "muted" }, "Chưa thấy đồ vật."),
       h("p", { class: "small muted" }, "Chỉ giám sát, không thay cho việc tự kiểm tra xe."));
   }, { title: "Trong xe" });
+}
+
+// Owner says "there is a pet in the car": declares PET and starts the pet comfort plan through the parent page's bridge. Never changes the alert level.
+function petChip() {
+  const bridge = window.parent && window.parent.__phoneBridge;
+  const ready = !!(bridge && bridge.petCareAvailable && bridge.petCareAvailable());
+  return h("button", { class: `chip pet ${ready ? "" : "off"}`, "aria-label": "Có thú cưng trong xe", title: "Có thú cưng trong xe",
+    on: { click: (e) => ready ? busy(e.currentTarget, async () => { const r = await bridge.startPetCare(); if (!r.ok) toast(r.detail, "err"); })
+      : toast("Chưa bật được chế độ thú cưng: chưa có dữ liệu mới từ xe hoặc chế độ chăm sóc đang chạy.", "info") } }, icon("paw"));
 }
 
 async function act(btn, fn, okMsg) {
@@ -71,7 +81,11 @@ export async function render(ctx) {
   if (setup) out.push(setup);
   out.push(h("div", { class: "chips" },
     h("button", { class: `chip ${c && c.people ? "hot" : ""}`, "aria-label": `Người và thú cưng: ${c ? c.people : "chưa có dữ liệu"}`, on: { click: () => glance(s) } }, icon("child"), c ? c.people : "–", c && c.child && h("span", { class: "small" }, "có thể có trẻ em")),
-    h("button", { class: "chip items", "aria-label": `Đồ vật: ${c ? c.items : "chưa có dữ liệu"}`, on: { click: () => glance(s) } }, icon("bag"), c ? c.items : "–")));
+    h("button", { class: "chip items", "aria-label": `Đồ vật: ${c ? c.items : "chưa có dữ liệu"}`, on: { click: () => glance(s) } }, icon("bag"), c ? c.items : "–"),
+    petChip()));
+  out.push(h("p", { class: "small muted", style: "margin:0" }, "Không phát hiện gì không có nghĩa là xe trống."));
+  const due = scheduleBanner();
+  if (due) out.push(due);
 
   if (inc) {
     out.push(h("section", { class: "card gap" },
@@ -81,7 +95,7 @@ export async function render(ctx) {
       h("div", { class: "actions3" },
         h("a", { class: "btn primary", href: `#/incident/${inc.id}` }, "Xử lý ngay"),
         !inc.viewed_at && h("button", { class: "btn", on: { click: (e) => act(e.target, async () => { await post(`/v1/incidents/${inc.id}/view`); await refresh(); }, "Đã ghi nhận bạn đã xem. Sự cố vẫn mở.") } }, "Đã xem"),
-        h("a", { class: "btn danger", href: "tel:112" }, icon("phone"), "Gọi 112"))));
+        h("button", { class: "btn danger", on: { click: () => toast("DEMO: không thực hiện cuộc gọi khẩn cấp.", "info") } }, icon("phone"), "Hỗ trợ (mô phỏng)"))));
   }
 
   const ex = s.exit_check;
@@ -90,11 +104,6 @@ export async function render(ctx) {
       h("p", { style: "margin:0" }, `Camera đang thấy ${ex.seats.length} người/thú${ex.items.length ? ` và ${ex.items.length} đồ vật` : ""} ở ghế sau.`),
       h("button", { class: "btn primary", on: { click: (e) => act(e.target, async () => { await post(`/v1/vehicles/${s.vehicle.id}/exit-check/confirm`); await refresh(); }, "Đã ghi nhận.") } }, "Tôi đã kiểm tra ghế sau")));
   }
-
-  out.push(h("section", { class: "card gap" }, h("h3", {}, "Sơ đồ ghế"),
-    h("div", { class: "seats", role: "list" }, s.seats.map((x) => h("div", { role: "listitem", class: `seat ${["driver", "passenger"].includes(x.key) ? "front" : "rear"} ${x.occ ? (x.kind === "pet" ? "occ pet" : "occ") : ""}`,
-      "aria-label": `${x.label}: ${x.occ ? (x.kind === "pet" ? "thú cưng" : "có người") : "chưa thấy ai"}` }, x.label, x.occ && h("div", {}, `${x.kind === "pet" ? "Thú" : "Người"} ${Math.round(x.conf * 100)}%`)))),
-    h("p", { class: "small muted", style: "margin:0" }, "Không phát hiện gì không có nghĩa là xe trống.")));
 
   if ((s.tiles || []).length) out.push(h("div", { class: "tiles" }, s.tiles.map((t) => h("div", { class: `tile ${t.tone}` }, h("div", { class: "small muted" }, t.label), h("div", { class: "v" }, t.value)))));
 

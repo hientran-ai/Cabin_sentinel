@@ -10,6 +10,7 @@ import { api } from '../../../e2e/api'
 import { GTent } from './glyphs'
 import { useCarUi } from './carUi'
 import { useVinfast } from './useVinfast'
+import { goHome } from '../../../lib/layers'
 import { GCarTop, GChevron, GDefrostFront, GDefrostRear, GFan, GGrid, GHome, GSeat, GSun, GBattery } from './glyphs'
 
 const DRIVE = { chill: 'ECO', standard: 'NORMAL', sport: 'SPORT' } as const
@@ -90,7 +91,7 @@ export function BlueBottom() {
   const v = useVehicle(), ui = useUi(), c = v.climate
   return (
     <footer className="vf-bb" data-testid="vf-bottom">
-      <button type="button" className="vf-press" aria-label="Trang chủ" onClick={() => ui.setOverlay(null)}><GHome size={48} /></button>
+      <button type="button" className="vf-press" aria-label="Trang chủ" onClick={goHome}><GHome size={48} /></button>
       <button type="button" className="vf-press" aria-label="Thư viện ứng dụng" aria-pressed={ui.overlay === 'library'} onClick={() => ui.toggleOverlay('library')}><GGrid size={46} /></button>
       <Temp who="driver" />
       <button type="button" className="vf-press" aria-label="Mở điều hòa" aria-pressed={ui.overlay === 'climate'} data-testid="vf-open-climate" onClick={() => ui.toggleOverlay('climate')}><GFan size={50} />{c.enabled ? c.fanSpeed : ''}</button>

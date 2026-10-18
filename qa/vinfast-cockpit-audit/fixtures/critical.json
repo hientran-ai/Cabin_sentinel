@@ -1,0 +1,601 @@
+{
+ "state": {
+  "vehicle_id": "DEMO_7338e0caac4e440ebaae4e26e7353bdb",
+  "revision": 5,
+  "previous_risk_level": "CRITICAL",
+  "risk_level": "CRITICAL",
+  "rule_id": "HOT_OCCUPANT",
+  "reason": "Living being detected in hot parked cabin",
+  "occupancy_state": "PRESENT",
+  "occupancy_reason_code": "OCCUPANT_CONFIRMED",
+  "evidence_conflicts": [
+   {
+    "type": "PRESENCE_DISAGREEMENT",
+    "sensor": {
+     "radar_presence": false,
+     "observed_at": "2026-10-17T11:39:40.979103Z"
+    },
+    "vision": {
+     "detected_objects": [
+      {
+       "detection_id": null,
+       "class_name": "person",
+       "confidence": 0.9073747396469116
+      }
+     ],
+     "observed_at": "2026-10-17T11:39:41.307283Z"
+    }
+   }
+  ],
+  "seat_configuration_state": "NOT_ENOUGH_EVIDENCE",
+  "actions": [
+   "trigger_horn",
+   "send_sms",
+   "request_unlock"
+  ],
+  "action_results": [],
+  "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+  "incident": {
+   "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+   "status": "OPEN",
+   "opened_at": "2026-10-17T11:39:39.329152+00:00",
+   "acknowledged_at": null,
+   "resolved_at": null
+  },
+  "alert": {
+   "stage": "INITIAL",
+   "initial_sent_at": "2026-10-17T11:39:39.329152+00:00",
+   "initial_ends_at": "2026-10-17T11:39:42.329152+00:00",
+   "escalation_due_at": "2026-10-17T11:41:11.329152+00:00",
+   "escalation_deadline_at": "2026-10-17T11:41:12.329152+00:00",
+   "profile_version": 2,
+   "escalated_at": null,
+   "next_repeat_at": "2026-10-17T11:40:39.329152+00:00",
+   "minimum_repeat_until": "2026-10-17T11:59:39.329152+00:00",
+   "last_sent_at": "2026-10-17T11:39:40.979103+00:00",
+   "repeat_count": 0,
+   "sequence": 2,
+   "delivery_mode": "SIMULATED",
+   "lock_timing": {
+    "status": "WITHIN_TARGET",
+    "source": "SIMULATED",
+    "event_id": "48acec58f3334630a5ef9901566ad5d5",
+    "locked_at": "2026-10-17T11:39:40.979103Z",
+    "warning_sent_at": "2026-10-17T11:39:40.979103+00:00",
+    "latency_s": 0,
+    "target_s": 15
+   },
+   "temporal_origin": "CURRENT_PROFILE"
+  },
+  "data_quality": {
+   "status": "CURRENT",
+   "issues": []
+  },
+  "ruleset_version": "demo-alerts-2026-09-30",
+  "risk_route": "critical",
+  "unlock_request": {
+   "request_id": "7b311329-5b52-4f90-96e8-b92971617c9b",
+   "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+   "created_at": "2026-10-17T11:39:40.979103+00:00",
+   "expires_at": "2026-10-17T11:40:40.979103+00:00",
+   "status": "pending"
+  },
+  "sensor_snapshot": {
+   "schema_version": 1,
+   "vehicle_id": "DEMO_7338e0caac4e440ebaae4e26e7353bdb",
+   "timestamp": "2026-10-17T11:39:40.979103Z",
+   "sequence": 2,
+   "temperature": 40,
+   "engine_status": "OFF",
+   "doors_locked": true,
+   "radar_presence": false,
+   "locked_at": "2026-10-17T11:39:40.979103Z",
+   "lock_event_id": "48acec58f3334630a5ef9901566ad5d5",
+   "lock_event_source": "SIMULATED",
+   "powertrain_type": "EV",
+   "operation_mode": "NONE",
+   "hvac_status": "INACTIVE",
+   "battery_soc_pct": 68,
+   "remote_start_expires_at": null,
+   "driver_present": false,
+   "gear": "P",
+   "vehicle_speed_kph": 0,
+   "window_status": "CLOSED"
+  },
+  "temperature": 40,
+  "engine_status": "OFF",
+  "doors_locked": true,
+  "radar_presence": false,
+  "detected_objects": [
+   {
+    "detection_id": null,
+    "class_name": "person",
+    "confidence": 0.9073747396469116
+   }
+  ],
+  "seat_evidence": [],
+  "camera_status": "OK",
+  "evaluated_at": "2026-10-17T11:39:41.338145+00:00",
+  "reasoning_latency_ms": 1.36,
+  "freshness": {
+   "as_of": "2026-10-17T11:39:42.101809+00:00",
+   "sensor": {
+    "status": "FRESH",
+    "age_s": 1.122706,
+    "observed_at": "2026-10-17T11:39:40.979103+00:00"
+   },
+   "vision": {
+    "status": "FRESH",
+    "age_s": 0.794526,
+    "observed_at": "2026-10-17T11:39:41.307283+00:00"
+   },
+   "orientation": {
+    "status": "UNKNOWN",
+    "age_s": null,
+    "evidence": []
+   }
+  },
+  "action_ledger": [
+   {
+    "action_key": "DEMO_7338e0caac4e440ebaae4e26e7353bdb:4:trigger_horn",
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "revision": 4,
+    "tool": "trigger_horn",
+    "status": "simulated",
+    "outcome": "simulated"
+   },
+   {
+    "action_key": "DEMO_7338e0caac4e440ebaae4e26e7353bdb:4:send_sms",
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "revision": 4,
+    "tool": "send_sms",
+    "status": "simulated",
+    "outcome": "simulated"
+   },
+   {
+    "action_key": "DEMO_7338e0caac4e440ebaae4e26e7353bdb:4:request_unlock",
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "revision": 4,
+    "tool": "request_unlock",
+    "status": "pending_human_confirmation",
+    "outcome": "pending_human_confirmation"
+   },
+   {
+    "action_key": "DEMO_7338e0caac4e440ebaae4e26e7353bdb:4:send_notification",
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "revision": 4,
+    "tool": "send_notification",
+    "status": "simulated",
+    "outcome": "simulated"
+   },
+   {
+    "action_key": "DEMO_7338e0caac4e440ebaae4e26e7353bdb:2:send_notification",
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "revision": 2,
+    "tool": "send_notification",
+    "status": "simulated",
+    "outcome": "simulated"
+   }
+  ],
+  "decision_current": true,
+  "session_id": "7338e0caac4e440ebaae4e26e7353bdb",
+  "care": {
+   "status": "IDLE",
+   "profile": "UNKNOWN",
+   "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+   "auto_consent": true,
+   "responded_at": null,
+   "started_by": null,
+   "started_at": null,
+   "music": null,
+   "ended_at": null,
+   "ended_by": null,
+   "end_reason": null,
+   "plan": [],
+   "simulated": true,
+   "can_start": true,
+   "occupancy_evidence": true,
+   "countdown": {
+    "armed": true,
+    "remaining_s": 87,
+    "after_s": 90
+   },
+   "suggestion": {
+    "kind": "ASK",
+    "text": "Ai đang ở trong xe? Chọn để hệ thống gợi ý cách chăm sóc phù hợp. Không chọn thì xem như có thể là trẻ em."
+   },
+   "never_resolves_incident": true,
+   "target_c": 25,
+   "notes": [
+    "Chăm sóc chỉ là biện pháp tạm: rủi ro và sự cố vẫn do luật và người xác nhận quyết định.",
+    "Mô phỏng: chưa có kết nối điều hoà, loa hay màn hình xe thật (OEM_NOT_VERIFIED)."
+   ]
+  },
+  "simulation": {
+   "vehicle_source": "SIMULATED",
+   "action_mode": "SIMULATED",
+   "vision_source": "MODEL_INFERENCE",
+   "runtime": "HOSTED_SIMULATION"
+  },
+  "ttl_s": {
+   "sensor": 5,
+   "vision": 3
+  },
+  "server_time": "2026-10-17T11:39:42.101960+00:00",
+  "last_observation": {
+   "event_id": 11347,
+   "event_type": "observation",
+   "at": "2026-10-17T11:39:41.350483+00:00",
+   "frame_id": "7338e0ca-3-mvcbqrgq",
+   "source": "CLIP_FRAME",
+   "source_label": "Trẻ trong xe (clip mô phỏng AI)",
+   "accepted": true,
+   "ignored_reason": null,
+   "observed_at": "2026-10-17T11:39:41.307283+00:00",
+   "received_at": "2026-10-17T11:39:41.317283+00:00",
+   "capture_age_ms": 10,
+   "vision": {
+    "source": "MODEL_INFERENCE",
+    "detections": [
+     {
+      "class": "person",
+      "confidence": 0.9074,
+      "bbox": [
+       357.1512451171875,
+       149.14474487304688,
+       521.8876953125,
+       357.7765197753906
+      ],
+      "age_group": "unknown",
+      "age_scores": null,
+      "age_crop": null
+     }
+    ],
+    "age_classifier": {
+     "status": "disabled"
+    }
+   },
+   "timings_ms": {
+    "validate": 0.19,
+    "infer_detector": 19.27,
+    "infer_total": 19.37,
+    "infer_wall": 20.49,
+    "commit": 7.13,
+    "server_total": 27.81
+   },
+   "model": {
+    "file": "yolov8n.pt",
+    "sha256": "f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36",
+    "ultralytics_version": "8.4.159"
+   }
+  },
+  "model": {
+   "ready": true,
+   "framework": "ultralytics",
+   "runtime": "pytorch-cpu",
+   "classes_used": [
+    "person",
+    "cat",
+    "dog"
+   ],
+   "confidence_threshold": 0.25,
+   "file": "yolov8n.pt",
+   "size_bytes": 6549796,
+   "sha256": "f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36",
+   "ultralytics_version": "8.4.159",
+   "age_classifier": "disabled"
+  }
+ },
+ "notifications": [
+  {
+   "notification_id": 11326,
+   "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+   "stage": "LOCK_WARNING",
+   "sequence": 2,
+   "revision": 4,
+   "sent_at": "2026-10-17T11:39:40.979103+00:00",
+   "delivery_mode": "SIMULATED",
+   "risk_level": "CRITICAL",
+   "rule_id": "HOT_OCCUPANT",
+   "reason": "Living being detected in hot parked cabin",
+   "channels": {
+    "in_app_feed": {
+     "state": "PUBLISHED",
+     "delivered_at": null
+    },
+    "push": {
+     "state": "SIMULATED",
+     "adapter_status": "simulated",
+     "provider_accepted": false,
+     "os_delivery": "PUSH_OS_NOT_VERIFIED"
+    }
+   }
+  },
+  {
+   "notification_id": 11312,
+   "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+   "stage": "INITIAL",
+   "sequence": 1,
+   "revision": 2,
+   "sent_at": "2026-10-17T11:39:39.329152+00:00",
+   "delivery_mode": "SIMULATED",
+   "risk_level": "WARNING",
+   "rule_id": "COOL_OCCUPANT",
+   "reason": "Living being remains in vehicle",
+   "channels": {
+    "in_app_feed": {
+     "state": "PUBLISHED",
+     "delivered_at": null
+    },
+    "push": {
+     "state": "SIMULATED",
+     "adapter_status": "simulated",
+     "provider_accepted": false,
+     "os_delivery": "PUSH_OS_NOT_VERIFIED"
+    }
+   }
+  }
+ ],
+ "history": {
+  "items": [
+   {
+    "event_id": 11310,
+    "type": "risk_change",
+    "at": "2026-10-17T11:39:39.002553+00:00",
+    "revision": 1,
+    "previous_risk_level": null,
+    "risk_level": "ERROR",
+    "rule_id": "VISION_UNAVAILABLE",
+    "reason": "Vision data unavailable or stale",
+    "occupancy_state": "UNKNOWN",
+    "incident_id": "ab9344fb-5f23-429f-86f9-06d8adff9b1e"
+   },
+   {
+    "event_id": 11311,
+    "type": "risk_change",
+    "at": "2026-10-17T11:39:39.329152+00:00",
+    "revision": 2,
+    "previous_risk_level": "ERROR",
+    "risk_level": "WARNING",
+    "rule_id": "COOL_OCCUPANT",
+    "reason": "Living being remains in vehicle",
+    "occupancy_state": "PRESENT",
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c"
+   },
+   {
+    "event_id": 11312,
+    "type": "alert",
+    "at": "2026-10-17T11:39:39.329152+00:00",
+    "revision": 2,
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "stage": "INITIAL",
+    "sequence": 1,
+    "sent_at": "2026-10-17T11:39:39.329152+00:00",
+    "delivery_mode": "SIMULATED"
+   },
+   {
+    "event_id": 11313,
+    "type": "action_intent",
+    "at": null,
+    "revision": 2,
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "tool": "send_notification",
+    "action_key": "DEMO_7338e0caac4e440ebaae4e26e7353bdb:2:send_notification"
+   },
+   {
+    "event_id": 11314,
+    "type": "action_attempt",
+    "at": "2026-10-17T11:39:39.329152+00:00",
+    "revision": 2,
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "tool": "send_notification",
+    "attempted_at": "2026-10-17T11:39:39.329152+00:00"
+   },
+   {
+    "event_id": 11315,
+    "type": "action_result",
+    "at": null,
+    "revision": 2,
+    "tool": "send_notification",
+    "vehicle_id": "DEMO_7338e0caac4e440ebaae4e26e7353bdb",
+    "status": "simulated",
+    "parameters": {
+     "recipient": "OWNER",
+     "channel": "APP_PUSH"
+    },
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "action_key": "DEMO_7338e0caac4e440ebaae4e26e7353bdb:2:send_notification"
+   },
+   {
+    "event_id": 11325,
+    "type": "risk_change",
+    "at": "2026-10-17T11:39:40.979103+00:00",
+    "revision": 4,
+    "previous_risk_level": "WARNING",
+    "risk_level": "CRITICAL",
+    "rule_id": "HOT_OCCUPANT",
+    "reason": "Living being detected in hot parked cabin",
+    "occupancy_state": "PRESENT",
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c"
+   },
+   {
+    "event_id": 11326,
+    "type": "alert",
+    "at": "2026-10-17T11:39:40.979103+00:00",
+    "revision": 4,
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "stage": "LOCK_WARNING",
+    "sequence": 2,
+    "sent_at": "2026-10-17T11:39:40.979103+00:00",
+    "delivery_mode": "SIMULATED"
+   },
+   {
+    "event_id": 11327,
+    "type": "unlock_request",
+    "at": "2026-10-17T11:39:40.979103+00:00",
+    "revision": 4,
+    "request_id": "7b311329-5b52-4f90-96e8-b92971617c9b",
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "created_at": "2026-10-17T11:39:40.979103+00:00",
+    "expires_at": "2026-10-17T11:40:40.979103+00:00",
+    "status": "pending"
+   },
+   {
+    "event_id": 11328,
+    "type": "action_intent",
+    "at": null,
+    "revision": 4,
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "tool": "trigger_horn",
+    "action_key": "DEMO_7338e0caac4e440ebaae4e26e7353bdb:4:trigger_horn"
+   },
+   {
+    "event_id": 11329,
+    "type": "action_intent",
+    "at": null,
+    "revision": 4,
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "tool": "send_sms",
+    "action_key": "DEMO_7338e0caac4e440ebaae4e26e7353bdb:4:send_sms"
+   },
+   {
+    "event_id": 11330,
+    "type": "action_intent",
+    "at": null,
+    "revision": 4,
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "tool": "request_unlock",
+    "action_key": "DEMO_7338e0caac4e440ebaae4e26e7353bdb:4:request_unlock"
+   },
+   {
+    "event_id": 11331,
+    "type": "action_intent",
+    "at": null,
+    "revision": 4,
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "tool": "send_notification",
+    "action_key": "DEMO_7338e0caac4e440ebaae4e26e7353bdb:4:send_notification"
+   },
+   {
+    "event_id": 11332,
+    "type": "action_attempt",
+    "at": "2026-10-17T11:39:40.979103+00:00",
+    "revision": 4,
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "tool": "trigger_horn",
+    "attempted_at": "2026-10-17T11:39:40.979103+00:00"
+   },
+   {
+    "event_id": 11333,
+    "type": "action_result",
+    "at": null,
+    "revision": 4,
+    "tool": "trigger_horn",
+    "vehicle_id": "DEMO_7338e0caac4e440ebaae4e26e7353bdb",
+    "status": "simulated",
+    "parameters": {
+     "pattern": "PULSE",
+     "duration_s": 30,
+     "hazard_lights": true
+    },
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "action_key": "DEMO_7338e0caac4e440ebaae4e26e7353bdb:4:trigger_horn"
+   },
+   {
+    "event_id": 11334,
+    "type": "action_attempt",
+    "at": "2026-10-17T11:39:40.979103+00:00",
+    "revision": 4,
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "tool": "send_sms",
+    "attempted_at": "2026-10-17T11:39:40.979103+00:00"
+   },
+   {
+    "event_id": 11335,
+    "type": "action_result",
+    "at": null,
+    "revision": 4,
+    "tool": "send_sms",
+    "vehicle_id": "DEMO_7338e0caac4e440ebaae4e26e7353bdb",
+    "status": "simulated",
+    "parameters": {
+     "recipient": "EMERGENCY_CONTACT",
+     "channel": "SMS"
+    },
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "action_key": "DEMO_7338e0caac4e440ebaae4e26e7353bdb:4:send_sms"
+   },
+   {
+    "event_id": 11336,
+    "type": "action_result",
+    "at": null,
+    "revision": 4,
+    "tool": "request_unlock",
+    "vehicle_id": "DEMO_7338e0caac4e440ebaae4e26e7353bdb",
+    "status": "pending_human_confirmation",
+    "request_id": "7b311329-5b52-4f90-96e8-b92971617c9b",
+    "expires_at": "2026-10-17T11:40:40.979103+00:00",
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "action_key": "DEMO_7338e0caac4e440ebaae4e26e7353bdb:4:request_unlock"
+   },
+   {
+    "event_id": 11337,
+    "type": "action_attempt",
+    "at": "2026-10-17T11:39:40.979103+00:00",
+    "revision": 4,
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "tool": "send_notification",
+    "attempted_at": "2026-10-17T11:39:40.979103+00:00"
+   },
+   {
+    "event_id": 11338,
+    "type": "action_result",
+    "at": null,
+    "revision": 4,
+    "tool": "send_notification",
+    "vehicle_id": "DEMO_7338e0caac4e440ebaae4e26e7353bdb",
+    "status": "simulated",
+    "parameters": {
+     "recipient": "OWNER",
+     "channel": "APP_PUSH"
+    },
+    "incident_id": "78bf74a4-d6b9-4968-b824-45ada915975c",
+    "action_key": "DEMO_7338e0caac4e440ebaae4e26e7353bdb:4:send_notification"
+   }
+  ],
+  "next_after": 11354
+ },
+ "status": {
+  "mode": "HOSTED_SIMULATION",
+  "simulation": {
+   "vehicle_source": "SIMULATED",
+   "action_mode": "SIMULATED",
+   "vision_source": "MODEL_INFERENCE",
+   "runtime": "HOSTED_SIMULATION"
+  },
+  "model": {
+   "ready": true,
+   "framework": "ultralytics",
+   "runtime": "pytorch-cpu",
+   "classes_used": [
+    "person",
+    "cat",
+    "dog"
+   ],
+   "confidence_threshold": 0.25,
+   "file": "yolov8n.pt",
+   "size_bytes": 6549796,
+   "sha256": "f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36",
+   "ultralytics_version": "8.4.159",
+   "age_classifier": "disabled"
+  },
+  "ttl_s": {
+   "sensor": 5,
+   "vision": 3
+  },
+  "database": "ready",
+  "push_os": "PUSH_OS_NOT_VERIFIED",
+  "oem": "OEM_NOT_VERIFIED",
+  "upload_limit_bytes": 5242880
+ }
+}

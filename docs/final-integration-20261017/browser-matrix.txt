@@ -1,0 +1,839 @@
+(node:11752) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+Running 52 tests using 1 worker
+
+(node:11762) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:11762) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:11762) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   1 [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-01 decodes actual video, runs actual model and cleans up (31.8s)
+(node:12108) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12108) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:12108) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   2 [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-02 decodes actual video, runs actual model and cleans up (31.5s)
+(node:12377) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12377) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:12377) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   3 [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-03 decodes actual video, runs actual model and cleans up (30.9s)
+(node:12509) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12509) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:12509) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   4 [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-04 decodes actual video, runs actual model and cleans up (31.0s)
+(node:12602) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12602) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:12602) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   5 [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-05 decodes actual video, runs actual model and cleans up (30.9s)
+(node:12710) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12710) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:12710) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   6 [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-06 decodes actual video, runs actual model and cleans up (31.0s)
+(node:12801) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12801) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:12801) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   7 [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-07 decodes actual video, runs actual model and cleans up (31.0s)
+(node:12860) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12860) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:12860) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   8 [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-08 decodes actual video, runs actual model and cleans up (31.1s)
+(node:12914) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12914) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:12914) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   9 [chromium] › qa/vinfast-cockpit-audit/integration/player.spec.ts:2:1 › falls back to actual WebM frames when H.264 capability is unavailable (2.5s)
+  ✓  10 [chromium] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:3:1 › critical state interrupts comfort audio (API fixture, not detection evidence) (1.5s)
+  ✓  11 [chromium] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:19:1 › phone demo cannot dial emergency services (API fixture, not detection evidence) (1.4s)
+  ✓  12 [chromium] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:27:1 › malformed JSON and missing nested state keep cockpit visible and old critical explicit (4.6s)
+  ✓  13 [chromium] › qa/vinfast-cockpit-audit/integration/scenarios.spec.ts:2:1 › one demo entry opens eight scenario choices and returns to Cockpit (1.6s)
+(node:12951) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12951) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:12951) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  14 [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-01 decodes actual video, runs actual model and cleans up (35.0s)
+(node:13181) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13181) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:13181) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  15 [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-02 decodes actual video, runs actual model and cleans up (31.8s)
+(node:13372) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13372) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:13372) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  16 [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-03 decodes actual video, runs actual model and cleans up (31.0s)
+(node:13520) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13520) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:13520) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  17 [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-04 decodes actual video, runs actual model and cleans up (31.8s)
+(node:13656) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13656) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:13656) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  18 [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-05 decodes actual video, runs actual model and cleans up (32.0s)
+(node:13805) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13805) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:13805) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  19 [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-06 decodes actual video, runs actual model and cleans up (31.8s)
+(node:13948) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13948) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:13948) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  20 [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-07 decodes actual video, runs actual model and cleans up (31.8s)
+(node:14086) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:14086) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:14086) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  21 [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-08 decodes actual video, runs actual model and cleans up (32.0s)
+(node:14291) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:14291) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:14291) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  22 [chrome] › qa/vinfast-cockpit-audit/integration/player.spec.ts:2:1 › falls back to actual WebM frames when H.264 capability is unavailable (3.6s)
+  ✓  23 [chrome] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:3:1 › critical state interrupts comfort audio (API fixture, not detection evidence) (2.2s)
+  ✓  24 [chrome] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:19:1 › phone demo cannot dial emergency services (API fixture, not detection evidence) (1.8s)
+  ✓  25 [chrome] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:27:1 › malformed JSON and missing nested state keep cockpit visible and old critical explicit (3.6s)
+  ✓  26 [chrome] › qa/vinfast-cockpit-audit/integration/scenarios.spec.ts:2:1 › one demo entry opens eight scenario choices and returns to Cockpit (1.8s)
+(node:14367) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:14367) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:14367) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  27 [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-01 decodes actual video, runs actual model and cleans up (32.3s)
+(node:14455) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:14455) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:14455) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  28 [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-02 decodes actual video, runs actual model and cleans up (32.2s)
+(node:14546) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:14546) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:14546) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  29 [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-03 decodes actual video, runs actual model and cleans up (32.4s)
+(node:14646) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:14646) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:14646) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  30 [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-04 decodes actual video, runs actual model and cleans up (32.0s)
+(node:14772) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:14772) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:14772) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  31 [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-05 decodes actual video, runs actual model and cleans up (31.3s)
+(node:14926) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:14926) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:14926) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  32 [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-06 decodes actual video, runs actual model and cleans up (31.6s)
+(node:15150) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15150) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:15150) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  33 [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-07 decodes actual video, runs actual model and cleans up (31.7s)
+(node:15297) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15297) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:15297) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  34 [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-08 decodes actual video, runs actual model and cleans up (32.2s)
+(node:15413) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15413) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:15413) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  35 [webkit] › qa/vinfast-cockpit-audit/integration/player.spec.ts:2:1 › falls back to actual WebM frames when H.264 capability is unavailable (2.7s)
+  ✓  36 [webkit] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:3:1 › critical state interrupts comfort audio (API fixture, not detection evidence) (1.5s)
+  ✓  37 [webkit] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:19:1 › phone demo cannot dial emergency services (API fixture, not detection evidence) (1.6s)
+  ✓  38 [webkit] › qa/vinfast-cockpit-audit/integration/recovery.spec.ts:27:1 › malformed JSON and missing nested state keep cockpit visible and old critical explicit (5.1s)
+  ✘  39 [webkit] › qa/vinfast-cockpit-audit/integration/scenarios.spec.ts:2:1 › one demo entry opens eight scenario choices and returns to Cockpit (1.7s)
+
+
+  1) [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-01 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-01-decode-e8b9a--actual-model-and-cleans-up-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-01-decode-e8b9a--actual-model-and-cleans-up-chromium/error-context.md
+
+  2) [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-02 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-02-decode-89501--actual-model-and-cleans-up-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-02-decode-89501--actual-model-and-cleans-up-chromium/error-context.md
+
+  3) [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-03 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-03-decode-13393--actual-model-and-cleans-up-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-03-decode-13393--actual-model-and-cleans-up-chromium/error-context.md
+
+  4) [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-04 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-04-decode-10ac6--actual-model-and-cleans-up-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-04-decode-10ac6--actual-model-and-cleans-up-chromium/error-context.md
+
+  5) [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-05 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-05-decode-80c4f--actual-model-and-cleans-up-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-05-decode-80c4f--actual-model-and-cleans-up-chromium/error-context.md
+
+  6) [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-06 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-06-decode-f6f7f--actual-model-and-cleans-up-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-06-decode-f6f7f--actual-model-and-cleans-up-chromium/error-context.md
+
+  7) [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-07 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-07-decode-457f0--actual-model-and-cleans-up-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-07-decode-457f0--actual-model-and-cleans-up-chromium/error-context.md
+
+  8) [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-08 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-08-decode-f8bd8--actual-model-and-cleans-up-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-08-decode-f8bd8--actual-model-and-cleans-up-chromium/error-context.md
+
+  9) [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-01 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-01-decode-e8b9a--actual-model-and-cleans-up-chrome/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-01-decode-e8b9a--actual-model-and-cleans-up-chrome/error-context.md
+
+  10) [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-02 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-02-decode-89501--actual-model-and-cleans-up-chrome/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-02-decode-89501--actual-model-and-cleans-up-chrome/error-context.md
+
+  11) [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-03 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-03-decode-13393--actual-model-and-cleans-up-chrome/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-03-decode-13393--actual-model-and-cleans-up-chrome/error-context.md
+
+  12) [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-04 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-04-decode-10ac6--actual-model-and-cleans-up-chrome/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-04-decode-10ac6--actual-model-and-cleans-up-chrome/error-context.md
+
+  13) [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-05 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-05-decode-80c4f--actual-model-and-cleans-up-chrome/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-05-decode-80c4f--actual-model-and-cleans-up-chrome/error-context.md
+
+  14) [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-06 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-06-decode-f6f7f--actual-model-and-cleans-up-chrome/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-06-decode-f6f7f--actual-model-and-cleans-up-chrome/error-context.md
+
+  15) [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-07 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-07-decode-457f0--actual-model-and-cleans-up-chrome/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-07-decode-457f0--actual-model-and-cleans-up-chrome/error-context.md
+
+  16) [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-08 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-08-decode-f8bd8--actual-model-and-cleans-up-chrome/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-08-decode-f8bd8--actual-model-and-cleans-up-chrome/error-context.md
+
+  17) [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-01 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-01-decode-e8b9a--actual-model-and-cleans-up-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-01-decode-e8b9a--actual-model-and-cleans-up-webkit/error-context.md
+
+  18) [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-02 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-02-decode-89501--actual-model-and-cleans-up-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-02-decode-89501--actual-model-and-cleans-up-webkit/error-context.md
+
+  19) [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-03 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-03-decode-13393--actual-model-and-cleans-up-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-03-decode-13393--actual-model-and-cleans-up-webkit/error-context.md
+
+  20) [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-04 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-04-decode-10ac6--actual-model-and-cleans-up-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-04-decode-10ac6--actual-model-and-cleans-up-webkit/error-context.md
+
+  21) [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-05 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-05-decode-80c4f--actual-model-and-cleans-up-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-05-decode-80c4f--actual-model-and-cleans-up-webkit/error-context.md
+
+  22) [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-06 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-06-decode-f6f7f--actual-model-and-cleans-up-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-06-decode-f6f7f--actual-model-and-cleans-up-webkit/error-context.md
+
+  23) [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-07 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-07-decode-457f0--actual-model-and-cleans-up-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-07-decode-457f0--actual-model-and-cleans-up-webkit/error-context.md
+
+  24) [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-08 decodes actual video, runs actual model and cleans up 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      12 |     await page.getByTestId(`start-${id}`).click()
+      13 |     await expect(page.getByTestId('cabin-monitor')).toBeVisible()
+    > 14 |     await expect.poll(() => page.evaluate(() => (window as any).__e2e.getState().metrics.accepted), { timeout: 30000 }).toBeGreaterThanOrEqual(2)
+         |     ^
+      15 |     const evidence = await page.evaluate(() => {
+      16 |       const s = (window as any).__e2e.getState()
+      17 |       const v = (window as any).__e2eCapture.getVideo()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:14:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-08-decode-f8bd8--actual-model-and-cleans-up-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/eight-clips-DEMO-08-decode-f8bd8--actual-model-and-cleans-up-webkit/error-context.md
+
+  25) [webkit] › qa/vinfast-cockpit-audit/integration/scenarios.spec.ts:2:1 › one demo entry opens eight scenario choices and returns to Cockpit 
+
+    Test was interrupted.
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeFocused[2m([22m[2m)[22m failed
+
+    Locator:  getByRole('button', { name: 'Trải nghiệm tình huống', exact: true })
+    Expected: focused
+    Received: inactive
+
+    Call log:
+    [2m  - Expect "toBeFocused" with timeout 20000ms[22m
+    [2m  - waiting for getByRole('button', { name: 'Trải nghiệm tình huống', exact: true })[22m
+    [2m    3 × locator resolved to <button type="button" aria-expanded="false" class="vd-btn primary vd-press" data-testid="scenario-selector">Trải nghiệm tình huống</button>[22m
+    [2m      - unexpected value "inactive"[22m
+
+
+      12 |   await page.keyboard.press('Escape')
+      13 |   await expect(dialog).not.toBeVisible()
+    > 14 |   await expect(entry).toBeFocused()
+         |                       ^
+      15 | })
+      16 |
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/scenarios.spec.ts:14:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/scenarios-one-demo-entry-o-7164f-ices-and-returns-to-Cockpit-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  24 failed
+    [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-01 decodes actual video, runs actual model and cleans up 
+    [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-02 decodes actual video, runs actual model and cleans up 
+    [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-03 decodes actual video, runs actual model and cleans up 
+    [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-04 decodes actual video, runs actual model and cleans up 
+    [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-05 decodes actual video, runs actual model and cleans up 
+    [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-06 decodes actual video, runs actual model and cleans up 
+    [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-07 decodes actual video, runs actual model and cleans up 
+    [chromium] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-08 decodes actual video, runs actual model and cleans up 
+    [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-01 decodes actual video, runs actual model and cleans up 
+    [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-02 decodes actual video, runs actual model and cleans up 
+    [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-03 decodes actual video, runs actual model and cleans up 
+    [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-04 decodes actual video, runs actual model and cleans up 
+    [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-05 decodes actual video, runs actual model and cleans up 
+    [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-06 decodes actual video, runs actual model and cleans up 
+    [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-07 decodes actual video, runs actual model and cleans up 
+    [chrome] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-08 decodes actual video, runs actual model and cleans up 
+    [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-01 decodes actual video, runs actual model and cleans up 
+    [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-02 decodes actual video, runs actual model and cleans up 
+    [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-03 decodes actual video, runs actual model and cleans up 
+    [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-04 decodes actual video, runs actual model and cleans up 
+    [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-05 decodes actual video, runs actual model and cleans up 
+    [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-06 decodes actual video, runs actual model and cleans up 
+    [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-07 decodes actual video, runs actual model and cleans up 
+    [webkit] › qa/vinfast-cockpit-audit/integration/eight-clips.spec.ts:5:3 › DEMO-08 decodes actual video, runs actual model and cleans up 
+  1 interrupted
+    [webkit] › qa/vinfast-cockpit-audit/integration/scenarios.spec.ts:2:1 › one demo entry opens eight scenario choices and returns to Cockpit 
+  13 did not run
+  14 passed (15.5m)

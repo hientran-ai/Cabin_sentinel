@@ -1,0 +1,331 @@
+........................................................................ [ 19%]
+........................................................................ [ 38%]
+........................................................................ [ 57%]
+.............................................................F.......... [ 77%]
+............................................................... [ 93%]
+.......................                                                  [100%]
+=================================== FAILURES ===================================
+_____________ test_evidence_upload_signed_url_expiry_and_retention _____________
+
+filename = <_io.BytesIO object at 0x12408a390>, args = ()
+kwargs = {'formats': ['JPEG', 'PNG']}
+
+    def image_open(filename, *args, **kwargs):
+        """Open an image with PIL, lazily registering the HEIF plugin on first failure.
+    
+        This monkey-patches PIL.Image.open to add HEIC/HEIF support via pi-heif (lightweight, decode-only), avoiding the
+        ~800ms startup cost of importing the package unless actually needed. AVIF is supported natively by Pillow 12+ and
+        does not require a plugin.
+    
+        Args:
+            filename (str): Path to the image file.
+            *args (Any): Additional positional arguments passed to PIL.Image.open.
+            **kwargs (Any): Additional keyword arguments passed to PIL.Image.open.
+    
+        Returns:
+            (PIL.Image.Image): The opened PIL image.
+        """
+        global _pil_plugins_registered
+        if _pil_plugins_registered:
+            return _image_open(filename, *args, **kwargs)
+        try:
+>           return _image_open(filename, *args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/ultralytics/utils/patches.py:78: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+fp = <_io.BytesIO object at 0x12408a390>, mode = 'r', formats = ['JPEG', 'PNG']
+
+    def open(
+        fp: StrOrBytesPath | IO[bytes],
+        mode: Literal["r"] = "r",
+        formats: list[str] | tuple[str, ...] | None = None,
+    ) -> ImageFile.ImageFile:
+        """
+        Opens and identifies the given image file.
+    
+        This is a lazy operation; this function identifies the file, but
+        the file remains open and the actual image data is not read from
+        the file until you try to process the data (or call the
+        :py:meth:`~PIL.Image.Image.load` method).  See
+        :py:func:`~PIL.Image.new`. See :ref:`file-handling`.
+    
+        :param fp: A filename (string), os.PathLike object or a file object.
+           The file object must implement ``file.read``,
+           ``file.seek``, and ``file.tell`` methods,
+           and be opened in binary mode. The file object will also seek to zero
+           before reading.
+        :param mode: The mode.  If given, this argument must be "r".
+        :param formats: A list or tuple of formats to attempt to load the file in.
+           This can be used to restrict the set of formats checked.
+           Pass ``None`` to try all supported formats. You can print the set of
+           available formats by running ``python3 -m PIL`` or using
+           the :py:func:`PIL.features.pilinfo` function.
+        :returns: An :py:class:`~PIL.Image.Image` object.
+        :exception FileNotFoundError: If the file cannot be found.
+        :exception PIL.UnidentifiedImageError: If the image cannot be opened and
+           identified.
+        :exception ValueError: If the ``mode`` is not "r", or if a ``StringIO``
+           instance is used for ``fp``.
+        :exception TypeError: If ``formats`` is not ``None``, a list or a tuple.
+        """
+    
+        if mode != "r":
+            msg = f"bad mode {repr(mode)}"  # type: ignore[unreachable]
+            raise ValueError(msg)
+        elif isinstance(fp, io.StringIO):
+            msg = (  # type: ignore[unreachable]
+                "StringIO cannot be used to open an image. "
+                "Binary data must be used instead."
+            )
+            raise ValueError(msg)
+    
+        if formats is None:
+            formats = ID
+        elif not isinstance(formats, (list, tuple)):
+            msg = "formats must be a list or tuple"  # type: ignore[unreachable]
+            raise TypeError(msg)
+    
+        exclusive_fp = False
+        filename: str | bytes = ""
+        if is_path(fp):
+            filename = os.fspath(fp)
+            fp = builtins.open(filename, "rb")
+            exclusive_fp = True
+        else:
+            fp = cast(IO[bytes], fp)
+    
+        try:
+            fp.seek(0)
+        except (AttributeError, io.UnsupportedOperation):
+            fp = io.BytesIO(fp.read())
+            exclusive_fp = True
+    
+        prefix = fp.read(16)
+    
+        # Try to import just the plugin needed for this file extension
+        # before falling back to preinit() which imports common plugins
+        ext = os.path.splitext(filename)[1] if filename else ""
+        if not _import_plugin_for_extension(ext):
+            preinit()
+    
+        warning_messages: list[str] = []
+    
+        def _open_core(
+            fp: IO[bytes],
+            filename: str | bytes,
+            prefix: bytes,
+            formats: list[str] | tuple[str, ...],
+        ) -> ImageFile.ImageFile | None:
+            for i in formats:
+                i = i.upper()
+                if i not in OPEN:
+                    init()
+                try:
+                    factory, accept = OPEN[i]
+                    result = not accept or accept(prefix)
+                    if isinstance(result, str):
+                        warning_messages.append(result)
+                    elif result:
+                        fp.seek(0)
+                        im = factory(fp, filename)
+                        _decompression_bomb_check(im.size)
+                        return im
+                except (SyntaxError, IndexError, TypeError, struct.error) as e:
+                    if WARN_POSSIBLE_FORMATS:
+                        warning_messages.append(i + " opening failed. " + str(e))
+                except BaseException:
+                    if exclusive_fp:
+                        fp.close()
+                    raise
+            return None
+    
+        im = _open_core(fp, filename, prefix, formats)
+    
+        if im is None and formats is ID:
+            # Try preinit (few common plugins) then init (all plugins)
+            for loader in (preinit, init):
+                checked_formats = ID.copy()
+                loader()
+                if formats != checked_formats:
+                    im = _open_core(
+                        fp,
+                        filename,
+                        prefix,
+                        tuple(f for f in formats if f not in checked_formats),
+                    )
+                    if im is not None:
+                        break
+    
+        if im:
+            im._exclusive_fp = exclusive_fp
+            return im
+    
+        if exclusive_fp:
+            fp.close()
+        for message in warning_messages:
+            warnings.warn(message)
+        msg = "cannot identify image file %r" % (filename if filename else fp)
+>       raise UnidentifiedImageError(msg)
+E       PIL.UnidentifiedImageError: cannot identify image file <_io.BytesIO object at 0x12408a390>
+
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/PIL/Image.py:3715: UnidentifiedImageError
+
+The above exception was the direct cause of the following exception:
+
+env = namespace(client=<starlette.testclient.TestClient object at 0x124055290>, service=<src.cabinsentinel.service.CabinServ...entinel.fleet.Fleet object at 0x124b683d0>, clock=[datetime.datetime(2026, 10, 3, 9, 0, tzinfo=datetime.timezone.utc)])
+
+    def test_evidence_upload_signed_url_expiry_and_retention(env):
+        owner = user_token(env, "ev@example.com")
+        add_vehicle(env, owner, "CAR-E")
+        token = pair(env, owner, "CAR-E")["device_token"]
+        files = {"image": ("blur.png", png_bytes(), "image/png")}
+        assert env.client.post("/api/v1/vehicles/CAR-E/evidence", files=files, data={"privacy_processed": "false"}, headers=auth(token)).status_code == 422
+>       assert env.client.post("/api/v1/vehicles/CAR-E/evidence", files={"image": ("x.png", b"not an image", "image/png")},
+                               data={"privacy_processed": "true"}, headers=auth(token)).status_code == 422
+
+tests/test_platform_api.py:277: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/httpx2/_client.py:1204: in post
+    return self.request(
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/starlette/testclient.py:463: in request
+    return super().request(
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/httpx2/_client.py:797: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/httpx2/_client.py:980: in send
+    response = self._send_handling_auth(
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/httpx2/_client.py:1008: in _send_handling_auth
+    response = self._send_handling_redirects(
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/httpx2/_client.py:1043: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/httpx2/_client.py:1076: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/starlette/testclient.py:360: in handle_request
+    raise exc
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/starlette/testclient.py:357: in handle_request
+    portal.call(self.app, scope, receive, send)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/anyio/from_thread.py:340: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/anyio/from_thread.py:265: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/fastapi/applications.py:1163: in __call__
+    await super().__call__(scope, receive, send)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/starlette/applications.py:96: in __call__
+    await self.middleware_stack(scope, receive, send)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/starlette/middleware/base.py:197: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/src/main.py:135: in private_api_responses
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/starlette/middleware/base.py:173: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/starlette/middleware/base.py:149: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py:91: in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py:149: in simple_response
+    await self.app(scope, receive, send)
+services/api/src/cabinsentinel/upload_limit.py:37: in __call__
+    await self.app(scope, receive, send)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/starlette/routing.py:676: in __call__
+    await self.middleware_stack(scope, receive, send)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/fastapi/routing.py:2734: in app
+    await route.handle(scope, receive, send)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/fastapi/routing.py:1780: in handle
+    await self.original_router.handle(scope, receive, send)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/fastapi/routing.py:2789: in handle
+    await included_router._handle_selected(scope, receive, send)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/fastapi/routing.py:1800: in _handle_selected
+    await original_route.handle(scope, receive, send)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/fastapi/routing.py:1279: in handle
+    await app(scope, receive, send)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/fastapi/routing.py:158: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/fastapi/routing.py:144: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/fastapi/routing.py:706: in app
+    raw_response = await run_endpoint_function(
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/fastapi/routing.py:352: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/src/cabinsentinel/platform_api.py:604: in upload_evidence
+    with Image.open(BytesIO(data), formats=["JPEG", "PNG"]) as decoded:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+filename = <_io.BytesIO object at 0x12408a390>, args = ()
+kwargs = {'formats': ['JPEG', 'PNG']}
+
+    def image_open(filename, *args, **kwargs):
+        """Open an image with PIL, lazily registering the HEIF plugin on first failure.
+    
+        This monkey-patches PIL.Image.open to add HEIC/HEIF support via pi-heif (lightweight, decode-only), avoiding the
+        ~800ms startup cost of importing the package unless actually needed. AVIF is supported natively by Pillow 12+ and
+        does not require a plugin.
+    
+        Args:
+            filename (str): Path to the image file.
+            *args (Any): Additional positional arguments passed to PIL.Image.open.
+            **kwargs (Any): Additional keyword arguments passed to PIL.Image.open.
+    
+        Returns:
+            (PIL.Image.Image): The opened PIL image.
+        """
+        global _pil_plugins_registered
+        if _pil_plugins_registered:
+            return _image_open(filename, *args, **kwargs)
+        try:
+            return _image_open(filename, *args, **kwargs)
+        except Exception:
+            from ultralytics.utils.checks import check_requirements
+    
+            check_requirements("pi-heif")
+>           from pi_heif import register_heif_opener
+E           ModuleNotFoundError: No module named 'pi_heif'
+
+../pr5-demo-scenarios/.venv/lib/python3.11/site-packages/ultralytics/utils/patches.py:83: ModuleNotFoundError
+----------------------------- Captured stdout call -----------------------------
+[31m[1mrequirements:[0m Ultralytics requirement ['pi-heif'] not found, attempting AutoUpdate...
+WARNING ⚠️ Retry 1/2 failed: Command '['/Users/mac/BUILD_PHASE/worktrees/pr5-demo-scenarios/.venv/bin/python', '-m', 'pip', 'install', '--no-cache-dir', 'pi-heif']' returned non-zero exit status 1.
+WARNING ⚠️ Retry 2/2 failed: Command '['/Users/mac/BUILD_PHASE/worktrees/pr5-demo-scenarios/.venv/bin/python', '-m', 'pip', 'install', '--no-cache-dir', 'pi-heif']' returned non-zero exit status 1.
+WARNING ⚠️ [31m[1mrequirements:[0m ❌ Command '['/Users/mac/BUILD_PHASE/worktrees/pr5-demo-scenarios/.venv/bin/python', '-m', 'pip', 'install', '--no-cache-dir', 'pi-heif']' returned non-zero exit status 1.
+/Users/mac/BUILD_PHASE/worktrees/pr5-demo-scenarios/.venv/bin/python: No module named pip
+
+------------------------------ Captured log call -------------------------------
+INFO     ultralytics:checks.py:615 [31m[1mrequirements:[0m Ultralytics requirement ['pi-heif'] not found, attempting AutoUpdate...
+WARNING  ultralytics:__init__.py:1159 WARNING ⚠️ Retry 1/2 failed: Command '['/Users/mac/BUILD_PHASE/worktrees/pr5-demo-scenarios/.venv/bin/python', '-m', 'pip', 'install', '--no-cache-dir', 'pi-heif']' returned non-zero exit status 1.
+WARNING  ultralytics:__init__.py:1159 WARNING ⚠️ Retry 2/2 failed: Command '['/Users/mac/BUILD_PHASE/worktrees/pr5-demo-scenarios/.venv/bin/python', '-m', 'pip', 'install', '--no-cache-dir', 'pi-heif']' returned non-zero exit status 1.
+WARNING  ultralytics:checks.py:630 WARNING ⚠️ [31m[1mrequirements:[0m ❌ Command '['/Users/mac/BUILD_PHASE/worktrees/pr5-demo-scenarios/.venv/bin/python', '-m', 'pip', 'install', '--no-cache-dir', 'pi-heif']' returned non-zero exit status 1.
+/Users/mac/BUILD_PHASE/worktrees/pr5-demo-scenarios/.venv/bin/python: No module named pip
+=========================== short test summary info ============================
+FAILED tests/test_platform_api.py::test_evidence_upload_signed_url_expiry_and_retention
+1 failed, 373 passed, 9 subtests passed in 26.06s

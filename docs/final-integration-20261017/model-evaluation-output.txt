@@ -1,0 +1,8 @@
+DEMO-01 {'person': 8} ['ERROR'] notifications 0
+DEMO-02 {} ['ERROR'] notifications 0
+DEMO-03 {} ['WARNING'] notifications 1
+DEMO-04 {'person': 9} ['ERROR'] notifications 0
+DEMO-05 {'person': 11} ['CRITICAL'] notifications 1
+DEMO-06 {'person': 23, 'backpack': 11, 'cat': 2, 'dog': 1} ['WARNING'] notifications 1
+DEMO-07 {'person': 35} ['SAFE'] notifications 0
+DEMO-08 {'person': 3, 'cell phone': 1} ['ERROR', 'WARNING'] notifications 1

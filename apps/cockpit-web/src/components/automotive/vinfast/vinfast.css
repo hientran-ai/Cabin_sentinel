@@ -850,3 +850,6 @@
 .vf-shell[data-vf-skin="blue"] .vf-clip-list button > span { padding: var(--space-1) var(--space-3); }
 .vf-shell[data-vf-skin="blue"] .vf-qgrid { gap: var(--space-3); }
 .vf-shell[data-vf-skin="blue"] .vf-media + .vf-launcher { padding: var(--space-4) var(--space-5); }
+
+/* a care mode is running but its screen was sent back to the home screen: one labelled way to open it again */
+.vf-care-chip { position: absolute; left: 904px; top: 22px; z-index: 22; display: inline-flex; align-items: center; gap: 12px; height: 56px; padding: 0 22px; border-radius: 28px; background: #0c7f5f; color: #fff; border: 2px solid #5fe3bb; font-size: 22px; font-weight: 700; box-shadow: 0 8px 24px rgba(0, 20, 14, .4); }

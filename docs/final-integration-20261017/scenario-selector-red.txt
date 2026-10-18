@@ -1,0 +1,46 @@
+(node:9104) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:9114) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:9114) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:9114) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › qa/vinfast-cockpit-audit/integration/scenarios.spec.ts:2:1 › one demo entry opens eight scenario choices and returns to Cockpit (7.1s)
+
+
+  1) [chromium] › qa/vinfast-cockpit-audit/integration/scenarios.spec.ts:2:1 › one demo entry opens eight scenario choices and returns to Cockpit 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('button', { name: 'Trải nghiệm tình huống', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for getByRole('button', { name: 'Trải nghiệm tình huống', exact: true })[22m
+
+
+      4 |   await page.goto('/cockpit/vinfast/?debug=1')
+      5 |   const entry = page.getByRole('button', { name: 'Trải nghiệm tình huống', exact: true })
+    > 6 |   await expect(entry).toBeVisible({ timeout: 5000 })
+        |                       ^
+      7 |   await entry.click()
+      8 |   const dialog = page.getByRole('dialog', { name: 'Trải nghiệm tình huống' })
+      9 |   await expect(dialog).toBeVisible()
+        at /Users/mac/BUILD_PHASE/worktrees/final-demo-integration-20261017/qa/vinfast-cockpit-audit/integration/scenarios.spec.ts:6:23
+
+    [31mTest timeout of 90000ms exceeded.[39m
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/final-integration-20261017/playwright-artifacts/scenarios-one-demo-entry-o-7164f-ices-and-returns-to-Cockpit-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/final-integration-20261017/playwright-artifacts/scenarios-one-demo-entry-o-7164f-ices-and-returns-to-Cockpit-chromium/error-context.md
+
+  1 failed
+    [chromium] › qa/vinfast-cockpit-audit/integration/scenarios.spec.ts:2:1 › one demo entry opens eight scenario choices and returns to Cockpit 

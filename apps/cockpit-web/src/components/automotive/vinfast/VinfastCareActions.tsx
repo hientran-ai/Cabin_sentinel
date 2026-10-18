@@ -13,11 +13,13 @@ import { useCarUi } from './carUi'
 import { IC, Switch } from './parts'
 
 const ADULT: { id: string; title: string; sub: string; grad: string; real: boolean }[] = [
+  { id: 'off', title: 'Không bật nhạc', sub: 'Mặc định; chỉ gợi ý nhạc khi bạn chọn', grad: 'linear-gradient(150deg,#26374c,#182a42)', real: false },
   { id: 'ambient', title: 'Nhạc thư giãn', sub: 'Không lời · phát thật trong trình duyệt', grad: 'linear-gradient(150deg,#2fb7a6,#31508f)', real: true },
   { id: 'music_app', title: 'Ứng dụng nhạc', sub: 'Mở ứng dụng để chọn bài · mô phỏng', grad: 'linear-gradient(150deg,#8f5bf0,#d85aa8)', real: false },
   { id: 'podcast_app', title: 'Podcast', sub: 'Mở ứng dụng podcast · mô phỏng', grad: 'linear-gradient(150deg,#f19a3a,#d9503f)', real: false },
 ]
 const CHILD: { id: string; title: string; sub: string }[] = [
+  { id: 'off', title: 'Không bật âm thanh', sub: 'Mặc định; chọn rõ một bài nếu muốn phát' },
   { id: 'twinkle', title: TRACKS.twinkle.label, sub: 'Giai điệu dân gian, tự tổng hợp' },
   { id: 'brahms', title: TRACKS.brahms.label, sub: 'Brahms 1868, tự tổng hợp' },
 ]
@@ -77,7 +79,7 @@ export function PetActions({ on }: { on: boolean }) {
   const temp = useVehicle((s) => s.cabinTemperature), battery = useVehicle((s) => s.batteryLevel)
   const shown = name.trim() || 'Thú cưng'
   return (
-    <Card title="Khi có thú cưng trong xe" sub="giống chế độ thú cưng của Tesla: màn hình báo người đi qua">
+    <Card title="Khi có thú cưng trong xe" sub="màn hình đỗ xe báo người đi qua rằng thú cưng đang nghỉ ngơi">
       <div className="vf-petrow">
         <div className={`vf-petscreen ${on ? 'on' : ''}`} data-testid="vf-petscreen" aria-label="Màn hình khi đỗ xe (mô phỏng)">
           <GPaw size={56} className="paw" />

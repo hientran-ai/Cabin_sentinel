@@ -1,0 +1,244 @@
+{
+  "version": "1.0",
+  "created_for": "CabinSentinel VinFast HMI demo scenarios",
+  "important_contract": {
+    "never_replace_inference_with_ground_truth": true,
+    "never_infer_temperature_or_vehicle_state_from_video": true,
+    "video_camera_live_are_mutually_exclusive": true,
+    "safety_rules_evaluate_fresh_sensor_data": true,
+    "do_not_claim_safe_from_negative_frame": true,
+    "labels": "DEMO footage and SIMULATED telemetry; feature flags separate from production"
+  },
+  "scenarios": [
+    {
+      "id": "DEMO-01",
+      "title_vi": "Cabin trống, có người bên ngoài",
+      "source_filename": "cabin trống, bên ngoài có người có thể nhận diện được.mp4",
+      "video": "videos/empty-cabin-outside-person.mp4",
+      "poster": "posters/empty-cabin-outside-person.jpg",
+      "duration_seconds": 10.08,
+      "resolution": "1280x720",
+      "primary_video_codec": "h264",
+      "tags": [
+        "outside-person-negative",
+        "roi-filter"
+      ],
+      "human_review_observations_NOT_model_outputs": [
+        "interior:no-visible-occupant",
+        "exterior:person-possible"
+      ],
+      "demo_telemetry_fixture_SIMULATED": {
+        "parked": true,
+        "ignition_on": false,
+        "radar_presence": null
+      },
+      "expected_behavior_for_test": "Do not include external person as cabin occupant; negative vision alone must not claim verified empty cabin.",
+      "validated_detection_outputs": null,
+      "needs_manual_ground_truth_annotations": true,
+      "simulation_notice": "DEMO VIDEO + SIMULATED VEHICLE/SENSOR CONTEXT; not real VF8 telemetry"
+    },
+    {
+      "id": "DEMO-02",
+      "title_vi": "Cabin trống",
+      "source_filename": "cabin trống.mp4",
+      "video": "videos/empty-cabin.mp4",
+      "poster": "posters/empty-cabin.jpg",
+      "duration_seconds": 10.01,
+      "resolution": "1280x720",
+      "primary_video_codec": "h264",
+      "tags": [
+        "empty-negative",
+        "child-seat-empty"
+      ],
+      "human_review_observations_NOT_model_outputs": [
+        "interior:no-visible-occupant",
+        "child-seat:possibly-empty"
+      ],
+      "demo_telemetry_fixture_SIMULATED": {
+        "parked": true,
+        "ignition_on": false,
+        "radar_presence": false
+      },
+      "expected_behavior_for_test": "If verified-empty evidence is absent, show unverified/UNKNOWN rather than fabricating SAFE.",
+      "validated_detection_outputs": null,
+      "needs_manual_ground_truth_annotations": true,
+      "simulation_notice": "DEMO VIDEO + SIMULATED VEHICLE/SENSOR CONTEXT; not real VF8 telemetry"
+    },
+    {
+      "id": "DEMO-03",
+      "title_vi": "Camera bị che một phần",
+      "source_filename": "cam bị che_.mp4",
+      "video": "videos/camera-occluded.mp4",
+      "poster": "posters/camera-occluded.jpg",
+      "duration_seconds": 10.01,
+      "resolution": "1280x720",
+      "primary_video_codec": "h264",
+      "tags": [
+        "occlusion",
+        "radar-fallback"
+      ],
+      "human_review_observations_NOT_model_outputs": [
+        "camera:partially-occluded"
+      ],
+      "demo_telemetry_fixture_SIMULATED": {
+        "parked": true,
+        "ignition_on": false,
+        "locked": true,
+        "cabin_temp_c": 40,
+        "radar_presence": true
+      },
+      "expected_behavior_for_test": "Visibility degraded; simulated fresh radar=positive. Preserve SUSPECTED presence, notify per deterministic rule and label simulated telemetry.",
+      "validated_detection_outputs": null,
+      "needs_manual_ground_truth_annotations": true,
+      "simulation_notice": "DEMO VIDEO + SIMULATED VEHICLE/SENSOR CONTEXT; not real VF8 telemetry"
+    },
+    {
+      "id": "DEMO-04",
+      "title_vi": "Ánh sáng yếu",
+      "source_filename": "môi trường thiếu sáng.mp4",
+      "video": "videos/low-light.mp4",
+      "poster": "posters/low-light.jpg",
+      "duration_seconds": 10.01,
+      "resolution": "1280x720",
+      "primary_video_codec": "h264",
+      "tags": [
+        "low-light",
+        "confidence-uncertain"
+      ],
+      "human_review_observations_NOT_model_outputs": [
+        "camera:low-light",
+        "interior:occupants-not-reliably-verifiable"
+      ],
+      "demo_telemetry_fixture_SIMULATED": {
+        "parked": true,
+        "radar_presence": null
+      },
+      "expected_behavior_for_test": "Do not infer cabin empty from low confidence; show uncertainty/degraded vision when image quality invalidates inference.",
+      "validated_detection_outputs": null,
+      "needs_manual_ground_truth_annotations": true,
+      "simulation_notice": "DEMO VIDEO + SIMULATED VEHICLE/SENSOR CONTEXT; not real VF8 telemetry"
+    },
+    {
+      "id": "DEMO-05",
+      "title_vi": "Có trẻ phía sau + môi trường nóng",
+      "source_filename": "trẻ bị bỏ quên + trời nóng.mp4",
+      "video": "videos/child-hot.mp4",
+      "poster": "posters/child-hot.jpg",
+      "duration_seconds": 10.01,
+      "resolution": "1280x720",
+      "primary_video_codec": "h264",
+      "tags": [
+        "child-risk",
+        "alert-escalation",
+        "baby-mode"
+      ],
+      "human_review_observations_NOT_model_outputs": [
+        "interior:visible-child-rear-seat"
+      ],
+      "demo_telemetry_fixture_SIMULATED": {
+        "parked": true,
+        "ignition_on": false,
+        "locked": true,
+        "driver_departed": true,
+        "cabin_temp_c": 39.8,
+        "radar_presence": true
+      },
+      "expected_behavior_for_test": "Child is visually present; temperature, vehicle lock and driver departure are DEMO SIMULATION, not inferred from pixels. Validate CRITICAL according to implemented rules.",
+      "validated_detection_outputs": null,
+      "needs_manual_ground_truth_annotations": true,
+      "simulation_notice": "DEMO VIDEO + SIMULATED VEHICLE/SENSOR CONTEXT; not real VF8 telemetry"
+    },
+    {
+      "id": "DEMO-06",
+      "title_vi": "Nhiều đối tượng trong cabin",
+      "source_filename": "trẻ em, thú cưng, đồ vật.mp4",
+      "video": "videos/mixed-occupants-pet-items.mp4",
+      "poster": "posters/mixed-occupants-pet-items.jpg",
+      "duration_seconds": 10.01,
+      "resolution": "1280x720",
+      "primary_video_codec": "h264",
+      "tags": [
+        "multi-entity",
+        "personalization",
+        "child-pet-object"
+      ],
+      "human_review_observations_NOT_model_outputs": [
+        "interior:visible-adult-driver",
+        "interior:visible-child-rear",
+        "interior:cat-rear",
+        "objects:backpack-front-passenger",
+        "objects:phone-center"
+      ],
+      "demo_telemetry_fixture_SIMULATED": {
+        "parked": true,
+        "ignition_on": true,
+        "cabin_temp_c": 25.5,
+        "radar_presence": true
+      },
+      "expected_behavior_for_test": "Check person/age-unknown, cat, bag and phone with actual model capabilities; age/identity are not guaranteed by generic person detection. Avoid unnecessary critical alert under supervised conditions.",
+      "validated_detection_outputs": null,
+      "needs_manual_ground_truth_annotations": true,
+      "simulation_notice": "DEMO VIDEO + SIMULATED VEHICLE/SENSOR CONTEXT; not real VF8 telemetry"
+    },
+    {
+      "id": "DEMO-07",
+      "title_vi": "Xe đang chạy với người trong cabin",
+      "source_filename": "xe chạy bình thường.mp4",
+      "video": "videos/normal-driving.mp4",
+      "poster": "posters/normal-driving.jpg",
+      "duration_seconds": 10.01,
+      "resolution": "1280x720",
+      "primary_video_codec": "h264",
+      "tags": [
+        "driving-context",
+        "occupancy",
+        "no-unattended-alert"
+      ],
+      "human_review_observations_NOT_model_outputs": [
+        "interior:visible-adult-driver",
+        "interior:visible-child-rear"
+      ],
+      "demo_telemetry_fixture_SIMULATED": {
+        "parked": false,
+        "ignition_on": true,
+        "vehicle_moving": true,
+        "cabin_temp_c": 25.0,
+        "radar_presence": true
+      },
+      "expected_behavior_for_test": "Vehicle-moving data is simulated. Driver with rear-seat child must not be treated as an unattended child merely from video.",
+      "validated_detection_outputs": null,
+      "needs_manual_ground_truth_annotations": true,
+      "simulation_notice": "DEMO VIDEO + SIMULATED VEHICLE/SENSOR CONTEXT; not real VF8 telemetry"
+    },
+    {
+      "id": "DEMO-08",
+      "title_vi": "Đồ vật để quên sau chuyến",
+      "source_filename": "đồ vật bị bỏ quên.mp4",
+      "video": "videos/forgotten-backpack.mp4",
+      "poster": "posters/forgotten-backpack.jpg",
+      "duration_seconds": 10.01,
+      "resolution": "1280x720",
+      "primary_video_codec": "h264",
+      "tags": [
+        "forgotten-item",
+        "departure-event",
+        "reminder"
+      ],
+      "human_review_observations_NOT_model_outputs": [
+        "interior:driver-exits",
+        "objects:backpack-remains-rear-seat"
+      ],
+      "demo_telemetry_fixture_SIMULATED": {
+        "parked": true,
+        "ignition_on": false,
+        "trip_ended": true,
+        "driver_departed": true,
+        "radar_presence": false
+      },
+      "expected_behavior_for_test": "Backpack remains after driver exits. Trigger one reminder only when trip-end and object persistence evidence are sufficient; no emergency alert.",
+      "validated_detection_outputs": null,
+      "needs_manual_ground_truth_annotations": true,
+      "simulation_notice": "DEMO VIDEO + SIMULATED VEHICLE/SENSOR CONTEXT; not real VF8 telemetry"
+    }
+  ]
+}

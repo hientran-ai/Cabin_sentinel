@@ -1,0 +1,179 @@
+diff --git a/services/api/src/cabinsentinel/demo_api.py b/services/api/src/cabinsentinel/demo_api.py
+index be03277..cd634c6 100644
+--- a/services/api/src/cabinsentinel/demo_api.py
++++ b/services/api/src/cabinsentinel/demo_api.py
+@@ -223,6 +223,6 @@ def acknowledge_session(session_id: str, payload: AcknowledgeInput, request: Req
+ def resolve_session(session_id: str, payload: ResolveInput, request: Request, service: CabinService = Depends(get_cabin_service)):
+     vehicle_id = authorize_session(request, service, session_id)
+     try:
+-        return service.resolve(vehicle_id, payload.incident_id, payload.revision)
++        return service.resolve(vehicle_id, payload.incident_id, payload.revision, cabin_checked=payload.cabin_checked)
+     except ValueError as exc:
+         raise HTTPException(status_code=409, detail=str(exc)) from exc
+diff --git a/services/api/src/cabinsentinel/platform_api.py b/services/api/src/cabinsentinel/platform_api.py
+index 253bb8e..7e69f68 100644
+--- a/services/api/src/cabinsentinel/platform_api.py
++++ b/services/api/src/cabinsentinel/platform_api.py
+@@ -713,7 +713,7 @@ def resolve_incident(vehicle_id: str, incident_id: str, payload: ResolveInput, r
+     _incident_actor(store, grant, vehicle_id, manage=True)
+     if store.incident_ops(incident_id, vehicle_id)["keep_active"]:
+         raise HTTPException(status_code=409, detail="Incident is held active; release the hold first")
+-    guard(lambda: fleet.service.resolve(vehicle_id, incident_id, payload.revision))
++    guard(lambda: fleet.service.resolve(vehicle_id, incident_id, payload.revision, cabin_checked=payload.cabin_checked))
+     store.update_incident_ops(incident_id, vehicle_id, store.incident_ops(incident_id, vehicle_id)["version"],
+                               actor=grant.subject, ops_status="RESOLVED")
+     audit(request, store, grant, "incident.resolve", incident_id, vehicle=vehicle_id, revision=payload.revision)
+diff --git a/services/api/src/cabinsentinel/rules.py b/services/api/src/cabinsentinel/rules.py
+index c8b54bd..14938ea 100644
+--- a/services/api/src/cabinsentinel/rules.py
++++ b/services/api/src/cabinsentinel/rules.py
+@@ -128,7 +128,9 @@ def derive_occupancy(sensor: dict | None, vision: dict | None, now: datetime) ->
+         return _occupancy("SUSPECTED", "RADAR_PRESENCE")
+     if not sensor_fresh or not vision_fresh:
+         return _occupancy("UNKNOWN", "SOURCE_UNAVAILABLE")
+-    return _occupancy("ABSENT", "NO_OCCUPANT_EVIDENCE")
++    # A negative detector frame is not proof that the cabin is empty. In
++    # particular, the current model can miss rear-facing or occluded children.
++    return _occupancy("UNKNOWN", "NEGATIVE_VISION_INCONCLUSIVE")
+ 
+ 
+ def _occupancy(state: str, reason: str) -> dict:
+@@ -153,24 +155,32 @@ def has_baby_seat_evidence(vision: dict | None) -> bool:
+ 
+ 
+ def _decide_risk(sensor: dict | None, vision: dict | None, now: datetime, occupancy: dict) -> dict:
+-    if vision is not None and (now - datetime.fromisoformat(vision["timestamp"])).total_seconds() <= 3:
+-        if vision["camera_status"] != "OK":
+-            return _result("ERROR", "CAMERA_UNAVAILABLE", "Camera cannot verify cabin occupancy")
++    vision_age = (
++        (now - datetime.fromisoformat(vision["timestamp"])).total_seconds()
++        if vision is not None else None
++    )
++    camera_unavailable = (
++        vision is not None and -2 <= vision_age <= 3
++        and vision["camera_status"] != "OK"
++    )
+ 
+     if sensor is None:
++        if camera_unavailable:
++            return _camera_unavailable(False)
+         return _result("ERROR", "SENSOR_UNAVAILABLE", "Sensor data unavailable")
+     sensor_age = (now - datetime.fromisoformat(sensor["timestamp"])).total_seconds()
+     if sensor_age > 5 or sensor_age < -2:
++        if camera_unavailable:
++            return _camera_unavailable(False)
+         return _result("ERROR", "SENSOR_STALE", "Sensor data is stale or in the future")
+ 
+     radar = sensor["radar_presence"]
+     if vision is None:
+         return _radar_or_error(radar)
+-    vision_age = (now - datetime.fromisoformat(vision["timestamp"])).total_seconds()
+     if vision_age > 3 or vision_age < -2:
+         return _radar_or_error(radar)
+     if vision["camera_status"] != "OK":
+-        return _result("ERROR", "CAMERA_UNAVAILABLE", "Camera cannot verify cabin occupancy")
++        return _camera_unavailable(radar)
+ 
+     labels = {
+         obj["class_name"].strip().lower().replace("_", " ")
+@@ -229,6 +239,11 @@ def _decide_risk(sensor: dict | None, vision: dict | None, now: datetime, occupa
+         return _result("WARNING", "SUSPECTED_OCCUPANT", "Detection requires occupant review", ["send_notification"])
+     if labels & ITEMS and sensor["engine_status"] == "OFF":
+         return _result("NOTICE", "FORGOTTEN_ITEM", "Possible item left in vehicle", ["send_notification"])
++    if occupancy["occupancy_state"] == "UNKNOWN":
++        return _result(
++            "ERROR", "OCCUPANCY_UNVERIFIED",
++            "Vision did not confirm an occupant; cabin emptiness cannot be verified",
++        )
+     return _result("SAFE", "EMPTY_CABIN", "No occupant or radar presence detected")
+ 
+ 
+@@ -238,5 +253,15 @@ def _radar_or_error(radar: bool) -> dict:
+     return _result("ERROR", "VISION_UNAVAILABLE", "Vision data unavailable or stale")
+ 
+ 
++def _camera_unavailable(radar: bool) -> dict:
++    if radar:
++        return _result(
++            "ERROR", "CAMERA_UNAVAILABLE",
++            "Camera cannot verify cabin occupancy; radar reports possible presence",
++            ["send_notification"],
++        )
++    return _result("ERROR", "CAMERA_UNAVAILABLE", "Camera cannot verify cabin occupancy")
++
++
+ def _result(risk: str, rule: str, reason: str, actions: list[str] | None = None) -> dict:
+     return {"risk_level": risk, "rule_id": rule, "reason": reason, "actions": actions or []}
+diff --git a/services/api/src/cabinsentinel/service.py b/services/api/src/cabinsentinel/service.py
+index f70a2b5..ebb0fe6 100644
+--- a/services/api/src/cabinsentinel/service.py
++++ b/services/api/src/cabinsentinel/service.py
+@@ -249,7 +249,7 @@ class CabinService:
+                 "incident": incident,
+                 "alert": alert,
+                 "data_quality": quality,
+-                "ruleset_version": "demo-alerts-2026-09-30",
++                "ruleset_version": "demo-alerts-2026-10-17",
+                 "risk_route": decision["route"],
+                 "unlock_request": unlock_request,
+                 "sensor_snapshot": sensor_data,
+@@ -273,8 +273,19 @@ class CabinService:
+                 and has_baby_seat_evidence(vision_data)
+                 and not has_baby_seat_evidence(old_state)
+             )
++            camera_radar_first_notice = (
++                decision["rule_id"] == "CAMERA_UNAVAILABLE"
++                and "send_notification" in decision["actions"]
++                and decision["occupancy_state"] == "SUSPECTED"
++                and (
++                    old_state is None
++                    or old_state.get("rule_id") != "CAMERA_UNAVAILABLE"
++                    or old_state.get("occupancy_state") != "SUSPECTED"
++                )
++            )
+             new_intents = decision["actions"] if (
+                 new_risk != previous or deadline_escalation or baby_seat_first_notice
++                or camera_radar_first_notice
+             ) else []
+             if opened and not new_intents:
+                 new_intents = ["send_notification"]
+@@ -373,8 +384,8 @@ class CabinService:
+                 self._event(vehicle_id, "acknowledgment", {"revision": state["revision"], **incident})
+             return state
+ 
+-    def resolve(self, vehicle_id: str, incident_id: str, revision: int) -> dict:
+-        """Record a separate cabin check against the exact committed revision.
++    def resolve(self, vehicle_id: str, incident_id: str, revision: int, *, cabin_checked: bool = False) -> dict:
++        """Record an authorized human cabin check against the exact committed revision.
+ 
+         Endpoint authorization belongs to the API; this never calls an actuator.
+         """
+@@ -389,17 +400,21 @@ class CabinService:
+                 return state
+             if incident["status"] != "OPEN" or state["revision"] != revision:
+                 raise ValueError("State changed; inspect the current revision")
++            if cabin_checked is not True:
++                raise ValueError("Explicit cabin check is required to resolve this incident")
+             now = self.clock()
+             sensor = json.loads(row["sensor_json"]) if row["sensor_json"] else None
+             vision = json.loads(row["vision_json"]) if row["vision_json"] else None
+             decision = safety_graph.invoke({"sensor": sensor, "vision": vision, "now": now})
+-            if (
+-                data_quality(sensor, vision, now)["status"] != "CURRENT"
+-                or decision["occupancy_state"] != "ABSENT"
+-                or decision["evidence_conflicts"]
+-                or state.get("alert", {}).get("temporal_status") == "UNKNOWN_CLOCK_REGRESSION"
+-            ):
+-                raise ValueError("Fresh, consistent empty-cabin evidence is required")
++            quality = data_quality(sensor, vision, now)
++            if quality["status"] != "CURRENT":
++                raise ValueError("Current sensor and camera evidence is required before resolution")
++            if decision["occupancy_state"] in {"PRESENT", "SUSPECTED"}:
++                raise ValueError("Presence is still detected; inspect the cabin before resolving")
++            if decision["evidence_conflicts"]:
++                raise ValueError("Sensor evidence conflicts; refresh and inspect the cabin before resolving")
++            if state.get("alert", {}).get("temporal_status") == "UNKNOWN_CLOCK_REGRESSION":
++                raise ValueError("System time changed; refresh the current incident before resolving")
+             incident.update(status="RESOLVED", resolved_at=now.isoformat(), resolution_revision=revision,
+                             resolution="OPERATOR_CABIN_CHECK")
+             prior_risk = state["risk_level"]

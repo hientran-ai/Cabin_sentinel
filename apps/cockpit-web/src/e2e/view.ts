@@ -3,7 +3,7 @@
 import type { NotificationItem, RiskLevel, SensorInput, ServerState } from './types'
 
 export type Tone = 'ok' | 'info' | 'warning' | 'critical' | 'unknown'
-export type ViewKind = 'no-session' | 'waiting' | 'current' | 'stale' | 'last-known'
+export type ViewKind = 'no-session' | 'waiting' | 'current' | 'stale' | 'last-known' | 'vehicle-offline'
 
 export interface View {
   kind: ViewKind
@@ -32,10 +32,12 @@ export const RULE_VI: Record<string, string> = {
   EMPTY_CABIN: 'Không phát hiện người/thú và radar không báo gì', CAMERA_UNAVAILABLE: 'Camera không thể xác minh cabin',
   SENSOR_UNAVAILABLE: 'Chưa có dữ liệu cảm biến', SENSOR_STALE: 'Dữ liệu cảm biến đã cũ', VISION_UNAVAILABLE: 'Chưa có hình ảnh mới còn hiệu lực',
   UNRESOLVED_OCCUPANT: 'Sự cố trước chưa đóng: cần người kiểm tra cabin',
+  OCCUPANCY_UNVERIFIED: 'Chưa xác minh được cabin trống; model có thể bỏ sót người bị che hoặc quay lưng',
 }
-export const toneOf = (risk: RiskLevel | null | undefined): Tone => (risk ? TONE[risk] : 'unknown')
+export const toneOf = (risk: RiskLevel | null | undefined): Tone => (risk ? TONE[risk] ?? 'unknown' : 'unknown')
 
-export function deriveView(i: { hasSession: boolean; state: ServerState | null; connection: 'ok' | 'lost' }): View {
+/** `link` = the simulated VEHICLE link (backend). `connection` = browser to backend. Different causes, different wording. */
+export function deriveView(i: { hasSession: boolean; state: ServerState | null; connection: 'ok' | 'lost'; link?: string }): View {
   const { state } = i
   if (!i.hasSession) return { kind: 'no-session', tone: 'unknown', headline: 'Chưa có phiên', reason: 'Chưa tạo phiên demo.', caution: null, current: false, revision: null }
   if (!state) return { kind: 'waiting', tone: 'unknown', headline: 'Chưa có dữ liệu', reason: i.connection === 'lost' ? 'Không kết nối được máy chủ.' : 'Chưa có quan sát nào được chấm điểm.', caution: null, current: false, revision: null }
@@ -43,6 +45,10 @@ export function deriveView(i: { hasSession: boolean; state: ServerState | null; 
     ? state.rule_id === 'EMPTY_CABIN' ? 'Không phát hiện người/thú không có nghĩa là xe trống. Model có thể bỏ sót.' : null
     : null
   const base = { tone: toneOf(state.risk_level), headline: HEADLINE[state.risk_level], reason: RULE_VI[state.rule_id] ?? state.reason, caution, revision: state.revision }
+  if (i.connection !== 'lost' && (i.link === 'RECONNECTING' || i.link === 'DISCONNECTED')) {
+    return { ...base, kind: 'vehicle-offline', current: false, tone: 'unknown', headline: 'Chưa thể xác minh',
+      reason: 'Mất kết nối với xe. CabinSentinel không nhận được dữ liệu mới và hiện không thể xác minh tình trạng khoang xe.' }
+  }
   if (i.connection === 'lost') return { ...base, kind: 'last-known', current: false, tone: 'unknown', headline: `Dữ liệu cũ · ${HEADLINE[state.risk_level]}` }
   if (!state.decision_current) return { ...base, kind: 'stale', current: false }
   return { ...base, kind: 'current', current: true }
@@ -68,7 +74,7 @@ export interface VehicleForSensor {
   gear: 'P' | 'R' | 'N' | 'D'; speedKph: number; locked: boolean; climateEnabled: boolean; cabinTemperature: number
   batteryLevel: number; windows: Record<string, 'closed' | 'vent' | 'open'>
 }
-export interface SimInput { engineOn: boolean; driverPresent: boolean; radar: boolean; mode: SensorInput['operation_mode']; hvacFault: boolean }
+export interface SimInput { engineOn: boolean; driverPresent: boolean; radar: boolean; mode: SensorInput['operation_mode']; hvacFault: boolean; telemetryEnabled?: boolean; tripEnded?: boolean }
 
 /** Telemetry for the backend. Only vehicle facts; no risk, occupant or child field exists in this shape. */
 export function buildSensor(v: VehicleForSensor, sim: SimInput): SensorInput {
@@ -81,10 +87,16 @@ export function buildSensor(v: VehicleForSensor, sim: SimInput): SensorInput {
     hvac_status: sim.hvacFault ? 'FAULT' : v.climateEnabled ? 'ACTIVE' : 'INACTIVE',
     window_status: states.includes('open') ? 'OPEN' : states.includes('vent') ? 'VENTED' : 'CLOSED',
     powertrain_type: 'EV', operation_mode: sim.mode, battery_soc_pct: Math.round(v.batteryLevel),
+    ...(sim.tripEnded !== undefined ? { trip_ended: sim.tripEnded } : {}),
   }
 }
 
 const REASONS: [RegExp, string][] = [
+  [/presence is still detected/i, 'Vẫn phát hiện dấu hiệu hiện diện. Kiểm tra và đưa người/thú ra khỏi xe, cập nhật hình rồi thử lại.'],
+  [/current sensor and camera/i, 'Cảm biến hoặc camera chưa xác minh được. Cập nhật dữ liệu mới trước khi đóng sự cố.'],
+  [/sensor evidence conflicts/i, 'Các nguồn dữ liệu chưa thống nhất. Làm mới dữ liệu và kiểm tra cabin.'],
+  [/explicit cabin check/i, 'Bạn cần xác nhận đã trực tiếp kiểm tra cabin.'],
+  [/system time changed/i, 'Thời gian hệ thống đã thay đổi. Làm mới sự cố rồi kiểm tra lại.'],
   [/empty-cabin evidence/i, 'Chưa xác nhận được xe trống: cần quan sát mới, còn hiệu lực và không còn người/thú.'],
   [/state changed/i, 'Trạng thái đã thay đổi. Mở lại chi tiết sự cố rồi thử lại.'],
   [/not current/i, 'Sự cố này không còn là sự cố hiện tại.'],

@@ -228,15 +228,17 @@ def test_person_at_threshold_is_confirmed():
     assert state["risk_level"] == "CRITICAL"
 
 
-def test_fresh_empty_frame_and_negative_radar_are_absent():
+def test_hot_locked_empty_frame_is_unknown_not_safe_or_confirmed_child():
     service = _service()
     state = service.ingest_vision(VisionPayload(
         vehicle_id="CAR_1", timestamp=NOW, frame_id="empty-1",
         camera_status="OK", detected_objects=[],
     ))
-    assert state["occupancy_state"] == "ABSENT"
-    assert state["occupancy_reason_code"] == "NO_OCCUPANT_EVIDENCE"
-    assert state["risk_level"] == "SAFE"
+    assert state["occupancy_state"] == "UNKNOWN"
+    assert state["occupancy_reason_code"] == "NEGATIVE_VISION_INCONCLUSIVE"
+    assert state["risk_level"] == "ERROR"
+    assert state["rule_id"] == "OCCUPANCY_UNVERIFIED"
+    assert state["actions"] == []
 
 
 def test_unknown_label_with_known_item_cannot_become_notice_or_safe():
@@ -262,6 +264,41 @@ def test_stale_vision_is_unknown_and_error_with_negative_radar():
     assert state["occupancy_state"] == "UNKNOWN"
     assert state["occupancy_reason_code"] == "SOURCE_UNAVAILABLE"
     assert state["risk_level"] == "ERROR"
+
+
+def test_positive_radar_after_camera_block_sends_one_degraded_monitoring_alert():
+    clock = [NOW]
+    service = CabinService(":memory:", clock=lambda: clock[0])
+    service.ingest_sensor(SensorPayload(
+        vehicle_id="CAR_1", timestamp=NOW, sequence=1,
+        temperature=39, engine_status="OFF", doors_locked=True,
+        radar_presence=False,
+    ))
+    first = service.ingest_vision(VisionPayload(
+        vehicle_id="CAR_1", timestamp=NOW, frame_id="blocked-1",
+        camera_status="BLOCKED", detected_objects=[],
+    ))
+    assert first["risk_level"] == "ERROR"
+    assert first["occupancy_state"] == "UNKNOWN"
+
+    clock[0] = NOW + timedelta(seconds=1)
+    state = service.ingest_sensor(SensorPayload(
+        vehicle_id="CAR_1", timestamp=clock[0], sequence=2,
+        temperature=39, engine_status="OFF", doors_locked=True,
+        radar_presence=True,
+    ))
+    assert state["risk_level"] == "ERROR"
+    assert state["rule_id"] == "CAMERA_UNAVAILABLE"
+    assert state["occupancy_state"] == "SUSPECTED"
+    assert state["occupancy_reason_code"] == "RADAR_PRESENCE"
+    assert state["radar_presence"] is True
+    assert [item["tool"] for item in state["action_results"]] == ["send_notification"]
+    assert state["action_results"][0]["status"] == "simulated"
+    assert service.ingest_vision(VisionPayload(
+        vehicle_id="CAR_1", timestamp=clock[0], frame_id="blocked-2",
+        camera_status="BLOCKED", detected_objects=[],
+    ))["action_results"] == []
+    assert len(service.events("CAR_1", event_type="action_result")) == 1
 
 
 def test_committed_occupancy_is_read_only_and_survives_restart():

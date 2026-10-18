@@ -1,0 +1,8 @@
+.xb { position: fixed; z-index: 2000; top: max(10px, env(safe-area-inset-top)); left: max(10px, env(safe-area-inset-left)); display: flex; gap: 8px; flex-wrap: wrap; font-family: "Mulish", system-ui, sans-serif; }
+.xb-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 12px; background: rgba(4, 14, 32, .92); color: #fff; border: 1px solid rgba(190, 225, 255, .5); font-size: 15px; font-weight: 700; text-decoration: none; cursor: pointer; box-shadow: 0 6px 20px rgba(0, 6, 20, .45); }
+.xb-btn:hover { background: rgba(14, 40, 86, .95); }
+.xb-btn:focus-visible { outline: 3px solid #56AEFF; outline-offset: 2px; }
+.xb-btn kbd { font: 700 11px/1 system-ui, sans-serif; padding: 3px 6px; border-radius: 5px; background: rgba(255, 255, 255, .16); }
+.xb-cam { border-color: #ff8a92; }
+.xb-dot { width: 9px; height: 9px; border-radius: 50%; background: #ff4b57; box-shadow: 0 0 0 3px rgba(255, 75, 87, .3); }
+@media (max-width: 640px) { .xb-btn kbd { display: none; } }

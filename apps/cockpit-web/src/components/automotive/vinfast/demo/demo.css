@@ -69,3 +69,44 @@ html.vd-page, html.vd-page body { background: var(--bg-primary, #06152F); }
 .vt-charts { display: grid; gap: 8px; min-width: 0; } .vt-chart { margin: 0; min-width: 0; } .vt-chart figcaption { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; font-size: 15px; line-height: 20px; margin: 4px 0; } .vt-chart figcaption span { font-size: 13px; color: var(--text-muted); } .vt-chart svg { display: block; max-width: 100%; border-radius: 8px; background: rgba(180, 210, 255, .04); touch-action: none; }
 .vt-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 8px; padding: 0 0 0 40px; font-size: 13px; line-height: 20px; color: var(--text-secondary); } .vt-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
 .vt-hover { margin: 0; min-height: 24px; font-size: 14px; line-height: 24px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+
+/* first-visit guide (inline, not a popup) */
+.vd-onboard { display: grid; gap: 10px; padding: 12px 16px; border-radius: 16px; background: linear-gradient(180deg, rgba(35, 117, 232, .22), rgba(35, 117, 232, .08)); border: 1px solid var(--border-active, rgba(86, 174, 255, .6)); }
+.vd-onboard .head { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; } .vd-onboard .head .grow { flex: 1; } .vd-onboard h2 { margin: 0; font-size: 20px; line-height: 28px; }
+.vd-onboard ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.vd-onboard li { display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; background: rgba(2, 10, 24, .35); border: 1px solid var(--border-subtle); }
+.vd-onboard li b { font-size: 16px; line-height: 22px; } .vd-onboard li span { font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+@media (max-width: 720px) { .vd-onboard ol { grid-template-columns: 1fr; } .vd-onboard .head .vd-btn { flex: 1 1 140px; } }
+
+/* camera next to the scenarios */
+.vd-cam-note { font-size: 13px; line-height: 18px; color: var(--text-secondary); max-width: 150px; }
+
+/* phone-sized shortcut to the cabin dialog */
+.vd-shortcut { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; text-align: left; padding: 14px 16px; border-radius: 16px; min-height: 64px; background: var(--surface-primary, #102D66); border: 1px solid var(--border-active, rgba(86, 174, 255, .6)); }
+.vd-shortcut .l { display: inline-flex; align-items: center; gap: 10px; font-size: 18px; } .vd-shortcut .r { display: inline-flex; gap: 6px; } .vd-shortcut small { grid-column: 1 / -1; color: var(--text-secondary); font-size: 13px; }
+.vd-shortcut .pill { font-style: normal; font-size: 12px; font-weight: 800; letter-spacing: .04em; padding: 3px 8px; border-radius: 7px; background: rgba(180, 210, 255, .16); }
+.vd-shortcut .pill.s-SAFE { background: #31C995; color: #032a1d; } .vd-shortcut .pill.s-WARNING, .vd-shortcut .pill.s-NOTICE { background: #F5B942; color: #2e2000; } .vd-shortcut .pill.s-CRITICAL { background: #D93A44; color: #fff; }
+.vd-shortcut .pill.s-UNKNOWN { background: transparent; border: 1px dashed rgba(255, 255, 255, .6); }
+
+@media (max-width: 720px) {
+  .vd { padding: 10px 12px 20px; }
+  .vd-head { padding: 0; gap: 10px; } .vd-head .ttl { flex: 1 1 100%; } .vd-head .ttl h1 { font-size: 19px; line-height: 26px; } .vd-head .ttl p { font-size: 13px; }
+  .vd-head .vd-sess { display: none; } .vd-head .vd-btn { flex: 1 1 140px; }
+  .vd-strip { padding: 10px; } .vd-sc { flex: 1 1 100%; min-height: 56px; } .vd-strip > .vd-btn, .vd-cam { flex: 1 1 100%; } .vd-cam .vd-btn { flex: 1; min-height: 56px; } .vd-cam-note { max-width: none; flex: 1; }
+  .vd-fold-head { flex-wrap: wrap; padding: 8px 14px; } .vd-fold-head .s { flex: 1 1 100%; white-space: normal; order: 3; }
+  .vd-grid3 { grid-template-columns: minmax(0, 1fr); } .vd-field, .vd-block dl { grid-template-columns: minmax(0, 1fr); }
+  .vd-consent { width: calc(100vw - 48px); }
+}
+
+/* Scenario evidence lives outside the scaled vehicle artboard. */
+.vd-interaction { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; padding: 16px 24px; background: #153452; border: 1px solid #668bb8; border-radius: 16px; margin: 12px 24px; color: white; }
+.vd-interaction > div { flex: 1; min-width: 200px; }.vd-interaction p { margin: 4px 0 0; }.vd-interaction.critical { background: #861c2b; border: 2px solid #ffadb6; }.vd-interaction.warning { background: #53380f; border-color: #ffd28a; }
+.vd-interaction .vd-btn { min-height: 48px; border: 1px solid #b3ceef; background: #142c4b; color: #fff; }.vd-full-alert { position: fixed; bottom: 8px; left: 8px; right: 8px; z-index: 10000; }
+.vd-pipeline { margin: 12px 24px; padding: 16px; border: 1px solid #385c88; background: #10243f; border-radius: 16px; display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); color: #f2f7ff; }
+.vd-pipeline > div { display: flex; flex-direction: column; gap: 6px; overflow-wrap: anywhere; }.vd-pipeline b { font-size: 12px; color: #90c7ff; }.vd-pipeline small { color: #b8cce7; }.vd-pipeline button { min-height: 48px; }
+.vd-mobile-note { padding: 16px; background: #122741; border-radius: 12px; color: #d6e6fa; }
+@media (max-width: 900px) { .vd-pipeline { grid-template-columns: 1fr; margin: 12px 16px; }.vd-interaction { margin: 12px 16px; padding: 16px; } }
+
+.vd-linkbanner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.vd-linkbanner p { margin: 4px 0 0; } .vd-linkbanner small { font-weight: 600; opacity: .85; }
+.vd-linkactions { display: flex; flex-wrap: wrap; gap: 8px; }
