@@ -88,27 +88,30 @@ function Stat({ k, v, sub, tone }: { k: string; v: ReactNode; sub?: string; tone
 }
 
 export function VinfastCarMode() {
-  const { selected, petOn: petSim, washOn, adultMusic, childMusic, set } = useCarUi()
+  const { selected, petOn: petSim, washOn, campSim, babySim, adultMusic, childMusic, set } = useCarUi()
   const v = useVehicle(), ui = useUi(), care = useE2e((s) => s.state?.care), run = useE2e((s) => s.care), view = useView(), counts = useFrameCounts()
   const level = levelOf(v.climate.enabled, v.climate.fanSpeed)
   const setLevel = (n: number) => v.setClimate(n === 0 ? { enabled: false } : { enabled: true, fanSpeed: n, autoMode: false })
-  const campOn = care?.status === 'ACTIVE' && care.profile === 'ADULT', babyOn = care?.status === 'ACTIVE' && care.profile === 'CHILD'
+  const campBackend = care?.status === 'ACTIVE' && care.profile === 'ADULT', babyBackend = care?.status === 'ACTIVE' && care.profile === 'CHILD'
+  // Like the pet mode: the screen can always be switched on as a simulation; the backend Cabin Care command is sent only while it allows it (an open incident)
+  const campOn = campBackend || campSim, babyOn = babyBackend || babySim
   const petBackend = care?.status === 'ACTIVE' && care.profile === 'PET', petOn = petSim || petBackend
   const blockers = washBlockers({ windows: v.windows, doors: v.doors as Record<string, boolean>, chargingPortOpen: v.chargingPortOpen, frontTrunkOpen: v.frontTrunkOpen, rearTrunkOpen: v.rearTrunkOpen })
   const active: Record<CarMode, boolean> = { camping: campOn, baby: babyOn, pet: petOn, wash: washOn }
-  const badge: Record<CarMode, string> = { camping: campOn ? 'Đang bật' : 'Tắt', baby: babyOn ? 'Đang dỗ bé' : 'Chỉ giám sát', pet: petOn ? 'Đang bật' : 'Tắt', wash: washOn ? 'Đang bật' : 'Tắt' }
+  const badge: Record<CarMode, string> = { camping: campOn ? 'Đang bật' : 'Tắt', baby: babyOn ? 'Đang bật' : 'Tắt', pet: petOn ? 'Đang bật' : 'Tắt', wash: washOn ? 'Đang bật' : 'Tắt' }
+  const toggleBaby = (on: boolean) => { unlock(); set({ babySim: on }); if (on && care?.can_start && care.status !== 'ACTIVE') void run((s) => api.careStart(s, { profile: 'CHILD', music: childMusic === 'off' ? undefined : childMusic }, 'COCKPIT'), 'Đã bật dỗ bé (mô phỏng). Hãy quay lại xe.'); if (!on && babyBackend) void run((s) => api.careStop(s, 'COCKPIT'), 'Đã tắt dỗ bé. Sự cố vẫn mở.') }
   const info = INFO[selected], verified = view.kind === 'current'
   const temp = `${v.cabinTemperature.toFixed(1)}°C`
   let control: ReactNode = null, stats: ReactNode = null, extra: ReactNode = null
   if (selected === 'camping') {
-    control = <Switch checked={campOn} label="Chế độ cắm trại" disabled={!campOn && !care?.can_start} onChange={(on) => { unlock(); void run((s) => (on ? api.careStart(s, { profile: 'ADULT', music: adultMusic === 'off' ? undefined : adultMusic }, 'COCKPIT') : api.careStop(s, 'COCKPIT')), on ? 'Đã bật chế độ cắm trại.' : 'Đã tắt chế độ cắm trại.').then((o) => { if (on && o.ok && ['music_app', 'podcast_app'].includes(adultMusic)) ui.setOverlay('media') }) }} />
-    stats = <><Stat k="Nhiệt độ cabin" v={temp} /><Stat k="Quạt" v={LEVEL_TEXT(level)} /><Stat k="Trạng thái" v={campOn ? 'Đang chạy' : care?.can_start ? 'Sẵn sàng' : 'Chưa thể bật'} tone={campOn ? 'ok' : care?.can_start ? undefined : 'muted'} sub={campOn ? 'Cabin Care · mô phỏng' : care?.can_start ? undefined : 'máy chủ chưa cho phép lúc này'} /></>
+    control = <Switch checked={campOn} label="Chế độ cắm trại" onChange={(on) => { unlock(); set({ campSim: on }); if (on && care?.can_start && care.status !== 'ACTIVE') void run((s) => api.careStart(s, { profile: 'ADULT', music: adultMusic === 'off' ? undefined : adultMusic }, 'COCKPIT'), 'Đã bật chế độ cắm trại.').then((o) => { if (o.ok && ['music_app', 'podcast_app'].includes(adultMusic)) ui.setOverlay('media') }); if (!on && campBackend) void run((s) => api.careStop(s, 'COCKPIT'), 'Đã tắt chế độ cắm trại.') }} />
+    stats = <><Stat k="Nhiệt độ cabin" v={temp} /><Stat k="Quạt" v={LEVEL_TEXT(level)} /><Stat k="Trạng thái" v={campOn ? 'Đang chạy' : 'Sẵn sàng'} tone={campOn ? 'ok' : undefined} sub={campBackend ? 'Cabin Care · mô phỏng' : campOn ? 'giao diện mô phỏng, chưa có sự cố nên không gửi lệnh' : undefined} /></>
     extra = <><AdultActions /><div className="vf-mfan"><span>Mức quạt (mô phỏng)</span><Seg value={level} options={LEVELS} onChange={setLevel} label="Mức quạt" /></div></>
   }
   if (selected === 'baby') {
-    control = <button type="button" className="vf-btn vf-press" onClick={() => ui.setOverlay('cabin')}>Mở giám sát cabin</button>
+    control = <><Switch checked={babyOn} label="Chế độ bé" onChange={toggleBaby} /><button type="button" className="vf-btn vf-press" onClick={() => ui.setOverlay('cabin')}>Mở giám sát cabin</button></>
     stats = <><Stat k="Giám sát cabin" v={verified ? view.headline : 'Chưa xác minh'} tone={verified ? undefined : 'warn'} sub={verified ? undefined : 'dữ liệu cũ, mất kết nối hoặc chưa có khung'} /><Stat k="Người trong khung" v={n0(counts.person)} sub={counts.status === 'CURRENT' ? 'khung gần nhất' : 'chưa có số hiện tại'} /><Stat k="Nhãn trẻ em" v={counts.child == null ? 'Chưa hỗ trợ' : n0(counts.child)} tone={counts.child == null ? 'muted' : undefined} sub={counts.child == null ? 'bộ phân loại tuổi chưa bật' : 'từ bộ phân loại tuổi'} /></>
-    extra = <><ChildActions on={babyOn} canStart={!!care?.can_start} onToggle={(on) => { unlock(); void run((s) => (on ? api.careStart(s, { profile: 'CHILD', music: childMusic === 'off' ? undefined : childMusic }, 'COCKPIT') : api.careStop(s, 'COCKPIT')), on ? 'Đã bật dỗ bé (mô phỏng). Hãy quay lại xe.' : 'Đã tắt dỗ bé. Sự cố vẫn mở.') }} /><p className="vf-note">Khai báo trẻ em được thực hiện trên điện thoại chủ xe. Đó là khai báo của người dùng, không phải kết quả nhận diện tuổi từ camera. Người trong khung không có nghĩa là trẻ em.</p></>
+    extra = <><ChildActions on={babyOn} canStart onToggle={toggleBaby} /><p className="vf-note">Khai báo trẻ em được thực hiện trên điện thoại chủ xe. Đó là khai báo của người dùng, không phải kết quả nhận diện tuổi từ camera. Người trong khung không có nghĩa là trẻ em.</p></>
   }
   if (selected === 'pet') {
     control = <Switch checked={petOn} label="Chế độ thú cưng" disabled={!petOn && v.batteryLevel < 20} onChange={(on) => { set({ petOn: on }); if (on && care?.can_start && care.status !== 'ACTIVE') void run((s) => api.careStart(s, { profile: 'PET' }, 'COCKPIT'), 'Đã bật chế độ thú cưng (mô phỏng).'); if (!on && petBackend) void run((s) => api.careStop(s, 'COCKPIT'), 'Đã tắt chế độ thú cưng.') }} />
@@ -116,8 +119,12 @@ export function VinfastCarMode() {
     extra = <><PetActions on={petOn} /><div className="vf-mfan"><span>Mức quạt (mô phỏng)</span><Seg value={level} options={LEVELS} onChange={setLevel} label="Mức quạt" /></div></>
   }
   if (selected === 'wash') {
-    control = <Switch checked={washOn && !blockers.length} label="Chế độ rửa xe" disabled={!washOn && !!blockers.length} onChange={(on) => { if (!on || !blockers.length) set({ washOn: on }) }} />
-    stats = <><Stat k="Cửa và cửa sổ" v={blockers.length ? `${blockers.length} chưa đóng` : 'Đã đóng kín'} tone={blockers.length ? 'warn' : 'ok'} sub={blockers.length ? blockers.join(', ') : undefined} /><Stat k="Chế độ" v={washOn ? 'Đang bật' : 'Tắt'} /></>
+    // Switching on closes whatever is open first (simulated), so the mode can always be turned on from here
+    control = <Switch checked={washOn} label="Chế độ rửa xe" onChange={(on) => {
+      if (on && blockers.length) v.set({ doors: Object.fromEntries(Object.keys(v.doors).map((k) => [k, false])) as typeof v.doors, windows: Object.fromEntries(Object.keys(v.windows).map((k) => [k, 'closed'])) as typeof v.windows, frontTrunkOpen: false, rearTrunkOpen: false, chargingPortOpen: false })
+      set({ washOn: on })
+    }} />
+    stats = <><Stat k="Cửa và cửa sổ" v={blockers.length ? `${blockers.length} chưa đóng` : 'Đã đóng kín'} tone={blockers.length ? 'warn' : 'ok'} sub={blockers.length ? `${blockers.join(', ')} · sẽ tự đóng khi bật` : undefined} /><Stat k="Chế độ" v={washOn ? 'Đang bật' : 'Tắt'} /></>
   }
   return (
     <Panel title="Chế độ xe" label="Chế độ xe" tag={<SimChip />}>
