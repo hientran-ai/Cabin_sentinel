@@ -1,271 +1,260 @@
-> Project map / Sơ đồ source code: [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)
+# CabinSentinel
 
-## BaoTam model package (2026-10-03)
+CabinSentinel is an in-cabin safety platform that combines computer vision and
+vehicle-sensor telemetry to identify potentially unsafe conditions in parked
+vehicles. It provides a local risk engine, incident tracking, privacy-aware
+evidence handling, and web interfaces for vehicle and fleet monitoring.
 
-Pinned YuNet is bundled; YOLO weights have checksum-verified setup; latest BaoTam offline inference source is included. The trained age-router checkpoint is still missing. [Artifact inventory, setup and limitations](docs/BAOTAM_MODEL_PACKAGE.md).
+> [!IMPORTANT]
+> This repository contains a software prototype. Vehicle actions, emergency
+> calls, notifications, HVAC control, unlocking, and external delivery channels
+> are simulated or disabled unless explicitly connected to validated hardware
+> and services.
 
-## Product applications
+## Core capabilities
 
-`apps/operations-web` is the Admin and Operations portal. Owner, caregiver,
-mobile web and iOS experiences are provided by `cabin-noir`. The retired React
-Owner Web and Expo scaffold have been removed so Cabin Noir is the only
-user-facing product.
+- Accepts versioned vehicle telemetry through MQTT and vision observations
+  through HTTP.
+- Evaluates each vehicle with five deterministic risk states: `SAFE`, `NOTICE`,
+  `WARNING`, `CRITICAL`, and `ERROR`.
+- Expires vision input after 3 seconds and sensor input after 5 seconds to avoid
+  treating stale data as current evidence.
+- Preserves uncertainty when the camera is blocked, disconnected, or unable to
+  verify cabin occupancy.
+- Tracks alerts, acknowledgements, resolutions, actions, and privacy-safe
+  evidence.
+- Provides cockpit, owner, caregiver, and operations interfaces.
+- Supports local containers, automated tests, production builds, and a gated
+  deployment workflow.
 
-# CabinSentinel — Backend & Sensor Sprint 0
+## Safety behavior
 
-V1 online image demo instructions: [docs/V1_ONLINE_DEMO.md](docs/V1_ONLINE_DEMO.md).
-The image path uses Tâm's YOLO detector settings, a separate model artifact,
-and the canonical CabinSentinel reasoning service. It does not use the
-`BUILD_PHASE/app` prototype. No vehicle action is physically executed.
-An SVIRO child/infant-only sample was missed by the stock detector and produced
-`EMPTY_CABIN/SAFE`; see the V1 guide before presenting child safety claims.
+The risk engine runs locally and evaluates new vision or sensor input as it
+arrives. A missing or stale observation is not equivalent to an empty cabin.
+When the available evidence cannot support a current decision, the system
+reports an uncertain or error state instead of silently reporting safety.
 
-This repo now contains Khánh's local safety backend under
-`services/api/src/cabinsentinel/`.
-It accepts versioned sensor JSON through local MQTT and Vision results through
-HTTP, evaluates risk on either update, and exposes the latest state to the
-dashboard. Rules run locally. Horn, SMS, notification and unlock are **mock or
-pending** outputs; this does not demonstrate real vehicle control or delivery.
-The CabinSentinel routes do not need an OpenAI API key; the template chat route
-still uses the template's separate LLM configuration.
+The current implementation does not prove:
 
-## Run the Sprint 0 demo
+- detection of every child, adult, animal, or object;
+- operation on production vehicle hardware;
+- delivery through real notification or emergency channels;
+- physical execution of horn, HVAC, lock, unlock, or window commands; or
+- production readiness without the remaining validation gates.
+
+Review [RELEASE_READINESS.md](RELEASE_READINESS.md) before presenting or
+deploying the system.
+
+## Architecture
+
+```text
+Camera / video ----> Vision pipeline ----+
+                                         |
+Vehicle sensors ---> Telemetry ingest ---> Risk engine ---> Incidents / actions
+                                         |                       |
+                                         +----> Platform API <---+
+                                                     |
+                                  +------------------+------------------+
+                                  |                  |                  |
+                              Cockpit UI       Operations UI       Mobile UI
+```
+
+The canonical architecture is documented in
+[docs/ARCHITECTURE_V2.md](docs/ARCHITECTURE_V2.md). See
+[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for package boundaries and
+dependency rules.
+
+## Repository layout
+
+```text
+apps/
+  cockpit-web/          In-vehicle cockpit interface
+  operations-web/       Fleet administration and operations portal
+services/
+  api/src/              Backend API and safety services
+packages/               Shared frontend contracts and libraries
+src/                    Python compatibility layer
+tests/                  Backend and integration tests
+workers/                Static frontend router
+scripts/                Local development and validation utilities
+deploy/                 Hosted deployment files
+docs/                   Architecture, model, safety, and handoff documents
+eval/                   Evaluation reports
+```
+
+## Requirements
+
+- Python 3.11
+- Node.js 22.12 or newer
+- npm
+- Git
+- A container runtime with Compose support (optional)
+
+## Quick start with containers
+
+Create the local environment file:
 
 ```bash
 cp .env.example .env
+```
+
+Start the backend and local MQTT broker:
+
+```bash
 docker compose up --build
 ```
 
-The V1 image endpoint reports unavailable until `MODEL_PATH` points to a
-readable local model artifact. Set `CABINSENTINEL_MQTT_ENABLED=true` in `.env`
-when running the older MQTT sensor demo below.
+The API is available at `http://localhost:8000`. Interactive API documentation
+is available at `http://localhost:8000/docs` when documentation is enabled.
 
-In another terminal, publish a sensor snapshot (Python dependencies from
-`requirements.txt` are required on the host):
+## Local backend setup
+
+Create a virtual environment and install dependencies:
 
 ```bash
-python scripts/cabinsentinel_sensor_simulator.py --vehicle-id CAR_1 --temperature 35 --engine OFF --radar
+python -m venv .venv
 ```
 
-Send a matching Vision result to `POST http://localhost:8000/api/v1/vision`:
+Activate the environment:
+
+```bash
+# Linux or macOS
+source .venv/bin/activate
+
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+```
+
+Install dependencies and start the API:
+
+```bash
+pip install -r requirements.txt
+uvicorn src.main:app --reload --port 8000
+```
+
+## Frontend setup
+
+Install workspace dependencies:
+
+```bash
+npm ci
+```
+
+Start an application:
+
+```bash
+npm run dev:cockpit
+npm run dev:operations
+```
+
+Create the production web bundle:
+
+```bash
+npm run build
+```
+
+## Sensor and vision demo
+
+Publish simulated sensor telemetry:
+
+```bash
+python scripts/cabinsentinel_sensor_simulator.py \
+  --vehicle-id CAR_1 \
+  --temperature 35 \
+  --engine OFF \
+  --radar
+```
+
+Send a matching vision observation to `POST /api/v1/vision`:
 
 ```json
 {
   "vehicle_id": "CAR_1",
-  "timestamp": "2026-09-23T10:00:00+07:00",
+  "timestamp": "2026-11-03T10:00:00+07:00",
   "camera_status": "OK",
-  "objects": [{"class": "dog", "confidence": 0.95}]
+  "objects": [
+    {
+      "class": "dog",
+      "confidence": 0.95
+    }
+  ]
 }
 ```
 
-Use the current time in `timestamp`; the example timestamp is illustrative.
-Inputs expire after 3 seconds for Vision and 5 seconds for sensors. Read
-`GET /api/v1/state/CAR_1`,
-`GET /api/v1/risk/CAR_1`, and `GET /api/v1/events/CAR_1`. Swagger is at
-`http://localhost:8000/docs`. The simulator publishes a new snapshot every
-second with an increasing sequence; stop it with Ctrl-C. Restarting a
-simulator for the same vehicle resets its sequence, so clear the demo SQLite
-database or use a new vehicle ID for a separate demo run.
-Send a new Vision frame at least every 3 seconds during a live demo; after a
-single frame expires, the backend correctly reports `ERROR` without radar.
-`GET /health` reports model and database readiness. MQTT is disabled by default
-for V1; if explicitly enabled, a disconnected broker makes readiness degraded.
+Always replace the example timestamp with the current time. The simulator sends
+an increasing sequence number once per second. When restarting it for the same
+vehicle, clear the local demo database or use a new vehicle identifier.
 
-For an EV Pet Mode demo, use `--powertrain EV --mode PET --hvac ACTIVE --soc 40
---temperature 28`. For an ICE remote start demo, use `--powertrain ICE --mode
-REMOTE_START --hvac ACTIVE --engine ON`. These flags simulate vehicle feedback;
-they do not switch on a real vehicle mode or HVAC.
-
-Run checks with `pytest -q` and
-`ruff check services/api/src src tests scripts/cabinsentinel_sensor_simulator.py`.
-
-This is a Sprint 0 integration baseline. The team still needs real Vision
-integration, authorization and expiry for unlock confirmation, device feedback,
-mode telemetry validation, offline delivery adapters, and measured latency on
-the target Raspberry Pi 5 before claiming the full safety Definition of Done.
-
-## Original AI20K template guidance
-
-Template chính thức cho học viên VinUni AI20K Build Phase: cấu trúc dự án, code
-mẫu và hướng dẫn kỹ thuật để xây dựng một AI Agent hoàn chỉnh — từ kiến trúc,
-code, test cho đến deploy và nộp bài Demo Day.
-
-Technical Guidebook: <https://phoenix.note.transformerlabs.ai/technical-book>
-
-## Template có sẵn những gì
-
-- **Cấu trúc thư mục tách lớp** — `agents/`, `api/`, `services/`, `models/` đã
-  chia sẵn, không phải bàn lại từ đầu.
-- **Code mẫu chạy được** — LangGraph agent (state, node, tool), FastAPI routes,
-  Pydantic settings, schema.
-- **Docker và CI** — Dockerfile multi-stage, `docker-compose.yml`, workflow
-  GitHub Actions chạy `ruff` + `pytest` khi push lên `main`/`develop` và khi mở
-  pull request vào `main`.
-- **Technical Guidebook 10 chương** trong `docs/guide/`, đồng thời đọc được
-  online.
-- **Checklist 10 deliverables** của Demo Day.
-- **AI usage logging** — hook cài sẵn cho 6 công cụ AI, log tự động gửi lên
-  grading server mỗi lần `git push`.
-
-## Yêu cầu
-
-- Python 3.11 (phiên bản CI đang dùng)
-- Git
-- Docker — tuỳ chọn, chỉ cần nếu chạy `docker compose`
-
-## Bắt đầu
-
-### 1. Clone repo của đội
-
-Khi đội được chốt, hệ thống tự sinh repo cho đội từ template này, nằm trong org
-GitHub của khoá bạn đang học và đặt tên theo mã đội. Copy URL ở trang đội trên
-Phoenix rồi clone về:
-
-```bash
-git clone https://github.com/<ORG-CỦA-KHOÁ>/<MÃ-ĐỘI>.git
-cd <MÃ-ĐỘI>
-```
-
-Không cần `rm -rf .git`, `git init` hay `git remote add`: repo sinh từ template
-đã bắt đầu bằng lịch sử riêng của đội và remote trỏ sẵn đúng chỗ. Chưa thấy repo
-của đội thì báo BTC — repo tự tạo nằm ngoài org sẽ không được chấm.
-
-### 2. Cài môi trường
-
-```bash
-python3.11 -m venv .venv
-source .venv/bin/activate      # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-### 3. Cấu hình biến môi trường
-
-```bash
-cp .env.example .env
-```
-
-Mở `.env` và điền `OPENAI_API_KEY`. Riêng `AI_LOG_API_KEY`, mỗi thành viên tự
-tạo key riêng tại [dashboard Phoenix](https://phoenix.note.transformerlabs.ai/api-keys)
-rồi thay vào chỗ `<get-your-api-key-from-dashboard-phoenix>` — giá trị trong
-`.env.example` chỉ là placeholder, để nguyên thì log không vào được hệ thống chấm.
-
-### 4. Cài hook ghi log AI
-
-```bash
-bash scripts/setup_hooks.sh                                      # Linux / macOS / Git Bash
-powershell -ExecutionPolicy Bypass -File scripts\setup_hooks.ps1 # Windows PowerShell
-```
-
-Chạy một lần sau khi clone. Hook ghi lại prompt khi bạn dùng Claude Code, Cursor,
-Codex CLI, Gemini CLI, Antigravity hoặc GitHub Copilot, và cài pre-push hook để
-đẩy log lên server.
-
-### 5. Chạy server
-
-```bash
-uvicorn src.main:app --reload --port 8000
-```
-
-Swagger UI ở <http://localhost:8000/docs>. Hoặc dùng `make run`, `make test`,
-`make lint` — xem `Makefile`.
-
-## Cấu trúc thư mục
+Useful endpoints:
 
 ```text
-apps/                 Frontend applications
-  operations-web/     Admin & Operations portal
-cabin-noir/            Owner/caregiver web, iOS and mobile backend
-services/
-  api/src/            FastAPI backend source
-packages/             Shared frontend packages
-tests/                Backend pytest suite
-src/                  Temporary Python compatibility bridge
-scripts/              Automation and local utilities
-docs/                 Architecture, guides and handoff notes
-presentation/         Demo Day slides and videos
-.github/workflows/    CI
+GET /health
+GET /api/v1/state/CAR_1
+GET /api/v1/risk/CAR_1
+GET /api/v1/events/CAR_1
 ```
 
-See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for ownership rules,
-dependency direction and migration compatibility details.
+The image endpoint remains unavailable until `MODEL_PATH` references a readable
+model artifact. MQTT ingestion is disabled by default and can be enabled with
+`CABINSENTINEL_MQTT_ENABLED=true`.
 
-## Technical Guidebook
+## Configuration
 
-| Chương | Nội dung | Thời gian |
-|---|---|---|
-| 1 | Lời mở đầu — mục tiêu, cách sử dụng | 15 phút |
-| 2 | Khởi tạo dự án — clone, setup, git workflow | 4 giờ |
-| 3 | Thiết kế kiến trúc — 3-tier, diagram, ADR | 6 giờ |
-| 4 | LangGraph Agent — state, node, edge, tool, RAG | 8 giờ |
-| 5 | FastAPI — routes, validation, error handling, streaming | 6 giờ |
-| 6 | Giao diện — Next.js và Streamlit | 6 giờ |
-| 7 | DevOps — Docker, CI/CD, deploy, logging | 6 giờ |
-| 8 | Kiểm thử — unit test, integration test, RAGAS | 4 giờ |
-| 9 | Demo Day — 10 deliverables, checklist | 2 giờ |
-| 10 | Tài nguyên — khoá học, tài liệu, BMAD method | tham khảo |
+Important environment variables include:
 
-Đọc online tại <https://phoenix.note.transformerlabs.ai/technical-book>: đăng
-nhập bằng GitHub (đúng account đã được BTC mời vào org của khoá), chọn tab
-**Technical Book** ở sidebar trái. Bản offline nằm trong `docs/guide/`, mở được
-bằng bất kỳ markdown viewer nào.
-
-## 10 deliverables cho Demo Day
-
-| # | Deliverable | Vị trí | Template lo tới đâu |
-|---|---|---|---|
-| 1 | Source code | `apps/`, `services/`, `packages/` | Khung sẵn |
-| 2 | README | copy `README_boilerplate.md` thành `README.md` | Khung sẵn |
-| 3 | Architecture diagram | `docs/architecture_diagram.md` | Khung sẵn |
-| 4 | AI logs | LangSmith (3 biến môi trường) + auto AI usage logging | Cấu hình sẵn |
-| 5 | Live URL | deploy lên Render/Vercel | CI/CD sẵn |
-| 6 | Video demo | `presentation/` | Đội tự làm |
-| 7 | Pitch deck | `presentation/` | Đội tự làm |
-| 8 | Development journal | `JOURNAL.md` | Khung sẵn |
-| 9 | Worklog | `WORKLOG.md` | Khung sẵn |
-| 10 | Evaluation evidence | `eval/` | Đội tự làm |
-
-## Tech stack
-
-| Lớp | Công nghệ |
+| Variable | Purpose |
 |---|---|
-| Agent | LangGraph + LangChain 0.3 |
-| Backend | FastAPI 0.115 + Uvicorn |
-| LLM | OpenAI, mặc định `gpt-4o-mini` (đổi trong `services/api/src/config.py`) |
-| Giao diện | Next.js hoặc Streamlit (đội tự chọn, hướng dẫn ở chương 6) |
-| Lint / test | ruff + pytest 8 |
-| DevOps | Docker + GitHub Actions |
+| `APP_ENV` | Runtime environment |
+| `DATABASE_URL` | Database connection string |
+| `CABINSENTINEL_DB_PATH` | Local database path |
+| `CABINSENTINEL_MQTT_ENABLED` | Enables MQTT telemetry ingestion |
+| `MQTT_BROKER_HOST` | MQTT broker hostname |
+| `MQTT_BROKER_PORT` | MQTT broker port |
+| `MODEL_PATH` | Object-detection model path |
+| `AGE_CLASSIFIER_PATH` | Optional age-classification model path |
+| `CORS_ORIGINS` | Allowed web origins |
+| `PLATFORM_SIGNING_KEY` | Evidence-link signing key |
+| `REMOTE_COMMANDS_ENABLED` | Enables simulated remote commands |
 
-## AI usage logging
+Keep secrets outside version control. Production deployments must use explicit
+origins, persistent storage, strong credentials, and separately managed secret
+values.
 
-Mọi prompt được ghi vào `.ai-log/session.jsonl` và tự động gửi lên grading server
-ở bước pre-push.
+## Testing and validation
 
-| Công cụ | Cấu hình | Thời điểm ghi |
-|---|---|---|
-| Claude Code | `.claude/settings.json` | mỗi prompt (`UserPromptSubmit`) |
-| Cursor | `.cursor/hooks.json` | mỗi prompt và khi dừng |
-| OpenAI Codex CLI | `.codex/hooks.json` | mỗi prompt và khi dừng |
-| Gemini CLI | `.gemini/settings.json` | mỗi lượt agent chạy |
-| GitHub Copilot | `.github/hooks/hooks.json` | mỗi prompt và cuối session |
-| Antigravity IDE | `.agents/hooks.json` | mỗi prompt, kèm lần quét lại lúc `git push` |
-
-Dùng ChatGPT hay công cụ web khác thì log thủ công:
+Run backend tests and lint checks:
 
 ```bash
-bash scripts/_pyrun.sh scripts/log_manual.py --tool chatgpt --prompt "What you asked"
+pytest -q
+ruff check services/api/src src tests scripts/cabinsentinel_sensor_simulator.py
 ```
 
-## Đóng góp
+Run frontend and worker tests:
 
-Repo này là open source. Đọc [CONTRIBUTING.md](CONTRIBUTING.md) trước khi mở PR.
+```bash
+npm test
+npm run typecheck
+npm run build
+```
 
-Nội dung trong `docs/guide/` là nguồn của Technical Book và được đồng bộ lên bản
-online, nên mọi thay đổi ở đó cần review của
-[@AI20K-Build-Phase/book-maintainers](https://github.com/orgs/AI20K-Build-Phase/teams/book-maintainers)
-— xem [.github/CODEOWNERS](.github/CODEOWNERS).
+The automated workflow performs frontend type checking, unit tests, production
+builds, backend linting and tests, container/model verification, and a container
+smoke test. Deployment runs only after its required checks and configuration
+gates pass.
 
-Báo lỗ hổng bảo mật theo [SECURITY.md](SECURITY.md), đừng mở public issue.
+Automated tests and local demonstrations are not substitutes for model
+validation, hardware testing, security review, or production monitoring.
+
+## Additional documentation
+
+- [Architecture](ARCHITECTURE.md)
+- [Integration status](INTEGRATION_STATUS.md)
+- [Release readiness](RELEASE_READINESS.md)
+- [Model evaluation](MODEL_DETECTION_EVALUATION.md)
+- [Scenario test matrix](SCENARIO_TEST_MATRIX.md)
+- [Video scenario matrix](VIDEO_SCENARIO_MATRIX.md)
+- [Contribution guide](CONTRIBUTING.md)
 
 ## License
 
-[MIT](LICENSE) — dùng tự do cho mục đích giáo dục.
+See [LICENSE](LICENSE) for the license terms.
